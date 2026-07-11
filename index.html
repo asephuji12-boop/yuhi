@@ -1,1082 +1,677 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5" />
-    <title>Data Siswa · Pesantren</title>
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js">
-    </script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js">
-    </script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-        }
-        body {
-            background: #f4f7fc;
-            padding: 20px;
-            min-height: 100vh;
-        }
-        .app-container {
-            max-width: 1600px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 28px;
-            box-shadow: 0 20px 40px -12px rgba(26, 35, 126, 0.2);
-            padding: 24px 28px;
-        }
-        /* header */
-        .header-row {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: space-between;
-            gap: 16px 10px;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #e8edf5;
-            padding-bottom: 16px;
-        }
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-        .header-left h1 {
-            font-size: 1.9rem;
-            font-weight: 600;
-            color: #1a237e;
-            letter-spacing: -0.5px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .header-left h1 small {
-            font-size: 1rem;
-            font-weight: 400;
-            color: #3f51b5;
-            margin-left: 4px;
-        }
-        .btn-group {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 8px;
-        }
-        .btn {
-            background: white;
-            border: 1px solid #cfd8e6;
-            padding: 8px 16px;
-            border-radius: 40px;
-            font-weight: 500;
-            font-size: 0.9rem;
-            color: #1a237e;
-            cursor: pointer;
-            transition: 0.15s;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
-        }
-        .btn-primary {
-            background: #1a237e;
-            border-color: #1a237e;
-            color: white;
-        }
-        .btn-primary:hover {
-            background: #0d1457;
-            border-color: #0d1457;
-        }
-        .btn-outline {
-            background: transparent;
-            border: 1px solid #b0c0da;
-        }
-        .btn-outline:hover {
-            background: #eef3fd;
-            border-color: #1a237e;
-        }
-        .btn-sm {
-            padding: 4px 12px;
-            font-size: 0.8rem;
-        }
-        .btn-danger {
-            background: #b71c1c;
-            border-color: #b71c1c;
-            color: white;
-        }
-        .btn-danger:hover {
-            background: #8e0000;
-            border-color: #8e0000;
-        }
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 14px;
-            margin-bottom: 24px;
-        }
-        .stat-card {
-            background: #f8faff;
-            border-radius: 20px;
-            padding: 14px 16px;
-            border-left: 5px solid #1a237e;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
-        }
-        .stat-card .label {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            color: #455a64;
-            letter-spacing: 0.3px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .stat-card .value {
-            font-size: 1.8rem;
-            font-weight: 600;
-            color: #1a237e;
-            line-height: 1.2;
-        }
-        .table-wrap {
-            overflow-x: auto;
-            border-radius: 18px;
-            border: 1px solid #e2e9f2;
-            background: #ffffff;
-            margin-top: 4px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.85rem;
-            min-width: 1200px;
-        }
-        th {
-            background: #eef3fc;
-            color: #1a237e;
-            font-weight: 600;
-            padding: 12px 8px;
-            text-align: left;
-            white-space: nowrap;
-            position: sticky;
-            top: 0;
-            z-index: 2;
-        }
-        td {
-            padding: 10px 8px;
-            border-bottom: 1px solid #eef3f8;
-            vertical-align: middle;
-        }
-        tr:hover td {
-            background: #fafcff;
-        }
-        .clickable-name {
-            color: #1a237e;
-            font-weight: 500;
-            cursor: pointer;
-            text-decoration: underline dotted;
-        }
-        .badge-status {
-            display: inline-block;
-            padding: 2px 12px;
-            border-radius: 30px;
-            background: #e8edf5;
-            font-size: 0.75rem;
-        }
-        .pagination {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-            align-items: center;
-            padding: 14px 4px 6px 4px;
-            gap: 10px;
-        }
-        .pagination select,
-        .pagination button {
-            background: white;
-            border: 1px solid #d0dcec;
-            border-radius: 30px;
-            padding: 6px 16px;
-            font-weight: 500;
-        }
-        .pagination button {
-            background: #f2f6fe;
-            cursor: pointer;
-        }
-        .pagination button:disabled {
-            opacity: 0.4;
-            pointer-events: none;
-        }
-        /* modal overlay */
-        .modal {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.35);
-            backdrop-filter: blur(2px);
-            align-items: center;
-            justify-content: center;
-            z-index: 999;
-            padding: 20px;
-        }
-        .modal.open {
-            display: flex;
-        }
-        .modal-box {
-            background: white;
-            border-radius: 32px;
-            max-width: 700px;
-            width: 100%;
-            max-height: 90vh;
-            overflow-y: auto;
-            padding: 28px 30px;
-            box-shadow: 0 40px 60px -20px rgba(0, 0, 0, 0.4);
-            position: relative;
-        }
-        .modal-box h2 {
-            font-size: 1.5rem;
-            color: #1a237e;
-            margin-bottom: 18px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .modal-close {
-            background: none;
-            border: none;
-            font-size: 1.8rem;
-            cursor: pointer;
-            color: #5c6b8a;
-        }
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 14px 20px;
-        }
-        .form-grid .full {
-            grid-column: span 2;
-        }
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-        .form-group label {
-            font-weight: 500;
-            font-size: 0.8rem;
-            color: #2c3e50;
-        }
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            padding: 10px 12px;
-            border: 1px solid #d7e0eb;
-            border-radius: 16px;
-            font-size: 0.9rem;
-            background: #fafcff;
-            transition: 0.1s;
-        }
-        .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
-            border-color: #1a237e;
-            outline: none;
-            background: white;
-            box-shadow: 0 0 0 3px rgba(26, 35, 126, 0.1);
-        }
-        .btn-submit {
-            background: #1a237e;
-            color: white;
-            border: none;
-            padding: 12px 28px;
-            border-radius: 40px;
-            font-weight: 600;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: 0.15s;
-            width: fit-content;
-        }
-        .btn-submit:hover {
-            background: #0d1457;
-        }
-        .login-wrapper {
-            max-width: 380px;
-            margin: 60px auto;
-            background: white;
-            padding: 40px 32px;
-            border-radius: 40px;
-            box-shadow: 0 20px 40px -12px rgba(26, 35, 126, 0.3);
-        }
-        .login-wrapper h2 {
-            text-align: center;
-            color: #1a237e;
-        }
-        .login-wrapper .form-group {
-            margin-bottom: 16px;
-        }
-        .toast {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            background: #1a237e;
-            color: white;
-            padding: 14px 26px;
-            border-radius: 60px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-            z-index: 1200;
-            font-weight: 500;
-            opacity: 0;
-            transition: opacity 0.2s;
-            pointer-events: none;
-        }
-        .toast.show {
-            opacity: 1;
-            pointer-events: auto;
-        }
-        .text-muted {
-            color: #5a6c8a;
-            font-size: 0.8rem;
-        }
-        .flex {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-        .mt-2 {
-            margin-top: 12px;
-        }
-        @media (max-width: 700px) {
-            .app-container {
-                padding: 16px;
-            }
-            .form-grid {
-                grid-template-columns: 1fr;
-            }
-            .form-grid .full {
-                grid-column: span 1;
-            }
-            .header-left h1 {
-                font-size: 1.4rem;
-            }
-            .stats-grid {
-                grid-template-columns: 1fr 1fr;
-            }
-        }
-    </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>Bertumbuh — Habit Tracker</title>
+<link rel="icon" href="data:,">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<!-- Firebase (compat build: bisa dipakai langsung dengan tag script, tanpa bundler) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<style>
+  :root{
+    --ink:#122019; --ink-soft:#1C2E23; --ink-line:#26392E;
+    --paper:#FAF5E9; --paper-soft:#F1E8D4;
+    --moss:#3C5943; --moss-deep:#22352A;
+    --amber:#E3A23C; --amber-soft:#F3CE8E;
+    --bloom:#D8677B; --bloom-soft:#F0AFBC;
+    --charcoal:#232821; --cream:#FBF6EA; --cream-dim:rgba(251,246,234,0.6);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--ink); color:var(--cream); font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased;}
+  .font-display{font-family:'Fraunces',serif;}
+  .font-mono{font-family:'IBM Plex Mono',monospace;}
+  .hidden{display:none !important;}
+  button{font-family:inherit; cursor:pointer; border:none;}
+  input{font-family:inherit;}
+  button:focus-visible, input:focus-visible{outline:2px solid var(--amber); outline-offset:2px;}
+  .wrap{max-width:440px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column;}
+
+  /* Gate screen */
+  #gate-screen{min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;}
+  .gate-card{background:var(--ink-soft); border-radius:24px; padding:28px 24px; max-width:380px; width:100%;}
+  .gate-card h1{font-size:22px; margin:0 0 6px;}
+  .gate-card p{font-size:13px; color:var(--cream-dim); line-height:1.5; margin:0 0 18px;}
+  .gate-input{width:100%; padding:12px 14px; border-radius:12px; background:var(--paper); color:var(--charcoal); font-size:15px; margin-bottom:10px; letter-spacing:1px;}
+  .gate-btn{width:100%; padding:12px 14px; border-radius:12px; font-size:14px; font-weight:600; margin-bottom:10px;}
+  .gate-btn.primary{background:var(--amber); color:var(--charcoal);}
+  .gate-btn.secondary{background:transparent; color:var(--cream); border:1px solid var(--ink-line);}
+  .code-reveal{background:var(--paper-soft); border-radius:12px; padding:14px; text-align:center; margin-bottom:14px;}
+  .code-reveal .code{font-family:'IBM Plex Mono',monospace; font-size:20px; letter-spacing:2px; color:var(--charcoal); font-weight:600;}
+  .gate-warning{font-size:12px; color:var(--bloom); margin-bottom:14px; line-height:1.5;}
+
+  /* App header */
+  header.app-header{display:flex; align-items:center; justify-content:space-between; padding:24px 20px 8px;}
+  .brand{display:flex; align-items:center; gap:8px;}
+  .brand span{font-size:18px;}
+  .icon-btn{width:36px; height:36px; border-radius:999px; background:var(--ink-soft); display:flex; align-items:center; justify-content:center;}
+
+  /* Hero */
+  .hero-wrap{padding:12px 20px 0;}
+  .hero-card{background:var(--paper); border-radius:24px; padding:20px;}
+  .hero-top{display:flex; align-items:center; gap:16px;}
+  .hero-plant{width:96px; height:96px; flex-shrink:0;}
+  .hero-plant svg{width:100%; height:100%; transform-origin:50% 100%; animation:sway 4.5s ease-in-out infinite;}
+  @keyframes sway{0%,100%{transform:rotate(-1.5deg);} 50%{transform:rotate(1.5deg);}}
+  @media (prefers-reduced-motion: reduce){ .hero-plant svg{animation:none;} }
+  .hero-tag{font-size:11px; text-transform:uppercase; letter-spacing:0.04em; color:var(--moss); margin:0 0 2px;}
+  .hero-title{font-size:19px; color:var(--charcoal); margin:0 0 4px; line-height:1.3;}
+  .hero-note{font-size:12px; color:var(--moss); margin:0;}
+  .hero-bar-row{display:flex; align-items:center; gap:8px; margin-top:16px;}
+  .hero-bar{flex:1; height:6px; border-radius:999px; background:var(--paper-soft); overflow:hidden;}
+  .hero-bar-fill{height:100%; background:var(--amber); border-radius:999px; transition:width 0.5s ease;}
+  .hero-pct{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--charcoal);}
+
+  /* Month nav */
+  .month-nav{display:flex; align-items:center; justify-content:space-between; padding:20px 20px 0;}
+  .month-label{font-size:16px;}
+
+  /* Day strip */
+  .day-strip{display:flex; gap:8px; padding:16px 20px 4px; overflow-x:auto; scrollbar-width:none;}
+  .day-strip::-webkit-scrollbar{height:0;}
+  .day-pill{flex-shrink:0; width:44px; height:56px; border-radius:16px; background:var(--ink-soft); display:flex; flex-direction:column; align-items:center; justify-content:center; border:1px solid transparent;}
+  .day-pill .dname{font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--cream-dim);}
+  .day-pill .dnum{font-family:'Fraunces',serif; font-size:14px; color:var(--cream);}
+  .day-pill .ddot{width:4px; height:4px; border-radius:999px; margin-top:2px;}
+  .day-pill.selected{background:var(--amber);}
+  .day-pill.selected .dname, .day-pill.selected .dnum{color:var(--charcoal);}
+  .day-pill.today{border-color:var(--amber);}
+
+  /* Habit list */
+  .habit-section{padding:20px 20px 32px; flex:1;}
+  .habit-date-label{font-size:12px; color:var(--cream-dim); margin:0 0 8px;}
+  .habit-row{display:flex; align-items:center; gap:12px; background:var(--ink-soft); border-radius:16px; padding:12px 16px; margin-bottom:8px;}
+  .habit-check{width:28px; height:28px; border-radius:999px; flex-shrink:0; display:flex; align-items:center; justify-content:center; border:2px solid var(--ink-line); background:transparent; transition:background 0.15s, border-color 0.15s;}
+  .habit-check.done{background:var(--amber); border-color:var(--amber);}
+  .habit-name{font-size:14px; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--cream-dim);}
+  .habit-name.done{color:var(--cream);}
+  .habit-streak{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--amber-soft); display:flex; align-items:center; gap:4px; flex-shrink:0;}
+  .empty-habits{background:var(--ink-soft); border-radius:16px; padding:20px; text-align:center; font-size:13px; color:var(--cream-dim);}
+
+  .save-status{padding:0 20px 16px; height:16px; font-family:'IBM Plex Mono',monospace; font-size:11px;}
+  .save-status.error{color:var(--bloom);}
+  .save-status.ok{color:var(--cream-dim);}
+
+  /* Settings modal */
+  #settings-overlay{position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:flex-end; justify-content:center; z-index:50;}
+  .settings-card{background:var(--paper); border-radius:24px 24px 0 0; padding:20px; max-width:440px; width:100%; max-height:85vh; overflow-y:auto;}
+  .settings-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;}
+  .settings-head h2{font-size:18px; color:var(--charcoal); margin:0;}
+  .settings-close{width:30px; height:30px; border-radius:999px; background:var(--paper-soft); display:flex; align-items:center; justify-content:center;}
+  .habit-edit-row{display:flex; align-items:center; gap:8px; margin-bottom:8px;}
+  .habit-edit-input{flex:1; padding:9px 12px; border-radius:10px; background:var(--paper-soft); color:var(--charcoal); font-size:13px; border:none;}
+  .habit-del-btn{width:36px; height:36px; border-radius:10px; background:var(--paper-soft); display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .add-habit-row{display:flex; align-items:center; gap:8px; margin:14px 0 20px;}
+  .add-habit-btn{width:36px; height:36px; border-radius:10px; background:var(--moss); color:var(--cream); display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .settings-danger-btn{width:100%; padding:11px; border-radius:10px; background:transparent; border:1px solid var(--bloom); color:var(--bloom); font-size:12px; margin-bottom:10px;}
+  .settings-code-row{background:var(--paper-soft); border-radius:12px; padding:12px; font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--charcoal); text-align:center; margin-bottom:14px; letter-spacing:1px;}
+
+  #loading-screen{min-height:100vh; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:10px;}
+</style>
 </head>
 <body>
-    <div id="app">
-        <!-- login screen -->
-        <div id="loginScreen" class="login-wrapper" style="display:block;">
-            <h2>🔐 Login</h2>
-            <div class="form-group">
-                <label>Username</label>
-                <input id="loginUser" placeholder="admin" value="admin">
-            </div>
-            <div class="form-group">
-                <label>Password</label>
-                <input id="loginPass" type="password" placeholder="admin123" value="admin123">
-            </div>
-            <button class="btn-submit" id="loginBtn" style="width:100%;justify-content:center;">Masuk</button>
-            <div style="margin-top:10px;font-size:0.8rem;color:#5a6c8a;">Admin default: admin / admin123</div>
-        </div>
 
-        <!-- main app -->
-        <div id="mainApp" style="display:none;">
-            <div class="app-container">
-                <!-- header -->
-                <div class="header-row">
-                    <div class="header-left">
-                        <h1>📚 Data Siswa <small>Pesantren Darul Ilmi</small></h1>
-                    </div>
-                    <div class="btn-group">
-                        <button class="btn btn-primary" id="btnTambah">➕ Tambah</button>
-                        <button class="btn btn-outline" id="btnCari">🔍 Cari</button>
-                        <div class="btn-group" style="position:relative;">
-                            <button class="btn btn-outline" id="btnTampilan">📊 Tampilan ▾</button>
-                            <div id="dropdownTampilan" style="display:none;position:absolute;top:40px;right:0;background:white;border-radius:20px;box-shadow:0 12px 30px rgba(0,0,0,0.15);padding:8px 0;min-width:180px;z-index:50;">
-                                <button class="dropdown-item" data-view="kelas">📚 Tampilan Kelas</button>
-                                <button class="dropdown-item" data-view="tahfidz">📖 Tampilan Tahfidz</button>
-                                <button class="dropdown-item" data-view="kamar">🛏️ Tampilan Kamar</button>
-                                <button class="dropdown-item" data-view="filter">🔎 Filter Lanjutan</button>
-                            </div>
-                        </div>
-                        <button class="btn btn-outline" id="btnImportCSV">📤 Import CSV</button>
-                        <button class="btn btn-outline" id="btnExportCSV">📥 Ekspor CSV</button>
-                        <button class="btn btn-outline btn-sm" id="btnKelolaUser" style="display:none;">👥 User</button>
-                        <button class="btn btn-outline btn-sm" id="btnLogout">🚪 Keluar</button>
-                    </div>
-                </div>
+<div id="loading-screen">
+  <div class="font-mono" style="font-size:13px; color:var(--cream-dim);">Menyiapkan kebunmu…</div>
+</div>
 
-                <!-- stats -->
-                <div class="stats-grid" id="statsContainer">
-                    <div class="stat-card"><div class="label">📍 Alamat</div><div class="value" id="statAlamat">-</div></div>
-                    <div class="stat-card"><div class="label">🏫 Kelas</div><div class="value" id="statKelas">-</div></div>
-                    <div class="stat-card"><div class="label">📖 Tahfidz</div><div class="value" id="statTahfidz">-</div></div>
-                    <div class="stat-card"><div class="label">🛏️ Kamar</div><div class="value" id="statKamar">-</div></div>
-                </div>
+<!-- GATE: masuk pakai kode -->
+<div id="gate-screen" class="hidden">
+  <div class="gate-card">
+    <h1 class="font-display">Bertumbuh</h1>
+    <p>Buat kode akses baru, atau masukkan kode yang sudah kamu punya untuk sinkron data dari HP lain.</p>
 
-                <!-- tabel -->
-                <div class="table-wrap" id="tableWrap">
-                    <table>
-                        <thead><tr id="tableHead"></tr></thead>
-                        <tbody id="tableBody"></tbody>
-                    </table>
-                </div>
-                <!-- pagination -->
-                <div class="pagination">
-                    <div>
-                        <select id="pageSizeSelect"><option value="25">25</option><option value="50">50</option><option value="100">100</option><option value="999999">Semua</option></select>
-                        <span style="margin-left:10px;" id="pageInfo">1-0 dari 0</span>
-                    </div>
-                    <div>
-                        <button id="prevPage">◀ Prev</button>
-                        <button id="nextPage">Next ▶</button>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <div id="gate-default">
+      <button class="gate-btn primary" id="btn-create-code">Buat Kode Baru</button>
+      <input class="gate-input font-mono" id="input-existing-code" placeholder="Masukkan kode yang sudah ada" />
+      <button class="gate-btn secondary" id="btn-use-existing-code">Masuk dengan Kode Ini</button>
     </div>
 
-    <!-- modal container -->
-    <div id="modalContainer" class="modal"></div>
-    <div id="toastMessage" class="toast">✅ Sukses</div>
+    <div id="gate-reveal" class="hidden">
+      <div class="code-reveal">
+        <div style="font-size:11px; color:var(--moss); margin-bottom:6px;">Kode akses kamu:</div>
+        <div class="code" id="revealed-code"></div>
+      </div>
+      <p class="gate-warning">Simpan kode ini baik-baik (screenshot atau catat). Kode ini satu-satunya cara untuk membuka data yang sama dari HP lain — kalau hilang, data tidak bisa diambil kembali.</p>
+      <button class="gate-btn primary" id="btn-confirm-saved">Sudah Saya Simpan, Lanjutkan</button>
+    </div>
 
-    <script>
-        // ========== FIREBASE CONFIG (GANTI DENGAN MILIK ANDA) ==========
-        const firebaseConfig = {
-            apiKey: "AIzaSyBFbiI8A9fzGwKfE5ZWzXHcN_819e-nQEA",
-            authDomain: "yihn-9da06.firebaseapp.com",
-            projectId: "yihn-9da06",
-            storageBucket: "yihn-9da06.firebasestorage.app",
-            messagingSenderId: "540843053814",
-            appId: "1:540843053814:web:e5128f2f8fe55e2461d2d7"
-        };
-        // =================================================================
+    <p id="gate-error" class="hidden" style="color:var(--bloom); font-size:12px; margin-top:8px;"></p>
+  </div>
+</div>
 
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        // untuk development test mode, tidak perlu auth
+<!-- APP -->
+<div id="app-screen" class="hidden">
+  <div class="wrap">
+    <header class="app-header">
+      <div class="brand">
+        <span>🌱</span>
+        <span class="font-display" style="font-size:18px;">Bertumbuh</span>
+      </div>
+      <button class="icon-btn" id="btn-open-settings" aria-label="Pengaturan">⚙️</button>
+    </header>
 
-        // state
-        let allStudents = [];
-        let filteredStudents = [];
-        let currentUser = null;
-        let currentPage = 1;
-        let pageSize = 25;
+    <div class="hero-wrap">
+      <div class="hero-card">
+        <div class="hero-top">
+          <div class="hero-plant" id="hero-plant"></div>
+          <div style="min-width:0;">
+            <p class="hero-tag font-mono" id="hero-tag"></p>
+            <h1 class="hero-title font-display" id="hero-title"></h1>
+            <p class="hero-note" id="hero-note"></p>
+          </div>
+        </div>
+        <div class="hero-bar-row">
+          <div class="hero-bar"><div class="hero-bar-fill" id="hero-bar-fill"></div></div>
+          <span class="hero-pct" id="hero-pct"></span>
+        </div>
+      </div>
+    </div>
 
-        // DOM refs
-        const $ = id => document.getElementById(id);
-        const loginScreen = $('loginScreen');
-        const mainApp = $('mainApp');
-        const loginBtn = $('loginBtn');
-        const loginUser = $('loginUser');
-        const loginPass = $('loginPass');
-        const btnLogout = $('btnLogout');
-        const btnTambah = $('btnTambah');
-        const btnCari = $('btnCari');
-        const btnTampilan = $('btnTampilan');
-        const dropdownTampilan = $('dropdownTampilan');
-        const btnImportCSV = $('btnImportCSV');
-        const btnExportCSV = $('btnExportCSV');
-        const btnKelolaUser = $('btnKelolaUser');
-        const tableHead = $('tableHead');
-        const tableBody = $('tableBody');
-        const pageSizeSelect = $('pageSizeSelect');
-        const pageInfo = $('pageInfo');
-        const prevPage = $('prevPage');
-        const nextPage = $('nextPage');
-        const modalContainer = $('modalContainer');
-        const toast = $('toastMessage');
+    <div class="month-nav">
+      <button class="icon-btn" id="btn-prev-month" aria-label="Bulan sebelumnya">‹</button>
+      <span class="month-label font-display" id="month-label"></span>
+      <button class="icon-btn" id="btn-next-month" aria-label="Bulan berikutnya">›</button>
+    </div>
 
-        const columns = ['No', 'Id', 'Nama', 'Alamat', 'Status', 'Diniyyah', 'Tahfidz', 'Kamar', 'Kedudukan',
-            'Tgl Terdata', 'Tgl Keluar', 'Keterangan', 'No Yayasan', 'Catatan Awal', 'Catatan Akhir', 'Kelas Akhir'
-        ];
+    <div class="day-strip" id="day-strip"></div>
 
-        // ================== HELPERS ==================
-        function showToast(msg, isError = false) {
-            toast.textContent = msg;
-            toast.style.background = isError ? '#b71c1c' : '#1a237e';
-            toast.classList.add('show');
-            clearTimeout(toast._timer);
-            toast._timer = setTimeout(() => toast.classList.remove('show'), 4000);
-        }
+    <div class="habit-section">
+      <p class="habit-date-label" id="habit-date-label"></p>
+      <div id="habit-list"></div>
+    </div>
 
-        function openModal(html) {
-            modalContainer.innerHTML = html;
-            modalContainer.classList.add('open');
-        }
+    <div class="save-status" id="save-status"></div>
+  </div>
+</div>
 
-        function closeModal() {
-            modalContainer.classList.remove('open');
-        }
+<!-- SETTINGS MODAL -->
+<div id="settings-overlay" class="hidden">
+  <div class="settings-card">
+    <div class="settings-head">
+      <h2 class="font-display">Atur Habit</h2>
+      <button class="settings-close" id="btn-close-settings">✕</button>
+    </div>
 
-        function getStatusBadge(s) {
-            const colors = { 'Aktif': '#1a7e3a', 'Pindah': '#b06b1a', 'Lulus': '#0d47a1', 'Cuti': '#7b4b9a',
-                'Keluar': '#b71c1c' };
-            return `<span class="badge-status" style="background:${colors[s]||'#e8edf5'};color:white;">${s||'-'}</span>`;
-        }
+    <div class="settings-code-row" id="settings-code-display"></div>
 
-        function formatDate(d) {
-            if (!d) return '-';
-            try { return new Date(d).toLocaleDateString('id-ID'); } catch (e) { return d; }
-        }
+    <div id="settings-habit-list"></div>
 
-        // ================== LOGIN ==================
-        loginBtn.onclick = async () => {
-            const u = loginUser.value.trim(),
-                p = loginPass.value.trim();
-            if (u === 'admin' && p === 'admin123') {
-                currentUser = { username: 'admin', isAdmin: true };
-                enterApp();
-                return;
-            }
-            // cek firestore users
-            try {
-                const snap = await db.collection('users').where('username', '==', u).get();
-                if (snap.empty) { showToast('Username tidak ditemukan', true); return; }
-                let found = false;
-                snap.forEach(doc => {
-                    if (doc.data().password === p) { found = true;
-                        currentUser = { username: u, uid: doc.id, ...doc.data() }; }
-                });
-                if (found) { enterApp(); } else { showToast('Password salah', true); }
-            } catch (e) { showToast('Error login: ' + e.message, true); }
-        };
+    <div class="add-habit-row">
+      <input class="habit-edit-input" id="input-new-habit" placeholder="Nama habit baru" />
+      <button class="add-habit-btn" id="btn-add-habit">＋</button>
+    </div>
 
-        function enterApp() {
-            loginScreen.style.display = 'none';
-            mainApp.style.display = 'block';
-            btnKelolaUser.style.display = (currentUser && currentUser.isAdmin) ? 'inline-flex' : 'none';
-            loadData();
-        }
+    <button class="settings-danger-btn" id="btn-reset-data">↺ Reset Data Habit</button>
+    <button class="settings-danger-btn" id="btn-switch-code">⇄ Ganti Kode / Keluar dari Perangkat Ini</button>
+  </div>
+</div>
 
-        btnLogout.onclick = () => {
-            currentUser = null;
-            mainApp.style.display = 'none';
-            loginScreen.style.display = 'block';
-        };
+<script>
+/* ======================================================================
+   1) KONFIGURASI FIREBASE — GANTI BAGIAN INI DENGAN CONFIG PROJECTMU
+   Ambil dari: Firebase Console > Project Settings > General >
+   "Your apps" > SDK setup and configuration > Config
+   ====================================================================== */
+const firebaseConfig = {
+  apiKey: "AIzaSyBFbiI8A9fzGwKfE5ZWzXHcN_819e-nQEA",
+  authDomain: "yihn-9da06.firebaseapp.com",
+  projectId: "yihn-9da06",
+  storageBucket: "yihn-9da06.firebasestorage.app",
+  messagingSenderId: "540843053814",
+  appId: "1:540843053814:web:e5128f2f8fe55e2461d2d7"
+};
 
-        // ================== CRUD ==================
-        async function loadData() {
-            tableBody.innerHTML = `<tr><td colspan="${columns.length}" style="text-align:center;padding:40px;">⏳ Memuat data...</td></tr>`;
-            try {
-                const snap = await db.collection('siswa').get();
-                allStudents = [];
-                snap.forEach(doc => {
-                    const d = doc.data();
-                    d._id = doc.id;
-                    allStudents.push(d);
-                });
-                // urutkan berdasarkan No atau id
-                allStudents.sort((a, b) => (a.No || 0) - (b.No || 0));
-                applyFiltersAndRender();
-                updateStats();
-            } catch (e) {
-                tableBody.innerHTML = `<tr><td colspan="${columns.length}" style="text-align:center;padding:40px;color:#b71c1c;">Gagal memuat data: ${e.message}</td></tr>`;
-                showToast('Gagal load data: ' + e.message, true);
-            }
-        }
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
-        function applyFiltersAndRender() {
-            // default: semua
-            filteredStudents = [...allStudents];
-            // jika ada filter dari dropdown/view
-            renderTable();
-        }
+/* ======================================================================
+   2) DATA & STATE
+   ====================================================================== */
+const DEFAULT_HABITS = [
+  { id: 'h1', name: 'Bangun Pagi' },
+  { id: 'h2', name: 'Olahraga' },
+  { id: 'h3', name: 'Minum Air Putih' },
+  { id: 'h4', name: 'Membaca' },
+  { id: 'h5', name: 'Meditasi' },
+  { id: 'h6', name: 'Jurnal' },
+  { id: 'h7', name: 'Bersyukur' },
+  { id: 'h8', name: 'Tidur Cukup' },
+];
 
-        function renderTable() {
-            const start = (currentPage - 1) * pageSize;
-            const end = pageSize === 999999 ? filteredStudents.length : start + pageSize;
-            const pageData = filteredStudents.slice(start, end);
+const STAGES = [
+  { name: 'Benih Baru Ditanam', tag: '0%', note: 'Belum ada yang dicentang bulan ini.' },
+  { name: 'Akar Mulai Mencengkeram', tag: '1–20%', note: 'Awal yang baik, terus lanjutkan.' },
+  { name: 'Tunas Pertama Muncul', tag: '21–40%', note: 'Kebiasaan mulai kelihatan bentuknya.' },
+  { name: 'Daun Mulai Rimbun', tag: '41–60%', note: 'Sudah lebih dari separuh jalan.' },
+  { name: 'Kuncup Siap Mekar', tag: '61–80%', note: 'Tinggal sedikit lagi menuju mekar penuh.' },
+  { name: 'Mekar Sepenuhnya', tag: '81–100%', note: 'Bulan ini benar-benar bertumbuh.' },
+];
 
-            // head
-            tableHead.innerHTML = `<tr>${columns.map(c => `<th>${c}</th>`).join('')}</tr>`;
+const MONTH_NAMES = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+const DAY_NAMES = ['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
+const CODE_STORAGE_KEY = 'bertumbuh_code';
 
-            if (pageData.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="${columns.length}" style="text-align:center;padding:40px;">Tidak ada data</td></tr>`;
-                pageInfo.textContent = `0 dari 0`;
-                return;
-            }
-            let html = '';
-            pageData.forEach((s, idx) => {
-                const row = columns.map(col => {
-                    let val = s[col] ?? '-';
-                    if (col === 'Status') val = getStatusBadge(val);
-                    if (col === 'Nama') val = `<span class="clickable-name" data-id="${s._id}">${val}</span>`;
-                    if (col === 'Tgl Terdata' || col === 'Tgl Keluar') val = formatDate(val);
-                    return `<td>${val}</td>`;
-                }).join('');
-                html += `<tr>${row}</tr>`;
-            });
-            tableBody.innerHTML = html;
-            // event klik nama untuk detail
-            document.querySelectorAll('.clickable-name').forEach(el => {
-                el.onclick = () => {
-                    const id = el.dataset.id;
-                    const data = allStudents.find(s => s._id === id);
-                    if (data) showDetail(data);
-                };
-            });
-            const total = filteredStudents.length;
-            const from = total === 0 ? 0 : start + 1;
-            const to = Math.min(end, total);
-            pageInfo.textContent = `${from}-${to} dari ${total}`;
-            prevPage.disabled = currentPage === 1;
-            nextPage.disabled = end >= total;
-        }
+const today = new Date();
+const state = {
+  code: null,
+  habits: DEFAULT_HABITS,
+  months: {},
+  year: today.getFullYear(),
+  month: today.getMonth(),
+  selectedDay: today.getDate(),
+  saveTimer: null,
+};
 
-        // ========== STATISTIK (hanya status Aktif) ==========
-        function updateStats() {
-            const aktif = allStudents.filter(s => s.Status === 'Aktif');
-            const alamat = new Set(aktif.map(s => s.Alamat).filter(Boolean));
-            const kelas = new Set(aktif.map(s => s['Kelas Akhir']).filter(Boolean));
-            const tahfidz = new Set(aktif.map(s => s.Tahfidz).filter(Boolean));
-            const kamar = new Set(aktif.map(s => s.Kamar).filter(Boolean));
-            $('statAlamat').textContent = alamat.size;
-            $('statKelas').textContent = kelas.size;
-            $('statTahfidz').textContent = tahfidz.size;
-            $('statKamar').textContent = kamar.size;
-        }
+/* ======================================================================
+   3) HELPERS
+   ====================================================================== */
+function pad(n){ return String(n).padStart(2,'0'); }
+function monthKey(y,m){ return `${y}-${pad(m+1)}`; }
+function daysInMonth(y,m){ return new Date(y, m+1, 0).getDate(); }
+function uid(){ return 'h' + Math.random().toString(36).slice(2,9); }
 
-        // ========== MODAL TAMBAH ==========
-        btnTambah.onclick = () => {
-            if (!currentUser) return showToast('Login dulu', true);
-            openModalForm(null);
-        };
+function generateAccessCode(){
+  const alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // tanpa 0/O/1/I/L biar gak ambigu
+  let code = '';
+  for(let i=0;i<8;i++){
+    code += alphabet[Math.floor(Math.random()*alphabet.length)];
+    if(i===3) code += '-';
+  }
+  return code;
+}
 
-        function openModalForm(data) {
-            const isEdit = !!data;
-            const fields = columns.filter(c => !['No', 'Id'].includes(c));
-            let html = `<div class="modal-box">
-            <h2>${isEdit ? '✏️ Edit' : '➕ Tambah'} Siswa <button class="modal-close" onclick="closeModal()">✕</button></h2>
-            <form id="formSiswa" class="form-grid">`;
-            fields.forEach(col => {
-                const val = data ? (data[col] ?? '') : '';
-                const required = ['Nama', 'Alamat', 'Kelas Akhir', 'Keterangan'].includes(col);
-                const label = col;
-                let input = '';
-                if (col === 'Status') {
-                    const opts = ['Aktif', 'Pindah', 'Lulus', 'Cuti', 'Keluar'];
-                    input =
-                        `<select id="f_${col}">${opts.map(o => `<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('')}</select>`;
-                } else if (col === 'Diniyyah') {
-                    const opts = ['Ula', 'Wustha', 'Ulya', 'Takhasus'];
-                    input =
-                        `<select id="f_${col}">${opts.map(o => `<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('')}</select>`;
-                } else if (col === 'Tgl Terdata' || col === 'Tgl Keluar') {
-                    input = `<input type="date" id="f_${col}" value="${val}" />`;
-                } else if (col === 'Catatan Awal' || col === 'Catatan Akhir') {
-                    input = `<textarea id="f_${col}" rows="2">${val}</textarea>`;
-                } else {
-                    input = `<input type="text" id="f_${col}" value="${val}" ${required?'required':''} />`;
-                }
-                html += `<div class="form-group ${required?'full':''}">
-              <label>${label} ${required?'*':''}</label>
-              ${input}
-            </div>`;
-            });
-            html += `<div class="full" style="display:flex;gap:12px;margin-top:6px;flex-wrap:wrap;">
-              <button type="submit" class="btn-submit">${isEdit ? 'Update' : 'Simpan'}</button>
-              ${isEdit && currentUser && currentUser.isAdmin ? `<button type="button" class="btn btn-danger" id="btnHapusDariForm">🗑️ Hapus</button>` : ''}
-              <button type="button" class="btn btn-outline" onclick="closeModal()">Batal</button>
-            </div></form></div>`;
-            openModal(html);
-            if (isEdit && currentUser && currentUser.isAdmin) {
-                document.getElementById('btnHapusDariForm').onclick = () => confirmDeleteStudent(data._id);
-            }
-            const form = document.getElementById('formSiswa');
-            form.onsubmit = async (e) => {
-                e.preventDefault();
-                const obj = {};
-                fields.forEach(col => {
-                    const el = document.getElementById(`f_${col}`);
-                    if (el) obj[col] = el.value;
-                });
-                // validasi
-                if (!obj.Nama || !obj.Alamat || !obj['Kelas Akhir'] || !obj.Keterangan) {
-                    showToast('Nama, Alamat, Kelas Akhir, Keterangan wajib diisi', true);
-                    return;
-                }
-                try {
-                    if (isEdit) {
-                        await db.collection('siswa').doc(data._id).update(obj);
-                        showToast('Data diupdate');
-                    } else {
-                        const maxNo = allStudents.reduce((m, s) => Math.max(m, Number(s.No) || 0), 0);
-                        obj.No = maxNo + 1;
-                        await db.collection('siswa').add(obj);
-                        showToast('Siswa ditambahkan');
-                    }
-                    closeModal();
-                    loadData();
-                } catch (err) { showToast('Gagal: ' + err.message, true); }
-            };
-        }
+function getStageIndex(pct){
+  if(pct<=0) return 0;
+  if(pct<=0.2) return 1;
+  if(pct<=0.4) return 2;
+  if(pct<=0.6) return 3;
+  if(pct<=0.8) return 4;
+  return 5;
+}
 
-        // ========== DETAIL ==========
-        function showDetail(data) {
-            const canDelete = currentUser && currentUser.isAdmin;
-            let html = `<div class="modal-box">
-            <h2>📋 Detail Siswa <button class="modal-close" onclick="closeModal()">✕</button></h2>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 20px;">`;
-            columns.forEach(c => {
-                const val = data[c] ?? '-';
-                html += `<div><strong>${c}</strong><br><span>${c==='Status'?getStatusBadge(val):val}</span></div>`;
-            });
-            html += `</div><div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;">
-            <button class="btn btn-primary" onclick="openModalFormFromDetail('${data._id}')">✏️ Edit</button>
-            ${canDelete ? `<button class="btn btn-danger" onclick="confirmDeleteStudent('${data._id}')">🗑️ Hapus</button>` : ''}
-            <button class="btn btn-outline" onclick="closeModal()">Tutup</button>
-          </div></div>`;
-            openModal(html);
-            window._detailId = data._id;
-        }
+function isDone(y,m,day,habitId){
+  const key = monthKey(y,m);
+  const arr = (state.months[key] && state.months[key][habitId]) || [];
+  return arr.includes(day);
+}
 
-        window.confirmDeleteStudent = async function(id) {
-            if (!currentUser || !currentUser.isAdmin) { showToast('Hanya admin yang dapat menghapus data', true); return; }
-            const data = allStudents.find(s => s._id === id);
-            if (!data) return;
-            if (!confirm(`Yakin ingin menghapus data "${data.Nama}"? Tindakan ini tidak dapat dibatalkan.`)) return;
-            try {
-                await db.collection('siswa').doc(id).delete();
-                closeModal();
-                showToast('🗑️ Data berhasil dihapus');
-                loadData();
-            } catch (e) { showToast('Gagal menghapus: ' + e.message, true); }
-        };
+function computeStreak(habitId){
+  let streak = 0;
+  let d = new Date(state.year, state.month, state.selectedDay);
+  for(let i=0;i<366;i++){
+    const y=d.getFullYear(), m=d.getMonth(), day=d.getDate();
+    if(isDone(y,m,day,habitId)){
+      streak++;
+      d.setDate(d.getDate()-1);
+    } else break;
+  }
+  return streak;
+}
 
-        window.openModalFormFromDetail = function(id) {
-            const data = allStudents.find(s => s._id === id);
-            closeModal();
-            if (data) openModalForm(data);
-        };
+function plantSVG(stageIdx){
+  const C = { moss:'#3C5943', mossDeep:'#22352A', amber:'#E3A23C', bloomSoft:'#F0AFBC', bloom:'#D8677B' };
+  let inner = `
+    <ellipse cx="100" cy="206" rx="72" ry="11" fill="${C.mossDeep}" opacity="0.9" />
+    <ellipse cx="100" cy="200" rx="54" ry="7" fill="${C.moss}" opacity="0.55" />
+  `;
+  if(stageIdx === 0){
+    inner += `<circle cx="100" cy="195" r="5" fill="${C.amber}" />`;
+  }
+  if(stageIdx >= 1){
+    inner += `<path d="M100,200 C100,182 98,168 100,152" stroke="${C.moss}" stroke-width="5" fill="none" stroke-linecap="round" />`;
+  }
+  if(stageIdx >= 2){
+    inner += `
+      <ellipse cx="80" cy="163" rx="17" ry="8.5" fill="${C.moss}" transform="rotate(-25 80 163)" />
+      <ellipse cx="120" cy="163" rx="17" ry="8.5" fill="${C.moss}" transform="rotate(25 120 163)" />
+    `;
+  }
+  if(stageIdx >= 3){
+    inner += `<path d="M100,152 C100,133 97,118 100,102" stroke="${C.moss}" stroke-width="5" fill="none" stroke-linecap="round" />`;
+    inner += `
+      <ellipse cx="76" cy="128" rx="19" ry="9.5" fill="${C.moss}" transform="rotate(-20 76 128)" />
+      <ellipse cx="124" cy="128" rx="19" ry="9.5" fill="${C.moss}" transform="rotate(20 124 128)" />
+    `;
+  }
+  if(stageIdx === 4){
+    inner += `<circle cx="100" cy="98" r="14" fill="${C.bloomSoft}" stroke="${C.bloom}" stroke-width="3" />`;
+  }
+  if(stageIdx === 5){
+    [0,60,120,180,240,300].forEach(angle => {
+      inner += `<ellipse cx="100" cy="98" rx="11" ry="19" fill="${C.bloomSoft}" transform="rotate(${angle} 100 98) translate(0 -17)" />`;
+    });
+    inner += `<circle cx="100" cy="98" r="9" fill="${C.amber}" />`;
+  }
+  return `<svg viewBox="0 0 200 220" aria-hidden="true">${inner}</svg>`;
+}
 
-        // ========== PENCARIAN ==========
-        btnCari.onclick = () => {
-            if (!currentUser) return showToast('Login dulu', true);
-            let html = `<div class="modal-box">
-            <h2>🔍 Cari & Edit <button class="modal-close" onclick="closeModal()">✕</button></h2>
-            <input type="text" id="searchInput" placeholder="Cari nama, alamat, no yayasan..." style="width:100%;padding:12px;border-radius:30px;border:1px solid #d7e0eb;font-size:1rem;margin-bottom:16px;">
-            <div id="searchResults" style="max-height:400px;overflow-y:auto;"></div>
-          </div>`;
-            openModal(html);
-            const input = document.getElementById('searchInput');
-            input.oninput = debounce(() => {
-                const q = input.value.toLowerCase().trim();
-                const res = allStudents.filter(s =>
-                    (s.Nama || '').toLowerCase().includes(q) ||
-                    (s.Alamat || '').toLowerCase().includes(q) ||
-                    (s['No Yayasan'] || '').toLowerCase().includes(q)
-                );
-                const container = document.getElementById('searchResults');
-                if (res.length === 0) { container.innerHTML = '<p class="text-muted">Tidak ditemukan</p>'; return; }
-                container.innerHTML = res.map(s =>
-                    `<div style="padding:8px 12px;border-bottom:1px solid #edf2f9;display:flex;justify-content:space-between;align-items:center;">
-                <span><strong>${s.Nama}</strong> (${s.Alamat})</span>
-                <button class="btn btn-sm btn-primary" onclick="editFromSearch('${s._id}')">Edit</button>
-              </div>`
-                ).join('');
-            }, 300);
-        };
+/* ======================================================================
+   4) FIRESTORE SYNC
+   ====================================================================== */
+function docRef(){ return db.collection('trackers').doc(state.code); }
 
-        window.editFromSearch = function(id) {
-            const data = allStudents.find(s => s._id === id);
-            closeModal();
-            if (data) openModalForm(data);
-        };
+async function loadFromFirestore(){
+  try{
+    const snap = await docRef().get();
+    if(snap.exists){
+      const data = snap.data();
+      state.habits = (data.habits && data.habits.length) ? data.habits : DEFAULT_HABITS;
+      state.months = data.months || {};
+    } else {
+      state.habits = DEFAULT_HABITS;
+      state.months = {};
+      await docRef().set({ habits: state.habits, months: state.months });
+    }
+  } catch(e){
+    console.error(e);
+    showSaveStatus(true, 'Gagal memuat data — periksa koneksi & config Firebase.');
+  }
+}
 
-        function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t);
-                t = setTimeout(() => fn(...a), ms); }; }
+function scheduleSave(){
+  if(state.saveTimer) clearTimeout(state.saveTimer);
+  state.saveTimer = setTimeout(async () => {
+    try{
+      await docRef().set({ habits: state.habits, months: state.months }, { merge: true });
+      showSaveStatus(false, 'Tersimpan.');
+    } catch(e){
+      console.error(e);
+      showSaveStatus(true, 'Gagal menyimpan — periksa koneksi.');
+    }
+  }, 500);
+}
 
-        // ========== KELOLA USER (admin only) ==========
-        btnKelolaUser.onclick = () => {
-            if (!currentUser || !currentUser.isAdmin) { showToast('Hanya admin yang dapat mengelola pengguna', true); return; }
-            openUserManagement();
-        };
+function showSaveStatus(isError, msg){
+  const el = document.getElementById('save-status');
+  el.textContent = msg;
+  el.className = 'save-status ' + (isError ? 'error' : 'ok');
+  if(!isError){
+    setTimeout(() => { if(el.textContent === msg) el.textContent = ''; }, 1500);
+  }
+}
 
-        function openUserManagement() {
-            let html = `<div class="modal-box"><h2>👥 Kelola Pengguna <button class="modal-close" onclick="closeModal()">✕</button></h2>
-            <div id="userListContainer"><p class="text-muted">Memuat...</p></div>
-            <hr style="margin:18px 0;border:none;border-top:1px solid #eef3f8;">
-            <h3 style="font-size:1rem;color:#1a237e;margin-bottom:10px;">➕ Tambah Pengguna</h3>
-            <div class="form-grid">
-              <div class="form-group"><label>Username</label><input id="newUserName" placeholder="username"></div>
-              <div class="form-group"><label>Password</label><input id="newUserPass" type="text" placeholder="password"></div>
-              <div class="form-group full" style="flex-direction:row;align-items:center;gap:8px;">
-                <input type="checkbox" id="newUserAdmin" style="width:auto;"> <label style="margin:0;">Jadikan admin</label>
-              </div>
-            </div>
-            <button class="btn btn-primary mt-2" id="addUserBtn">Tambah Pengguna</button>
-          </div>`;
-            openModal(html);
-            renderUserList();
-            document.getElementById('addUserBtn').onclick = async () => {
-                const uname = document.getElementById('newUserName').value.trim();
-                const upass = document.getElementById('newUserPass').value.trim();
-                const uadmin = document.getElementById('newUserAdmin').checked;
-                if (!uname || !upass) { showToast('Username dan password wajib diisi', true); return; }
-                if (uname.toLowerCase() === 'admin') { showToast('Username "admin" sudah dipakai sistem', true); return; }
-                try {
-                    const existing = await db.collection('users').where('username', '==', uname).get();
-                    if (!existing.empty) { showToast('Username sudah dipakai', true); return; }
-                    await db.collection('users').add({ username: uname, password: upass, isAdmin: uadmin });
-                    showToast('Pengguna ditambahkan');
-                    document.getElementById('newUserName').value = '';
-                    document.getElementById('newUserPass').value = '';
-                    document.getElementById('newUserAdmin').checked = false;
-                    renderUserList();
-                } catch (e) { showToast('Gagal: ' + e.message, true); }
-            };
-        }
+/* ======================================================================
+   5) RENDER
+   ====================================================================== */
+function renderHero(){
+  const totalDays = daysInMonth(state.year, state.month);
+  const isRealCurrentMonth = state.year === today.getFullYear() && state.month === today.getMonth();
+  const effectiveDays = isRealCurrentMonth ? today.getDate() : totalDays;
+  const totalPossible = state.habits.length * Math.max(effectiveDays,1);
+  const curData = state.months[monthKey(state.year, state.month)] || {};
+  let completed = 0;
+  state.habits.forEach(h => {
+    const arr = curData[h.id] || [];
+    completed += arr.filter(d => d <= effectiveDays).length;
+  });
+  const pct = totalPossible > 0 ? completed/totalPossible : 0;
+  const stageIdx = getStageIndex(pct);
+  const stage = STAGES[stageIdx];
 
-        async function renderUserList() {
-            const container = document.getElementById('userListContainer');
-            if (!container) return;
-            try {
-                const snap = await db.collection('users').get();
-                let html = `<div style="padding:8px 12px;border-bottom:1px solid #edf2f9;display:flex;justify-content:space-between;font-weight:600;color:#1a237e;">
-              <span>admin (default sistem)</span><span class="badge-status">Admin</span>
-            </div>`;
-                if (snap.empty) {
-                    html += '<p class="text-muted" style="padding:10px 12px;">Belum ada pengguna tambahan.</p>';
-                } else {
-                    snap.forEach(doc => {
-                        const u = doc.data();
-                        html += `<div style="padding:8px 12px;border-bottom:1px solid #edf2f9;display:flex;justify-content:space-between;align-items:center;">
-                  <span>${u.username} ${u.isAdmin ? '<span class="badge-status">Admin</span>' : ''}</span>
-                  <button class="btn btn-sm btn-danger" onclick="deleteUser('${doc.id}')">Hapus</button>
-                </div>`;
-                    });
-                }
-                container.innerHTML = html;
-            } catch (e) {
-                container.innerHTML = `<p class="text-muted">Gagal memuat pengguna: ${e.message}</p>`;
-            }
-        }
+  document.getElementById('hero-plant').innerHTML = plantSVG(stageIdx);
+  document.getElementById('hero-tag').textContent = `${MONTH_NAMES[state.month]} ${state.year} · ${stage.tag}`;
+  document.getElementById('hero-title').textContent = stage.name;
+  document.getElementById('hero-note').textContent = stage.note;
+  document.getElementById('hero-bar-fill').style.width = Math.round(pct*100) + '%';
+  document.getElementById('hero-pct').textContent = Math.round(pct*100) + '%';
+}
 
-        window.deleteUser = async function(id) {
-            if (!confirm('Yakin ingin menghapus pengguna ini?')) return;
-            try {
-                await db.collection('users').doc(id).delete();
-                showToast('Pengguna dihapus');
-                renderUserList();
-            } catch (e) { showToast('Gagal: ' + e.message, true); }
-        };
+function renderMonthLabel(){
+  document.getElementById('month-label').textContent = `${MONTH_NAMES[state.month]} ${state.year}`;
+}
 
-        // ========== TAMPILAN / FILTER ==========
-        btnTampilan.onclick = (e) => {
-            e.stopPropagation();
-            dropdownTampilan.style.display = dropdownTampilan.style.display === 'block' ? 'none' : 'block';
-        };
-        document.addEventListener('click', () => dropdownTampilan.style.display = 'none');
-        document.querySelectorAll('.dropdown-item').forEach(el => {
-            el.onclick = () => {
-                dropdownTampilan.style.display = 'none';
-                const view = el.dataset.view;
-                if (view === 'filter') openFilterModal();
-                else if (view === 'kelas') filterBy('Kelas Akhir');
-                else if (view === 'tahfidz') filterBy('Tahfidz');
-                else if (view === 'kamar') filterBy('Kamar');
-            };
-        });
+function renderDayStrip(){
+  const totalDays = daysInMonth(state.year, state.month);
+  const isRealCurrentMonth = state.year === today.getFullYear() && state.month === today.getMonth();
+  let html = '';
+  for(let d=1; d<=totalDays; d++){
+    const dt = new Date(state.year, state.month, d);
+    const isSelected = d === state.selectedDay;
+    const isToday = isRealCurrentMonth && d === today.getDate();
+    const allDone = state.habits.length > 0 && state.habits.every(h => isDone(state.year, state.month, d, h.id));
+    html += `
+      <button class="day-pill${isSelected ? ' selected':''}${isToday && !isSelected ? ' today':''}" data-day="${d}">
+        <span class="dname font-mono">${DAY_NAMES[dt.getDay()]}</span>
+        <span class="dnum font-display">${d}</span>
+        <span class="ddot" style="background:${allDone ? (isSelected ? '#232821' : '#E3A23C') : 'transparent'}"></span>
+      </button>
+    `;
+  }
+  document.getElementById('day-strip').innerHTML = html;
+}
 
-        function filterBy(col) {
-            const vals = [...new Set(allStudents.map(s => s[col]).filter(Boolean))].sort();
-            if (vals.length === 0) { showToast('Tidak ada data untuk kolom ini'); return; }
-            let html = `<div class="modal-box"><h2>📊 Tampilan ${col} <button class="modal-close" onclick="closeModal()">✕</button></h2>
-            <p class="text-muted" style="margin-bottom:10px;">Klik salah satu nilai untuk menampilkan datanya di tabel.</p>
-            <div id="tampilanList"></div>
-            <button class="btn btn-outline mt-2" id="resetTampilanBtn">Tampilkan Semua</button></div>`;
-            openModal(html);
-            const listEl = document.getElementById('tampilanList');
-            listEl.innerHTML = vals.map(v => {
-                const count = allStudents.filter(s => s[col] === v).length;
-                return `<div class="tampilan-row" style="padding:8px 10px;border-bottom:1px solid #eef3f8;display:flex;justify-content:space-between;align-items:center;cursor:pointer;"><span>${v}</span><span class="badge-status">${count} siswa</span></div>`;
-            }).join('');
-            [...listEl.children].forEach((el, idx) => {
-                el.onclick = () => {
-                    filteredStudents = allStudents.filter(s => s[col] === vals[idx]);
-                    currentPage = 1;
-                    renderTable();
-                    closeModal();
-                    showToast(`Menampilkan ${filteredStudents.length} siswa (${col}: ${vals[idx]})`);
-                };
-            });
-            document.getElementById('resetTampilanBtn').onclick = resetFilter;
-        }
+function renderHabitList(){
+  const dt = new Date(state.year, state.month, state.selectedDay);
+  document.getElementById('habit-date-label').textContent = `${DAY_NAMES[dt.getDay()]}, ${state.selectedDay} ${MONTH_NAMES[state.month]}`;
 
-        function resetFilter() {
-            filteredStudents = [...allStudents];
-            currentPage = 1;
-            renderTable();
-            closeModal();
-        }
+  if(state.habits.length === 0){
+    document.getElementById('habit-list').innerHTML = `<div class="empty-habits">Belum ada habit. Tambahkan lewat ikon pengaturan di atas.</div>`;
+    return;
+  }
+  let html = '';
+  state.habits.forEach(h => {
+    const done = isDone(state.year, state.month, state.selectedDay, h.id);
+    const streak = computeStreak(h.id);
+    html += `
+      <div class="habit-row">
+        <button class="habit-check${done ? ' done':''}" data-habit="${h.id}" aria-pressed="${done}" aria-label="Tandai ${h.name}">
+          ${done ? '<svg width="13" height="10" viewBox="0 0 13 10" fill="none"><path d="M1 5L4.5 8.5L12 1" stroke="#232821" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>' : ''}
+        </button>
+        <span class="habit-name${done ? ' done':''}">${escapeHtml(h.name)}</span>
+        ${streak >= 2 ? `<span class="habit-streak">🔥 ${streak}</span>` : ''}
+      </div>
+    `;
+  });
+  document.getElementById('habit-list').innerHTML = html;
+}
 
-        function openFilterModal() {
-            let html = `<div class="modal-box"><h2>🔎 Filter Lanjutan <button class="modal-close" onclick="closeModal()">✕</button></h2>
-            <div class="form-grid">
-              <div class="form-group"><label>Status</label><select id="filterStatus"><option value="">Semua</option>${['Aktif','Pindah','Lulus','Cuti','Keluar'].map(o=>`<option value="${o}">${o}</option>`).join('')}</select></div>
-              <div class="form-group"><label>Diniyyah</label><select id="filterDiniyyah"><option value="">Semua</option>${['Ula','Wustha','Ulya','Takhasus'].map(o=>`<option value="${o}">${o}</option>`).join('')}</select></div>
-              <div class="form-group"><label>Kelas Akhir</label><input id="filterKelas" placeholder="Kelas"></div>
-              <div class="form-group"><label>Tgl Terdata (mulai)</label><input type="date" id="filterTgl"></div>
-            </div>
-            <div style="display:flex;gap:8px;margin-top:12px;">
-              <button class="btn btn-primary" id="applyFilterBtn">Terapkan</button>
-              <button class="btn btn-outline" onclick="resetFilter()">Reset</button>
-            </div></div>`;
-            openModal(html);
-            document.getElementById('applyFilterBtn').onclick = () => {
-                const status = document.getElementById('filterStatus').value;
-                const diniyyah = document.getElementById('filterDiniyyah').value;
-                const kelas = document.getElementById('filterKelas').value.trim();
-                const tgl = document.getElementById('filterTgl').value;
-                filteredStudents = allStudents.filter(s => {
-                    if (status && s.Status !== status) return false;
-                    if (diniyyah && s.Diniyyah !== diniyyah) return false;
-                    if (kelas && (s['Kelas Akhir'] || '').toLowerCase() !== kelas.toLowerCase()) return false;
-                    if (tgl && s['Tgl Terdata'] !== tgl) return false;
-                    return true;
-                });
-                currentPage = 1;
-                renderTable();
-                closeModal();
-                showToast(`Menampilkan ${filteredStudents.length} data`);
-            };
-        }
+function renderSettingsList(){
+  document.getElementById('settings-code-display').textContent = 'Kode aktif: ' + state.code;
+  let html = '';
+  state.habits.forEach(h => {
+    html += `
+      <div class="habit-edit-row">
+        <input class="habit-edit-input" data-rename="${h.id}" value="${escapeHtml(h.name)}" />
+        <button class="habit-del-btn" data-remove="${h.id}">🗑️</button>
+      </div>
+    `;
+  });
+  document.getElementById('settings-habit-list').innerHTML = html;
+}
 
-        // ========== EXPORT CSV ==========
-        btnExportCSV.onclick = () => {
-            if (allStudents.length === 0) { showToast('Tidak ada data untuk diekspor', true); return; }
-            const header = columns.join(',');
-            const rows = allStudents.map(s => columns.map(c => `"${(s[c]??'').toString().replace(/"/g,'""')}"`).join(','));
-            const csv = [header, ...rows].join('\n');
-            const bom = '\uFEFF';
-            const blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `data_siswa_${new Date().toISOString().slice(0,10)}.csv`;
-            link.click();
-        };
+function escapeHtml(str){
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
 
-        // ========== IMPORT CSV ==========
-        // Parser CSV yang benar (mendukung field berkutip dengan koma/newline/kutip di dalamnya)
-        function parseCSV(text) {
-            if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1); // buang BOM
-            const rows = [];
-            let row = [],
-                field = '',
-                inQuotes = false;
-            for (let i = 0; i < text.length; i++) {
-                const c = text[i];
-                if (inQuotes) {
-                    if (c === '"') {
-                        if (text[i + 1] === '"') { field += '"';
-                            i++; } else { inQuotes = false; }
-                    } else { field += c; }
-                } else {
-                    if (c === '"') { inQuotes = true; } else if (c === ',') { row.push(field);
-                        field = ''; } else if (c === '\r') { /* skip, \n menyusul */ } else if (c === '\n') {
-                        row.push(field);
-                        field = '';
-                        rows.push(row);
-                        row = [];
-                    } else { field += c; }
-                }
-            }
-            if (field.length > 0 || row.length > 0) { row.push(field);
-                rows.push(row); }
-            return rows.filter(r => !(r.length === 1 && r[0].trim() === ''));
-        }
+function renderAll(){
+  renderHero();
+  renderMonthLabel();
+  renderDayStrip();
+  renderHabitList();
+}
 
-        btnImportCSV.onclick = () => {
-            if (!currentUser) return showToast('Login dulu', true);
-            let html = `<div class="modal-box"><h2>📤 Import CSV <button class="modal-close" onclick="closeModal()">✕</button></h2>
-            <p class="text-muted">Upload file CSV dengan header sesuai kolom (kolom No &amp; Id opsional). Max 5MB.</p>
-            <input type="file" id="csvFileInput" accept=".csv" style="margin:12px 0;">
-            <div id="importProgress" style="margin:8px 0;"></div>
-            <button class="btn btn-primary" id="importBtn">Upload & Import</button>
-            <button class="btn btn-outline" onclick="closeModal()">Batal</button>
-          </div>`;
-            openModal(html);
-            document.getElementById('importBtn').onclick = async () => {
-                const fileInput = document.getElementById('csvFileInput');
-                const file = fileInput.files[0];
-                if (!file) { showToast('Pilih file CSV', true); return; }
-                if (file.size > 5 * 1024 * 1024) { showToast('Ukuran file maksimal 5MB', true); return; }
-                const progressEl = document.getElementById('importProgress');
-                const importBtn = document.getElementById('importBtn');
-                const reader = new FileReader();
-                reader.onload = async (e) => {
-                    const rows = parseCSV(e.target.result);
-                    if (rows.length < 2) { showToast('CSV kosong atau hanya header', true); return; }
-                    const header = rows[0].map(h => h.trim());
-                    // No dan Id bersifat opsional, kolom lain wajib ada di header
-                    const requiredHeaderCols = columns.filter(c => c !== 'No' && c !== 'Id');
-                    const missing = requiredHeaderCols.filter(c => !header.includes(c));
-                    if (missing.length) { showToast('Header tidak sesuai, kolom hilang: ' + missing.join(', '), true); return; }
-                    importBtn.disabled = true;
-                    let success = 0,
-                        errors = [];
-                    let nextNo = allStudents.reduce((m, s) => Math.max(m, Number(s.No) || 0), 0) + 1;
-                    const total = rows.length - 1;
-                    for (let i = 1; i < rows.length; i++) {
-                        progressEl.textContent = `Memproses baris ${i} dari ${total}...`;
-                        const vals = rows[i];
-                        const obj = {};
-                        header.forEach((h, idx) => { obj[h] = (vals[idx] ?? '').trim(); });
-                        if (!obj.Nama || !obj.Alamat || !obj['Kelas Akhir'] || !obj.Keterangan) {
-                            errors.push(`Baris ${i+1}: Nama, Alamat, Kelas Akhir, Keterangan wajib`);
-                            continue;
-                        }
-                        if (obj.Id) {
-                            const exist = allStudents.find(s => s.Id === obj.Id);
-                            if (exist) {
-                                errors.push(`Baris ${i+1}: Id duplikat (${obj.Id}) - dilewati`);
-                                continue;
-                            }
-                        }
-                        if (!header.includes('No') || !obj.No) { obj.No = nextNo++; }
-                        try {
-                            await db.collection('siswa').add(obj);
-                            success++;
-                        } catch (err) { errors.push(`Baris ${i+1}: ${err.message}`); }
-                    }
-                    closeModal();
-                    showToast(`✅ Berhasil import ${success} data. ${errors.length} error.`);
-                    if (errors.length) console.warn('Error import:', errors);
-                    loadData();
-                };
-                reader.readAsText(file);
-            };
-        };
+/* ======================================================================
+   6) ACTIONS
+   ====================================================================== */
+function toggleDay(habitId, day){
+  const key = monthKey(state.year, state.month);
+  const monthObj = { ...(state.months[key] || {}) };
+  const arr = monthObj[habitId] ? [...monthObj[habitId]] : [];
+  const idx = arr.indexOf(day);
+  if(idx >= 0) arr.splice(idx,1); else arr.push(day);
+  monthObj[habitId] = arr;
+  state.months = { ...state.months, [key]: monthObj };
+  renderAll();
+  scheduleSave();
+}
 
-        // ========== PAGINATION ==========
-        pageSizeSelect.onchange = () => {
-            pageSize = parseInt(pageSizeSelect.value);
-            currentPage = 1;
-            renderTable();
-        };
-        prevPage.onclick = () => { if (currentPage > 1) { currentPage--;
-                renderTable(); } };
-        nextPage.onclick = () => {
-            const maxPage = Math.ceil(filteredStudents.length / pageSize);
-            if (currentPage < maxPage) { currentPage++;
-                renderTable(); }
-        };
+function prevMonth(){
+  if(state.month === 0){ state.year -= 1; state.month = 11; } else state.month -= 1;
+  state.selectedDay = 1;
+  renderAll();
+}
+function nextMonth(){
+  if(state.month === 11){ state.year += 1; state.month = 0; } else state.month += 1;
+  state.selectedDay = 1;
+  renderAll();
+}
 
-        // ========== INIT ==========
-        // jika sudah login, load data
+function addHabit(name){
+  const trimmed = name.trim();
+  if(!trimmed) return;
+  state.habits = [...state.habits, { id: uid(), name: trimmed }];
+  renderSettingsList();
+  renderHabitList();
+  renderHero();
+  scheduleSave();
+}
+function removeHabit(id){
+  state.habits = state.habits.filter(h => h.id !== id);
+  renderSettingsList();
+  renderHabitList();
+  renderHero();
+  scheduleSave();
+}
+function renameHabit(id, name){
+  state.habits = state.habits.map(h => h.id === id ? { ...h, name } : h);
+  renderHabitList();
+  scheduleSave();
+}
 
-        // handle enter pada login
-        loginPass.onkeydown = (e) => { if (e.key === 'Enter') loginBtn.click(); };
-        loginUser.onkeydown = (e) => { if (e.key === 'Enter') loginBtn.click(); };
+async function resetData(){
+  if(!window.confirm('Hapus semua data habit dan riwayatnya? Kode akses tetap sama. Tindakan ini tidak bisa dibatalkan.')) return;
+  state.habits = DEFAULT_HABITS;
+  state.months = {};
+  try{ await docRef().set({ habits: state.habits, months: state.months }); } catch(e){ console.error(e); }
+  renderAll();
+  renderSettingsList();
+  document.getElementById('settings-overlay').classList.add('hidden');
+}
 
-        // cek session sederhana
-        // start
-        console.log('Aplikasi siap. Gunakan admin/admin123');
-    </script>
+function switchCode(){
+  if(!window.confirm('Keluar dari kode ini di perangkat ini? Kamu bisa masuk lagi kapan saja dengan memasukkan kode yang sama.')) return;
+  localStorage.removeItem(CODE_STORAGE_KEY);
+  window.location.reload();
+}
+
+/* ======================================================================
+   7) GATE (masuk / buat kode)
+   ====================================================================== */
+async function enterApp(code){
+  state.code = code;
+  localStorage.setItem(CODE_STORAGE_KEY, code);
+  document.getElementById('gate-screen').classList.add('hidden');
+  document.getElementById('loading-screen').classList.remove('hidden');
+  await loadFromFirestore();
+  document.getElementById('loading-screen').classList.add('hidden');
+  document.getElementById('app-screen').classList.remove('hidden');
+  renderAll();
+  renderSettingsList();
+}
+
+function initGateHandlers(){
+  document.getElementById('btn-create-code').addEventListener('click', () => {
+    const code = generateAccessCode();
+    document.getElementById('revealed-code').textContent = code;
+    document.getElementById('gate-default').classList.add('hidden');
+    document.getElementById('gate-reveal').classList.remove('hidden');
+    document.getElementById('btn-confirm-saved').onclick = () => enterApp(code);
+  });
+
+  document.getElementById('btn-use-existing-code').addEventListener('click', () => {
+    const val = document.getElementById('input-existing-code').value.trim();
+    const errEl = document.getElementById('gate-error');
+    if(!val){
+      errEl.textContent = 'Masukkan kode terlebih dahulu.';
+      errEl.classList.remove('hidden');
+      return;
+    }
+    errEl.classList.add('hidden');
+    enterApp(val.toUpperCase());
+  });
+}
+
+/* ======================================================================
+   8) APP EVENT WIRING
+   ====================================================================== */
+function initAppHandlers(){
+  document.getElementById('btn-open-settings').addEventListener('click', () => {
+    renderSettingsList();
+    document.getElementById('settings-overlay').classList.remove('hidden');
+  });
+  document.getElementById('btn-close-settings').addEventListener('click', () => {
+    document.getElementById('settings-overlay').classList.add('hidden');
+  });
+  document.getElementById('btn-prev-month').addEventListener('click', prevMonth);
+  document.getElementById('btn-next-month').addEventListener('click', nextMonth);
+
+  document.getElementById('day-strip').addEventListener('click', (e) => {
+    const btn = e.target.closest('.day-pill');
+    if(!btn) return;
+    state.selectedDay = parseInt(btn.dataset.day, 10);
+    renderDayStrip();
+    renderHabitList();
+  });
+
+  document.getElementById('habit-list').addEventListener('click', (e) => {
+    const btn = e.target.closest('.habit-check');
+    if(!btn) return;
+    toggleDay(btn.dataset.habit, state.selectedDay);
+  });
+
+  document.getElementById('btn-add-habit').addEventListener('click', () => {
+    const input = document.getElementById('input-new-habit');
+    addHabit(input.value);
+    input.value = '';
+  });
+  document.getElementById('input-new-habit').addEventListener('keydown', (e) => {
+    if(e.key === 'Enter'){
+      addHabit(e.target.value);
+      e.target.value = '';
+    }
+  });
+
+  document.getElementById('settings-habit-list').addEventListener('click', (e) => {
+    const del = e.target.closest('[data-remove]');
+    if(del) removeHabit(del.dataset.remove);
+  });
+  document.getElementById('settings-habit-list').addEventListener('change', (e) => {
+    const input = e.target.closest('[data-rename]');
+    if(input) renameHabit(input.dataset.rename, input.value);
+  });
+
+  document.getElementById('btn-reset-data').addEventListener('click', resetData);
+  document.getElementById('btn-switch-code').addEventListener('click', switchCode);
+}
+
+/* ======================================================================
+   9) INIT
+   ====================================================================== */
+(async function init(){
+  initGateHandlers();
+  initAppHandlers();
+
+  const savedCode = localStorage.getItem(CODE_STORAGE_KEY);
+  document.getElementById('loading-screen').classList.add('hidden');
+
+  if(savedCode){
+    state.code = savedCode;
+    document.getElementById('loading-screen').classList.remove('hidden');
+    await loadFromFirestore();
+    document.getElementById('loading-screen').classList.add('hidden');
+    document.getElementById('app-screen').classList.remove('hidden');
+    renderAll();
+    renderSettingsList();
+  } else {
+    document.getElementById('gate-screen').classList.remove('hidden');
+  }
+})();
+</script>
 </body>
 </html>
