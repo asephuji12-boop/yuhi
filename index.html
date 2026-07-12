@@ -169,6 +169,11 @@
   .fin-cat-row{display:flex; align-items:center; gap:6px; margin-bottom:8px; flex-wrap:wrap;}
   .fin-cat-row .cat-name-input{flex:1 1 120px;}
   .fin-cat-row .cat-budget-input{width:104px; flex-shrink:0;}
+
+  /* Modal transaksi: header & tombol tetap terlihat, hanya isi form yang scroll */
+  #txn-overlay .settings-card{display:flex; flex-direction:column; overflow:hidden;}
+  .txn-card-body{overflow-y:auto; flex:1; min-height:0; padding-right:2px; -webkit-overflow-scrolling:touch;}
+  .txn-card-footer{flex-shrink:0; padding-top:10px;}
 </style>
 </head>
 <body>
@@ -318,26 +323,30 @@
       <button class="settings-close" id="btn-close-txn">✕</button>
     </div>
 
-    <div class="type-toggle">
-      <button type="button" class="active" data-type="income" id="txn-type-income">Pemasukan</button>
-      <button type="button" data-type="expense" id="txn-type-expense">Pengeluaran</button>
+    <div class="txn-card-body">
+      <div class="type-toggle">
+        <button type="button" class="active" data-type="income" id="txn-type-income">Pemasukan</button>
+        <button type="button" data-type="expense" id="txn-type-expense">Pengeluaran</button>
+      </div>
+
+      <label class="fin-form-label">Jumlah (Rp)</label>
+      <input class="habit-edit-input" style="width:100%; margin-bottom:12px;" type="number" min="0" inputmode="numeric" enterkeyhint="next" id="txn-amount" placeholder="0" />
+
+      <label class="fin-form-label">Kategori</label>
+      <select class="habit-edit-input" style="width:100%; margin-bottom:8px;" id="txn-category"></select>
+      <input class="habit-edit-input hidden" style="width:100%; margin-bottom:12px;" id="txn-new-cat-name" placeholder="Nama kategori baru" />
+
+      <label class="fin-form-label">Deskripsi (barang/keperluan)</label>
+      <input class="habit-edit-input" style="width:100%; margin-bottom:12px;" id="txn-desc" placeholder="Misal: Beli buku, Uang saku" enterkeyhint="next" />
+
+      <label class="fin-form-label">Tanggal</label>
+      <select class="habit-edit-input" style="width:100%; margin-bottom:4px;" id="txn-day"></select>
     </div>
 
-    <label class="fin-form-label">Jumlah (Rp)</label>
-    <input class="habit-edit-input" style="width:100%; margin-bottom:12px;" type="number" min="0" inputmode="numeric" id="txn-amount" placeholder="0" />
-
-    <label class="fin-form-label">Kategori</label>
-    <select class="habit-edit-input" style="width:100%; margin-bottom:8px;" id="txn-category"></select>
-    <input class="habit-edit-input hidden" style="width:100%; margin-bottom:12px;" id="txn-new-cat-name" placeholder="Nama kategori baru" />
-
-    <label class="fin-form-label">Deskripsi (barang/keperluan)</label>
-    <input class="habit-edit-input" style="width:100%; margin-bottom:12px;" id="txn-desc" placeholder="Misal: Beli buku, Uang saku" />
-
-    <label class="fin-form-label">Tanggal</label>
-    <select class="habit-edit-input" style="width:100%; margin-bottom:18px;" id="txn-day"></select>
-
-    <button class="gate-btn primary" id="btn-save-txn">Simpan</button>
-    <button class="settings-danger-btn hidden" id="btn-delete-txn">Hapus Transaksi</button>
+    <div class="txn-card-footer">
+      <button class="gate-btn primary" id="btn-save-txn">Simpan</button>
+      <button class="settings-danger-btn hidden" id="btn-delete-txn">Hapus Transaksi</button>
+    </div>
   </div>
 </div>
 
@@ -1170,6 +1179,21 @@ function initAppHandlers(){
   document.getElementById('btn-delete-txn').addEventListener('click', () => deleteTxn(state.editingTxnId));
   document.getElementById('txn-type-income').addEventListener('click', () => setTxnType('income'));
   document.getElementById('txn-type-expense').addEventListener('click', () => setTxnType('expense'));
+
+  /* Lompat otomatis ke field berikutnya saat menekan Enter/Next di keyboard Android */
+  document.getElementById('txn-amount').addEventListener('keydown', (e) => {
+    if(e.key === 'Enter'){ e.preventDefault(); document.getElementById('txn-category').focus(); }
+  });
+  document.getElementById('txn-desc').addEventListener('keydown', (e) => {
+    if(e.key === 'Enter'){ e.preventDefault(); document.getElementById('txn-day').focus(); }
+  });
+
+  /* Auto-scroll field yang sedang aktif supaya tidak ketutup keyboard */
+  document.querySelectorAll('#txn-overlay input, #txn-overlay select').forEach(el => {
+    el.addEventListener('focus', () => {
+      setTimeout(() => el.scrollIntoView({ block: 'center', behavior: 'smooth' }), 300);
+    });
+  });
   document.getElementById('txn-category').addEventListener('change', (e) => {
     document.getElementById('txn-new-cat-name').classList.toggle('hidden', e.target.value !== '__new__');
   });
