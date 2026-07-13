@@ -170,8 +170,13 @@
   .fin-cat-row .cat-name-input{flex:1 1 120px;}
   .fin-cat-row .cat-budget-input{width:104px; flex-shrink:0;}
 
-  /* Modal transaksi: header & tombol tetap terlihat, hanya isi form yang scroll */
-  #txn-overlay .settings-card{display:flex; flex-direction:column; overflow:hidden;}
+  /* Modal Kategori & Anggaran: sama seperti modal transaksi, muncul di tengah layar */
+  #fin-settings-overlay{position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:50; padding:20px;}
+  #fin-settings-overlay .settings-card{border-radius:24px;}
+
+  /* Modal transaksi: muncul di tengah layar (bukan bottom-sheet), header & tombol tetap terlihat, hanya isi form yang scroll */
+  #txn-overlay{position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:50; padding:20px;}
+  #txn-overlay .settings-card{display:flex; flex-direction:column; overflow:hidden; border-radius:24px;}
   .txn-card-body{overflow-y:auto; flex:1; min-height:0; padding-right:2px; -webkit-overflow-scrolling:touch;}
   .txn-card-footer{flex-shrink:0; padding-top:10px;}
 </style>
