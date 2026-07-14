@@ -54,10 +54,14 @@
   .hero-wrap{padding:12px 20px 0;}
   .hero-card{background:var(--paper); border-radius:24px; padding:20px;}
   .hero-top{display:flex; align-items:center; gap:16px;}
-  .hero-plant{width:96px; height:96px; flex-shrink:0;}
+  .hero-plant{width:96px; height:96px; flex-shrink:0; position:relative;}
   .hero-plant svg{width:100%; height:100%; transform-origin:50% 100%; animation:sway 4.5s ease-in-out infinite;}
   @keyframes sway{0%,100%{transform:rotate(-1.5deg);} 50%{transform:rotate(1.5deg);}}
-  @media (prefers-reduced-motion: reduce){ .hero-plant svg{animation:none;} }
+  .hero-plant.grow-pop svg{animation:sway 4.5s ease-in-out infinite, growPop 0.6s cubic-bezier(.34,1.56,.64,1);}
+  @keyframes growPop{0%{transform:scale(1) rotate(-1.5deg);} 35%{transform:scale(1.16) rotate(1deg);} 62%{transform:scale(0.95) rotate(-1deg);} 100%{transform:scale(1) rotate(-1.5deg);}}
+  .sparkle{position:absolute; left:50%; top:35%; width:6px; height:6px; border-radius:999px; background:var(--amber); opacity:0; pointer-events:none; animation:sparkleFly 0.9s ease-out forwards;}
+  @keyframes sparkleFly{0%{opacity:0; transform:translate(-50%,-50%) scale(0.4);} 18%{opacity:1;} 100%{opacity:0; transform:translate(calc(-50% + var(--sx,0px)), calc(-50% + var(--sy,-46px))) scale(1);}}
+  @media (prefers-reduced-motion: reduce){ .hero-plant svg{animation:none;} .hero-plant.grow-pop svg{animation:none;} .sparkle{display:none;} }
   .hero-tag{font-size:11px; text-transform:uppercase; letter-spacing:0.04em; color:var(--moss); margin:0 0 2px;}
   .hero-title{font-size:19px; color:var(--charcoal); margin:0 0 4px; line-height:1.3;}
   .hero-note{font-size:12px; color:var(--moss); margin:0;}
@@ -76,7 +80,8 @@
   .day-pill{flex-shrink:0; width:44px; height:56px; border-radius:16px; background:var(--ink-soft); display:flex; flex-direction:column; align-items:center; justify-content:center; border:1px solid transparent;}
   .day-pill .dname{font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--cream-dim);}
   .day-pill .dnum{font-family:'Fraunces',serif; font-size:14px; color:var(--cream);}
-  .day-pill .ddot{width:4px; height:4px; border-radius:999px; margin-top:2px;}
+  .day-pill .day-mini-plant{width:22px; height:22px; margin-top:2px;}
+  .day-pill .day-mini-plant svg{width:100%; height:100%; display:block;}
   .day-pill.selected{background:var(--amber);}
   .day-pill.selected .dname, .day-pill.selected .dnum{color:var(--charcoal);}
   .day-pill.today{border-color:var(--amber);}
@@ -91,6 +96,28 @@
   .habit-name.done{color:var(--cream);}
   .habit-streak{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--amber-soft); display:flex; align-items:center; gap:4px; flex-shrink:0;}
   .empty-habits{background:var(--ink-soft); border-radius:16px; padding:20px; text-align:center; font-size:13px; color:var(--cream-dim);}
+
+  /* Tanaman harian */
+  .daily-wrap{padding:10px 20px 0;}
+  .daily-card{background:var(--ink-soft); border-radius:18px; padding:10px 14px; display:flex; align-items:center; gap:12px;}
+  .daily-plant{width:44px; height:44px; flex-shrink:0;}
+  .daily-plant svg{width:100%; height:100%; display:block; transform-origin:50% 100%;}
+  .daily-plant.grow-pop svg{animation:growPop 0.6s cubic-bezier(.34,1.56,.64,1);}
+  .daily-info{flex:1; min-width:0;}
+  .daily-tag{font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.04em; color:var(--cream-dim); margin:0;}
+  .daily-title{font-size:13px; color:var(--cream); margin:2px 0 0;}
+  .daily-pct{font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--amber-soft); flex-shrink:0;}
+
+  /* Kebun bulanan (grid overview) */
+  #garden-overlay{position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:flex-end; justify-content:center; z-index:50;}
+  .garden-intro{font-size:12px; color:var(--moss); margin:0 0 14px; line-height:1.5;}
+  .garden-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:6px;}
+  .garden-cell{background:var(--paper-soft); border-radius:10px; padding:6px 2px 8px; display:flex; flex-direction:column; align-items:center; gap:2px; border:1px solid transparent;}
+  .garden-cell.g-today{border-color:var(--amber);}
+  .garden-cell.g-selected{background:var(--amber);}
+  .garden-cell .g-daynum{font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--charcoal);}
+  .garden-cell .g-plant{width:26px; height:26px;}
+  .garden-cell .g-plant svg{width:100%; height:100%; display:block;}
 
   .save-status{padding:0 20px 16px; height:16px; font-family:'IBM Plex Mono',monospace; font-size:11px;}
   .save-status.error{color:var(--bloom);}
@@ -220,7 +247,10 @@
         <span>🌱</span>
         <span class="font-display" style="font-size:18px;">Bertumbuh</span>
       </div>
-      <button class="icon-btn" id="btn-open-settings" aria-label="Pengaturan">⚙️</button>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <button class="icon-btn" id="btn-open-garden" aria-label="Kebun bulanan">🌿</button>
+        <button class="icon-btn" id="btn-open-settings" aria-label="Pengaturan">⚙️</button>
+      </div>
     </header>
 
     <div class="month-nav">
@@ -244,6 +274,17 @@
             <div class="hero-bar"><div class="hero-bar-fill" id="hero-bar-fill"></div></div>
             <span class="hero-pct" id="hero-pct"></span>
           </div>
+        </div>
+      </div>
+
+      <div class="daily-wrap">
+        <div class="daily-card">
+          <div class="daily-plant" id="daily-plant"></div>
+          <div class="daily-info">
+            <p class="daily-tag" id="daily-tag"></p>
+            <p class="daily-title" id="daily-title"></p>
+          </div>
+          <span class="daily-pct" id="daily-pct"></span>
         </div>
       </div>
 
@@ -317,6 +358,18 @@
 
     <button class="settings-danger-btn" id="btn-reset-data">↺ Reset Data Habit</button>
     <button class="settings-danger-btn" id="btn-switch-code">⇄ Ganti Kode / Keluar dari Perangkat Ini</button>
+  </div>
+</div>
+
+<!-- KEBUN BULANAN MODAL -->
+<div id="garden-overlay" class="hidden">
+  <div class="settings-card">
+    <div class="settings-head">
+      <h2 class="font-display">Kebun Bulan Ini</h2>
+      <button class="settings-close" id="btn-close-garden">✕</button>
+    </div>
+    <p class="garden-intro">Satu tanaman kecil untuk tiap hari — semakin banyak habit yang dicentang hari itu, semakin mekar tanamannya. Tap tanggal untuk lompat ke hari itu.</p>
+    <div class="garden-grid" id="garden-grid"></div>
   </div>
 </div>
 
@@ -512,6 +565,26 @@ function generateAccessCode(){
   return code;
 }
 
+function computeMonthPct(y = state.year, m = state.month){
+  const totalDays = daysInMonth(y, m);
+  const isRealCurrentMonth = y === today.getFullYear() && m === today.getMonth();
+  const effectiveDays = isRealCurrentMonth ? today.getDate() : totalDays;
+  const totalPossible = state.habits.length * Math.max(effectiveDays,1);
+  const curData = state.months[monthKey(y, m)] || {};
+  let completed = 0;
+  state.habits.forEach(h => {
+    const arr = curData[h.id] || [];
+    completed += arr.filter(d => d <= effectiveDays).length;
+  });
+  return totalPossible > 0 ? completed/totalPossible : 0;
+}
+
+function dayPct(y, m, d){
+  if(state.habits.length === 0) return 0;
+  const done = state.habits.filter(h => isDone(y, m, d, h.id)).length;
+  return done / state.habits.length;
+}
+
 function getStageIndex(pct){
   if(pct<=0) return 0;
   if(pct<=0.2) return 1;
@@ -632,17 +705,7 @@ function showSaveStatus(isError, msg){
    5) RENDER
    ====================================================================== */
 function renderHero(){
-  const totalDays = daysInMonth(state.year, state.month);
-  const isRealCurrentMonth = state.year === today.getFullYear() && state.month === today.getMonth();
-  const effectiveDays = isRealCurrentMonth ? today.getDate() : totalDays;
-  const totalPossible = state.habits.length * Math.max(effectiveDays,1);
-  const curData = state.months[monthKey(state.year, state.month)] || {};
-  let completed = 0;
-  state.habits.forEach(h => {
-    const arr = curData[h.id] || [];
-    completed += arr.filter(d => d <= effectiveDays).length;
-  });
-  const pct = totalPossible > 0 ? completed/totalPossible : 0;
+  const pct = computeMonthPct();
   const stageIdx = getStageIndex(pct);
   const stage = STAGES[stageIdx];
 
@@ -652,6 +715,63 @@ function renderHero(){
   document.getElementById('hero-note').textContent = stage.note;
   document.getElementById('hero-bar-fill').style.width = Math.round(pct*100) + '%';
   document.getElementById('hero-pct').textContent = Math.round(pct*100) + '%';
+}
+
+function renderDailyPlant(){
+  const pct = dayPct(state.year, state.month, state.selectedDay);
+  const stageIdx = getStageIndex(pct);
+  const isRealToday = state.year === today.getFullYear() && state.month === today.getMonth() && state.selectedDay === today.getDate();
+  const dt = new Date(state.year, state.month, state.selectedDay);
+  const doneCount = state.habits.filter(h => isDone(state.year, state.month, state.selectedDay, h.id)).length;
+
+  document.getElementById('daily-plant').innerHTML = plantSVG(stageIdx);
+  document.getElementById('daily-tag').textContent = isRealToday ? 'HARI INI' : `${DAY_NAMES[dt.getDay()].toUpperCase()}, ${state.selectedDay} ${MONTH_NAMES[state.month].toUpperCase()}`;
+  document.getElementById('daily-title').textContent = state.habits.length ? `${doneCount}/${state.habits.length} habit selesai` : 'Belum ada habit';
+  document.getElementById('daily-pct').textContent = Math.round(pct*100) + '%';
+}
+
+/* --- Feedback animasi pertumbuhan --- */
+let lastHeroStageIdx = null;
+
+function playGrowPop(el){
+  if(!el) return;
+  el.classList.remove('grow-pop');
+  void el.offsetWidth; // restart animasi
+  el.classList.add('grow-pop');
+  setTimeout(() => el.classList.remove('grow-pop'), 650);
+}
+
+function spawnSparkles(container){
+  if(!container) return;
+  const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(prefersReduced) return;
+  const count = 6;
+  for(let i=0;i<count;i++){
+    const s = document.createElement('span');
+    s.className = 'sparkle';
+    const angle = (Math.PI * 2 * i) / count + Math.random()*0.4;
+    const dist = 34 + Math.random()*14;
+    s.style.setProperty('--sx', Math.round(Math.cos(angle)*dist) + 'px');
+    s.style.setProperty('--sy', Math.round(Math.sin(angle)*dist - 10) + 'px');
+    s.style.animationDelay = (Math.random()*0.12) + 's';
+    container.appendChild(s);
+    setTimeout(() => s.remove(), 1100);
+  }
+}
+
+function triggerGrowthFeedback(day){
+  const heroWrap = document.getElementById('hero-plant');
+  playGrowPop(heroWrap);
+
+  if(day === state.selectedDay){
+    playGrowPop(document.getElementById('daily-plant'));
+  }
+
+  const newStageIdx = getStageIndex(computeMonthPct());
+  if(lastHeroStageIdx !== null && newStageIdx > lastHeroStageIdx){
+    spawnSparkles(heroWrap);
+  }
+  lastHeroStageIdx = newStageIdx;
 }
 
 function renderMonthLabel(){
@@ -666,16 +786,34 @@ function renderDayStrip(){
     const dt = new Date(state.year, state.month, d);
     const isSelected = d === state.selectedDay;
     const isToday = isRealCurrentMonth && d === today.getDate();
-    const allDone = state.habits.length > 0 && state.habits.every(h => isDone(state.year, state.month, d, h.id));
+    const stageIdx = getStageIndex(dayPct(state.year, state.month, d));
     html += `
       <button class="day-pill${isSelected ? ' selected':''}${isToday && !isSelected ? ' today':''}" data-day="${d}">
         <span class="dname font-mono">${DAY_NAMES[dt.getDay()]}</span>
         <span class="dnum font-display">${d}</span>
-        <span class="ddot" style="background:${allDone ? (isSelected ? '#232821' : '#E3A23C') : 'transparent'}"></span>
+        <span class="day-mini-plant">${plantSVG(stageIdx)}</span>
       </button>
     `;
   }
   document.getElementById('day-strip').innerHTML = html;
+}
+
+function renderGardenGrid(){
+  const totalDays = daysInMonth(state.year, state.month);
+  const isRealCurrentMonth = state.year === today.getFullYear() && state.month === today.getMonth();
+  let html = '';
+  for(let d=1; d<=totalDays; d++){
+    const isSelected = d === state.selectedDay;
+    const isToday = isRealCurrentMonth && d === today.getDate();
+    const stageIdx = getStageIndex(dayPct(state.year, state.month, d));
+    html += `
+      <button class="garden-cell${isSelected ? ' g-selected':''}${isToday && !isSelected ? ' g-today':''}" data-garden-day="${d}">
+        <span class="g-daynum">${d}</span>
+        <span class="g-plant">${plantSVG(stageIdx)}</span>
+      </button>
+    `;
+  }
+  document.getElementById('garden-grid').innerHTML = html;
 }
 
 function renderHabitList(){
@@ -725,9 +863,11 @@ function escapeHtml(str){
 
 function renderAll(){
   renderHero();
+  renderDailyPlant();
   renderMonthLabel();
   renderDayStrip();
   renderHabitList();
+  if(lastHeroStageIdx === null) lastHeroStageIdx = getStageIndex(computeMonthPct());
   if(state.activeTab === 'keuangan') renderFinance();
 }
 
@@ -906,17 +1046,20 @@ function toggleDay(habitId, day){
   state.months = { ...state.months, [key]: monthObj };
   renderAll();
   scheduleSave();
+  if(idx < 0) triggerGrowthFeedback(day); // hanya animasikan saat baru dicentang, bukan saat dibatalkan
 }
 
 function prevMonth(){
   if(state.month === 0){ state.year -= 1; state.month = 11; } else state.month -= 1;
   state.selectedDay = 1;
   renderAll();
+  lastHeroStageIdx = getStageIndex(computeMonthPct());
 }
 function nextMonth(){
   if(state.month === 11){ state.year += 1; state.month = 0; } else state.month += 1;
   state.selectedDay = 1;
   renderAll();
+  lastHeroStageIdx = getStageIndex(computeMonthPct());
 }
 
 function addHabit(name){
@@ -948,6 +1091,7 @@ async function resetData(){
   try{ await docRef().set({ habits: state.habits, months: state.months }, { merge: true }); } catch(e){ console.error(e); }
   renderAll();
   renderSettingsList();
+  lastHeroStageIdx = getStageIndex(computeMonthPct());
   document.getElementById('settings-overlay').classList.add('hidden');
 }
 
@@ -1134,12 +1278,30 @@ function initAppHandlers(){
   document.getElementById('btn-prev-month').addEventListener('click', prevMonth);
   document.getElementById('btn-next-month').addEventListener('click', nextMonth);
 
+  document.getElementById('btn-open-garden').addEventListener('click', () => {
+    renderGardenGrid();
+    document.getElementById('garden-overlay').classList.remove('hidden');
+  });
+  document.getElementById('btn-close-garden').addEventListener('click', () => {
+    document.getElementById('garden-overlay').classList.add('hidden');
+  });
+  document.getElementById('garden-grid').addEventListener('click', (e) => {
+    const cell = e.target.closest('[data-garden-day]');
+    if(!cell) return;
+    state.selectedDay = parseInt(cell.dataset.gardenDay, 10);
+    renderDayStrip();
+    renderHabitList();
+    renderDailyPlant();
+    document.getElementById('garden-overlay').classList.add('hidden');
+  });
+
   document.getElementById('day-strip').addEventListener('click', (e) => {
     const btn = e.target.closest('.day-pill');
     if(!btn) return;
     state.selectedDay = parseInt(btn.dataset.day, 10);
     renderDayStrip();
     renderHabitList();
+    renderDailyPlant();
   });
 
   document.getElementById('habit-list').addEventListener('click', (e) => {
