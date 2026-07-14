@@ -31,125 +31,234 @@
   button:focus-visible, input:focus-visible{outline:2px solid var(--amber); outline-offset:2px;}
   .wrap{max-width:440px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column; padding-bottom:76px;}
 
+  /* ===== ANIMATIONS ===== */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes scaleIn {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0px) rotate(-1deg); }
+    50% { transform: translateY(-6px) rotate(1deg); }
+  }
+  @keyframes pulseGlow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(227, 162, 60, 0.3); }
+    50% { box-shadow: 0 0 0 8px rgba(227, 162, 60, 0); }
+  }
+  @keyframes checkPop {
+    0% { transform: scale(1); }
+    30% { transform: scale(1.25); }
+    60% { transform: scale(0.9); }
+    100% { transform: scale(1); }
+  }
+  @keyframes slideMonthLeft {
+    from { transform: translateX(30px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  @keyframes slideMonthRight {
+    from { transform: translateX(-30px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  @keyframes leafFloat {
+    0%, 100% { transform: rotate(0deg) translateY(0); }
+    25% { transform: rotate(2deg) translateY(-2px); }
+    75% { transform: rotate(-2deg) translateY(2px); }
+  }
+  @keyframes sparkleTwinkle {
+    0%, 100% { opacity: 0; transform: scale(0.5) rotate(0deg); }
+    50% { opacity: 1; transform: scale(1.2) rotate(180deg); }
+  }
+  @keyframes loadingBounce {
+    0%, 80%, 100% { transform: scale(0.6); opacity: 0.3; }
+    40% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes cardHover {
+    0% { transform: translateY(0); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    100% { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.25); }
+  }
+  @keyframes petalSpread {
+    0% { transform: rotate(0deg) scale(0.8); opacity: 0.5; }
+    100% { transform: rotate(360deg) scale(1); opacity: 1; }
+  }
+  @keyframes rainDrop {
+    0% { transform: translateY(-20px) scale(0.8); opacity: 0; }
+    50% { opacity: 1; }
+    100% { transform: translateY(20px) scale(1); opacity: 0; }
+  }
+  @keyframes bounceIn {
+    0% { transform: scale(0.3); opacity: 0; }
+    50% { transform: scale(1.05); }
+    70% { transform: scale(0.9); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .anim-fade-up { animation: fadeInUp 0.5s ease forwards; }
+  .anim-fade-down { animation: fadeInDown 0.4s ease forwards; }
+  .anim-scale-in { animation: scaleIn 0.4s cubic-bezier(.34,1.56,.64,1) forwards; }
+  .anim-float { animation: float 3s ease-in-out infinite; }
+  .anim-check-pop { animation: checkPop 0.4s cubic-bezier(.34,1.56,.64,1) forwards; }
+  .anim-bounce-in { animation: bounceIn 0.5s cubic-bezier(.34,1.56,.64,1) forwards; }
+
   /* Gate screen */
   #gate-screen{min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;}
-  .gate-card{background:var(--ink-soft); border-radius:24px; padding:28px 24px; max-width:380px; width:100%;}
+  .gate-card{background:var(--ink-soft); border-radius:24px; padding:28px 24px; max-width:380px; width:100%; animation: fadeInUp 0.6s ease;}
   .gate-card h1{font-size:22px; margin:0 0 6px;}
   .gate-card p{font-size:13px; color:var(--cream-dim); line-height:1.5; margin:0 0 18px;}
-  .gate-input{width:100%; padding:12px 14px; border-radius:12px; background:var(--paper); color:var(--charcoal); font-size:15px; margin-bottom:10px; letter-spacing:1px;}
-  .gate-btn{width:100%; padding:12px 14px; border-radius:12px; font-size:14px; font-weight:600; margin-bottom:10px;}
+  .gate-input{width:100%; padding:12px 14px; border-radius:12px; background:var(--paper); color:var(--charcoal); font-size:15px; margin-bottom:10px; letter-spacing:1px; transition: box-shadow 0.3s;}
+  .gate-input:focus{box-shadow:0 0 0 3px var(--amber);}
+  .gate-btn{width:100%; padding:12px 14px; border-radius:12px; font-size:14px; font-weight:600; margin-bottom:10px; transition: all 0.2s;}
   .gate-btn.primary{background:var(--amber); color:var(--charcoal);}
+  .gate-btn.primary:hover{transform:scale(1.02); box-shadow:0 4px 16px rgba(227,162,60,0.3);}
   .gate-btn.secondary{background:transparent; color:var(--cream); border:1px solid var(--ink-line);}
-  .code-reveal{background:var(--paper-soft); border-radius:12px; padding:14px; text-align:center; margin-bottom:14px;}
+  .gate-btn.secondary:hover{background:var(--ink-line);}
+  .code-reveal{background:var(--paper-soft); border-radius:12px; padding:14px; text-align:center; margin-bottom:14px; animation: scaleIn 0.5s cubic-bezier(.34,1.56,.64,1);}
   .code-reveal .code{font-family:'IBM Plex Mono',monospace; font-size:20px; letter-spacing:2px; color:var(--charcoal); font-weight:600;}
   .gate-warning{font-size:12px; color:var(--bloom); margin-bottom:14px; line-height:1.5;}
 
   /* App header */
   header.app-header{display:flex; align-items:center; justify-content:space-between; padding:24px 20px 8px;}
-  .brand{display:flex; align-items:center; gap:8px;}
+  .brand{display:flex; align-items:center; gap:8px; transition: transform 0.3s;}
+  .brand:hover{transform: scale(1.05);}
   .brand span{font-size:18px;}
-  .icon-btn{width:36px; height:36px; border-radius:999px; background:var(--ink-soft); display:flex; align-items:center; justify-content:center;}
+  .icon-btn{width:36px; height:36px; border-radius:999px; background:var(--ink-soft); display:flex; align-items:center; justify-content:center; transition: all 0.25s;}
+  .icon-btn:hover{background:var(--ink-line); transform: scale(1.1);}
+  .icon-btn:active{transform: scale(0.9);}
 
   /* Hero */
   .hero-wrap{padding:12px 20px 0;}
-  .hero-card{background:var(--paper); border-radius:24px; padding:20px;}
+  .hero-card{background:var(--paper); border-radius:24px; padding:20px; transition: all 0.3s; animation: fadeInUp 0.5s ease;}
+  .hero-card:hover{box-shadow:0 8px 32px rgba(0,0,0,0.2);}
   .hero-top{display:flex; align-items:center; gap:16px;}
-  .hero-plant{width:96px; height:96px; flex-shrink:0; position:relative;}
-  .hero-plant svg{width:100%; height:100%; transform-origin:50% 100%; animation:sway 4.5s ease-in-out infinite;}
-  @keyframes sway{0%,100%{transform:rotate(-1.5deg);} 50%{transform:rotate(1.5deg);}}
-  .hero-plant.grow-pop svg{animation:sway 4.5s ease-in-out infinite, growPop 0.6s cubic-bezier(.34,1.56,.64,1);}
-  @keyframes growPop{0%{transform:scale(1) rotate(-1.5deg);} 35%{transform:scale(1.16) rotate(1deg);} 62%{transform:scale(0.95) rotate(-1deg);} 100%{transform:scale(1) rotate(-1.5deg);}}
-  .sparkle{position:absolute; left:50%; top:35%; width:6px; height:6px; border-radius:999px; background:var(--amber); opacity:0; pointer-events:none; animation:sparkleFly 0.9s ease-out forwards;}
-  @keyframes sparkleFly{0%{opacity:0; transform:translate(-50%,-50%) scale(0.4);} 18%{opacity:1;} 100%{opacity:0; transform:translate(calc(-50% + var(--sx,0px)), calc(-50% + var(--sy,-46px))) scale(1);}}
+  .hero-plant{width:96px; height:96px; flex-shrink:0; position:relative; transition: transform 0.3s;}
+  .hero-plant:hover{transform: scale(1.05) rotate(-2deg);}
+  .hero-plant svg{width:100%; height:100%; transform-origin:50% 100%; animation:float 4.5s ease-in-out infinite;}
+  .hero-plant.grow-pop svg{animation:float 4.5s ease-in-out infinite, checkPop 0.6s cubic-bezier(.34,1.56,.64,1);}
+  .sparkle{position:absolute; left:50%; top:35%; width:8px; height:8px; border-radius:999px; background:var(--amber); opacity:0; pointer-events:none; animation:sparkleTwinkle 0.9s ease-out forwards;}
+  @keyframes sparkleTwinkle {
+    0%{opacity:0; transform:translate(-50%,-50%) scale(0.4) rotate(0deg);}
+    20%{opacity:1; transform:translate(calc(-50% + var(--sx,0px)), calc(-50% + var(--sy,-46px))) scale(1.2) rotate(90deg);}
+    100%{opacity:0; transform:translate(calc(-50% + var(--sx,0px)), calc(-50% + var(--sy,-46px))) scale(0.6) rotate(180deg);}
+  }
   @media (prefers-reduced-motion: reduce){ .hero-plant svg{animation:none;} .hero-plant.grow-pop svg{animation:none;} .sparkle{display:none;} }
   .hero-tag{font-size:11px; text-transform:uppercase; letter-spacing:0.04em; color:var(--moss); margin:0 0 2px;}
   .hero-title{font-size:19px; color:var(--charcoal); margin:0 0 4px; line-height:1.3;}
   .hero-note{font-size:12px; color:var(--moss); margin:0;}
   .hero-bar-row{display:flex; align-items:center; gap:8px; margin-top:16px;}
   .hero-bar{flex:1; height:6px; border-radius:999px; background:var(--paper-soft); overflow:hidden;}
-  .hero-bar-fill{height:100%; background:var(--amber); border-radius:999px; transition:width 0.5s ease;}
-  .hero-pct{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--charcoal);}
+  .hero-bar-fill{height:100%; background:var(--amber); border-radius:999px; transition:width 0.6s cubic-bezier(.34,1.56,.64,1);}
+  .hero-pct{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--charcoal); transition: all 0.3s;}
 
   /* Month nav */
   .month-nav{display:flex; align-items:center; justify-content:space-between; padding:20px 20px 0;}
-  .month-label{font-size:16px;}
+  .month-label{font-size:16px; transition: all 0.3s;}
+  .month-label.slide-left{animation: slideMonthLeft 0.3s ease forwards;}
+  .month-label.slide-right{animation: slideMonthRight 0.3s ease forwards;}
 
   /* Day strip */
-  .day-strip{display:flex; gap:8px; padding:16px 20px 4px; overflow-x:auto; scrollbar-width:none;}
+  .day-strip{display:flex; gap:8px; padding:16px 20px 4px; overflow-x:auto; scrollbar-width:none; scroll-behavior:smooth;}
   .day-strip::-webkit-scrollbar{height:0;}
-  .day-pill{flex-shrink:0; width:44px; height:56px; border-radius:16px; background:var(--ink-soft); display:flex; flex-direction:column; align-items:center; justify-content:center; border:1px solid transparent;}
+  .day-pill{flex-shrink:0; width:44px; height:56px; border-radius:16px; background:var(--ink-soft); display:flex; flex-direction:column; align-items:center; justify-content:center; border:1px solid transparent; transition: all 0.25s cubic-bezier(.34,1.56,.64,1);}
+  .day-pill:hover{transform: translateY(-2px) scale(1.03); background:var(--ink-line);}
   .day-pill .dname{font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--cream-dim);}
   .day-pill .dnum{font-family:'Fraunces',serif; font-size:14px; color:var(--cream);}
-  .day-pill .day-mini-plant{width:22px; height:22px; margin-top:2px;}
+  .day-pill .day-mini-plant{width:22px; height:22px; margin-top:2px; transition: transform 0.3s;}
   .day-pill .day-mini-plant svg{width:100%; height:100%; display:block;}
-  .day-pill.selected{background:var(--amber);}
+  .day-pill.selected{background:var(--amber); transform: scale(1.05); box-shadow:0 4px 16px rgba(227,162,60,0.3);}
   .day-pill.selected .dname, .day-pill.selected .dnum{color:var(--charcoal);}
   .day-pill.today{border-color:var(--amber);}
+  .day-pill.today::after{content:''; position:absolute; bottom:2px; width:4px; height:4px; border-radius:999px; background:var(--amber);}
 
   /* Habit list */
   .habit-section{padding:20px 20px 32px; flex:1;}
   .habit-date-label{font-size:12px; color:var(--cream-dim); margin:0 0 8px;}
-  .habit-row{display:flex; align-items:center; gap:12px; background:var(--ink-soft); border-radius:16px; padding:12px 16px; margin-bottom:8px;}
-  .habit-check{width:28px; height:28px; border-radius:999px; flex-shrink:0; display:flex; align-items:center; justify-content:center; border:2px solid var(--ink-line); background:transparent; transition:background 0.15s, border-color 0.15s;}
-  .habit-check.done{background:var(--amber); border-color:var(--amber);}
-  .habit-name{font-size:14px; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--cream-dim);}
+  .habit-row{display:flex; align-items:center; gap:12px; background:var(--ink-soft); border-radius:16px; padding:12px 16px; margin-bottom:8px; transition: all 0.3s cubic-bezier(.34,1.56,.64,1); animation: fadeInUp 0.3s ease forwards;}
+  .habit-row:hover{transform:translateX(4px); background:var(--ink-line);}
+  .habit-check{width:28px; height:28px; border-radius:999px; flex-shrink:0; display:flex; align-items:center; justify-content:center; border:2px solid var(--ink-line); background:transparent; transition: all 0.25s cubic-bezier(.34,1.56,.64,1);}
+  .habit-check:hover{transform: scale(1.1); border-color:var(--amber);}
+  .habit-check:active{transform: scale(0.85);}
+  .habit-check.done{background:var(--amber); border-color:var(--amber); animation: checkPop 0.4s cubic-bezier(.34,1.56,.64,1);}
+  .habit-name{font-size:14px; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--cream-dim); transition: color 0.3s;}
   .habit-name.done{color:var(--cream);}
-  .habit-streak{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--amber-soft); display:flex; align-items:center; gap:4px; flex-shrink:0;}
+  .habit-streak{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--amber-soft); display:flex; align-items:center; gap:4px; flex-shrink:0; animation: pulseGlow 2s ease-in-out infinite;}
   .empty-habits{background:var(--ink-soft); border-radius:16px; padding:20px; text-align:center; font-size:13px; color:var(--cream-dim);}
 
   /* Tanaman harian */
   .daily-wrap{padding:10px 20px 0;}
-  .daily-card{background:var(--ink-soft); border-radius:18px; padding:10px 14px; display:flex; align-items:center; gap:12px;}
+  .daily-card{background:var(--ink-soft); border-radius:18px; padding:10px 14px; display:flex; align-items:center; gap:12px; transition: all 0.3s; animation: fadeInUp 0.4s ease;}
+  .daily-card:hover{transform: scale(1.01); background:var(--ink-line);}
   .daily-plant{width:44px; height:44px; flex-shrink:0; position:relative;}
   .daily-plant svg{width:100%; height:100%; display:block; transform-origin:50% 100%;}
-  .daily-plant.grow-pop svg{animation:growPop 0.6s cubic-bezier(.34,1.56,.64,1);}
+  .daily-plant.grow-pop svg{animation:checkPop 0.6s cubic-bezier(.34,1.56,.64,1);}
   .daily-info{flex:1; min-width:0;}
   .daily-tag{font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.04em; color:var(--cream-dim); margin:0;}
   .daily-title{font-size:13px; color:var(--cream); margin:2px 0 0;}
-  .daily-pct{font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--amber-soft); flex-shrink:0;}
+  .daily-pct{font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--amber-soft); flex-shrink:0; transition: all 0.3s;}
 
   /* Kebun bulanan (grid overview) */
-  #garden-overlay{position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:flex-end; justify-content:center; z-index:50;}
+  #garden-overlay{position:fixed; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(8px); display:flex; align-items:flex-end; justify-content:center; z-index:50; animation: fadeInUp 0.3s ease;}
   .garden-intro{font-size:12px; color:var(--moss); margin:0 0 14px; line-height:1.5;}
   .garden-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:6px;}
-  .garden-cell{background:var(--paper-soft); border-radius:10px; padding:6px 2px 8px; display:flex; flex-direction:column; align-items:center; gap:2px; border:1px solid transparent;}
-  .garden-cell.g-today{border-color:var(--amber);}
-  .garden-cell.g-selected{background:var(--amber);}
+  .garden-cell{background:var(--paper-soft); border-radius:10px; padding:6px 2px 8px; display:flex; flex-direction:column; align-items:center; gap:2px; border:1px solid transparent; transition: all 0.25s cubic-bezier(.34,1.56,.64,1);}
+  .garden-cell:hover{transform: scale(1.08); background:var(--amber-soft);}
+  .garden-cell:active{transform: scale(0.92);}
+  .garden-cell.g-today{border-color:var(--amber); box-shadow:0 0 0 2px var(--amber);}
+  .garden-cell.g-selected{background:var(--amber); transform: scale(1.05);}
   .garden-cell .g-daynum{font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--charcoal);}
-  .garden-cell .g-plant{width:26px; height:26px;}
+  .garden-cell .g-plant{width:26px; height:26px; transition: transform 0.3s;}
   .garden-cell .g-plant svg{width:100%; height:100%; display:block;}
 
-  .save-status{padding:0 20px 16px; height:16px; font-family:'IBM Plex Mono',monospace; font-size:11px;}
+  .save-status{padding:0 20px 16px; height:16px; font-family:'IBM Plex Mono',monospace; font-size:11px; transition: all 0.3s;}
   .save-status.error{color:var(--bloom);}
   .save-status.ok{color:var(--cream-dim);}
 
   /* Settings modal */
-  #settings-overlay{position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:flex-end; justify-content:center; z-index:50;}
-  .settings-card{background:var(--paper); border-radius:24px 24px 0 0; padding:20px; max-width:440px; width:100%; max-height:85vh; overflow-y:auto;}
+  #settings-overlay{position:fixed; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(8px); display:flex; align-items:flex-end; justify-content:center; z-index:50; animation: fadeInUp 0.3s ease;}
+  .settings-card{background:var(--paper); border-radius:24px 24px 0 0; padding:20px; max-width:440px; width:100%; max-height:85vh; overflow-y:auto; animation: fadeInUp 0.3s ease;}
   .settings-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;}
   .settings-head h2{font-size:18px; color:var(--charcoal); margin:0;}
-  .settings-close{width:30px; height:30px; border-radius:999px; background:var(--paper-soft); display:flex; align-items:center; justify-content:center;}
-  .habit-edit-row{display:flex; align-items:center; gap:8px; margin-bottom:8px;}
-  .habit-edit-input{flex:1; padding:9px 12px; border-radius:10px; background:var(--paper-soft); color:var(--charcoal); font-size:13px; border:none;}
-  .habit-del-btn{width:36px; height:36px; border-radius:10px; background:var(--paper-soft); display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .settings-close{width:30px; height:30px; border-radius:999px; background:var(--paper-soft); display:flex; align-items:center; justify-content:center; transition: all 0.25s;}
+  .settings-close:hover{background:var(--amber-soft); transform: rotate(90deg);}
+  .habit-edit-row{display:flex; align-items:center; gap:8px; margin-bottom:8px; animation: fadeInUp 0.2s ease forwards;}
+  .habit-edit-input{flex:1; padding:9px 12px; border-radius:10px; background:var(--paper-soft); color:var(--charcoal); font-size:13px; border:none; transition: box-shadow 0.3s;}
+  .habit-edit-input:focus{box-shadow:0 0 0 2px var(--amber);}
+  .habit-del-btn{width:36px; height:36px; border-radius:10px; background:var(--paper-soft); display:flex; align-items:center; justify-content:center; flex-shrink:0; transition: all 0.25s;}
+  .habit-del-btn:hover{background:var(--bloom); color:white; transform: scale(1.05);}
   .add-habit-row{display:flex; align-items:center; gap:8px; margin:14px 0 20px;}
-  .add-habit-btn{width:36px; height:36px; border-radius:10px; background:var(--moss); color:var(--cream); display:flex; align-items:center; justify-content:center; flex-shrink:0;}
-  .settings-danger-btn{width:100%; padding:11px; border-radius:10px; background:transparent; border:1px solid var(--bloom); color:var(--bloom); font-size:12px; margin-bottom:10px;}
+  .add-habit-btn{width:36px; height:36px; border-radius:10px; background:var(--moss); color:var(--cream); display:flex; align-items:center; justify-content:center; flex-shrink:0; transition: all 0.25s;}
+  .add-habit-btn:hover{transform: scale(1.1); background:var(--mint);}
+  .settings-danger-btn{width:100%; padding:11px; border-radius:10px; background:transparent; border:1px solid var(--bloom); color:var(--bloom); font-size:12px; margin-bottom:10px; transition: all 0.25s;}
+  .settings-danger-btn:hover{background:var(--bloom); color:white; transform: scale(1.02);}
   .settings-code-row{background:var(--paper-soft); border-radius:12px; padding:12px; font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--charcoal); text-align:center; margin-bottom:14px; letter-spacing:1px;}
 
-  #loading-screen{min-height:100vh; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:10px;}
+  #loading-screen{min-height:100vh; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:16px;}
+  .loading-dots{display:flex; gap:8px;}
+  .loading-dot{width:12px; height:12px; border-radius:999px; background:var(--amber); animation: loadingBounce 1.4s ease-in-out infinite;}
+  .loading-dot:nth-child(2){animation-delay:0.2s;}
+  .loading-dot:nth-child(3){animation-delay:0.4s;}
 
   /* ===================== KEUANGAN ===================== */
   .fixed-frame{position:fixed; left:50%; transform:translateX(-50%); width:100%; max-width:440px; bottom:0; pointer-events:none; z-index:40;}
   .fixed-frame > *{pointer-events:auto;}
-  .fab{position:absolute; right:20px; bottom:76px; width:52px; height:52px; border-radius:999px; background:var(--amber); color:var(--charcoal); font-size:24px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 14px rgba(0,0,0,0.35);}
-  .bottom-tabs{background:var(--ink-soft); border-top:1px solid var(--ink-line); display:flex; justify-content:center;}
+  .fab{position:absolute; right:20px; bottom:76px; width:52px; height:52px; border-radius:999px; background:var(--amber); color:var(--charcoal); font-size:24px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 14px rgba(0,0,0,0.35); transition: all 0.3s cubic-bezier(.34,1.56,.64,1);}
+  .fab:hover{transform: scale(1.12) rotate(90deg); box-shadow:0 8px 28px rgba(227,162,60,0.4);}
+  .fab:active{transform: scale(0.88);}
+  .bottom-tabs{background:var(--ink-soft); border-top:1px solid var(--ink-line); display:flex; justify-content:center; backdrop-filter:blur(12px);}
   .bottom-tabs-inner{max-width:440px; width:100%; display:flex;}
-  .tab-btn{flex:1; padding:10px 0 10px; display:flex; flex-direction:column; align-items:center; gap:2px; background:transparent; color:var(--cream-dim); font-size:11px;}
-  .tab-btn .tab-icon{font-size:18px;}
+  .tab-btn{flex:1; padding:10px 0 10px; display:flex; flex-direction:column; align-items:center; gap:2px; background:transparent; color:var(--cream-dim); font-size:11px; transition: all 0.3s;}
+  .tab-btn .tab-icon{font-size:18px; transition: transform 0.3s;}
+  .tab-btn:hover .tab-icon{transform: translateY(-2px);}
   .tab-btn.active{color:var(--amber);}
+  .tab-btn.active .tab-icon{transform: translateY(-2px);}
 
-  .fin-card{background:var(--paper); border-radius:24px; padding:20px;}
+  .fin-card{background:var(--paper); border-radius:24px; padding:20px; transition: all 0.3s; animation: fadeInUp 0.5s ease;}
+  .fin-card:hover{box-shadow:0 8px 32px rgba(0,0,0,0.15);}
   .fin-month{font-size:11px; text-transform:uppercase; letter-spacing:0.04em; color:var(--moss); margin:0 0 4px;}
   .fin-balance{font-size:24px; font-family:'Fraunces',serif; color:var(--charcoal); margin:0 0 12px;}
   .fin-row{display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;}
@@ -161,21 +270,25 @@
   .fin-section-title{font-size:12px; color:var(--cream-dim); margin:0; text-transform:uppercase; letter-spacing:0.04em;}
   .fin-section-sub{font-size:12px; color:var(--charcoal); opacity:0.65; margin:14px 0 8px; text-transform:uppercase; letter-spacing:0.03em;}
 
-  .budget-row{background:var(--ink-soft); border-radius:16px; padding:12px 16px; margin:0 20px 8px;}
+  .budget-row{background:var(--ink-soft); border-radius:16px; padding:12px 16px; margin:0 20px 8px; transition: all 0.3s; animation: fadeInUp 0.3s ease forwards;}
+  .budget-row:hover{transform:translateX(4px);}
   .budget-head{display:flex; justify-content:space-between; align-items:baseline; font-size:13px; margin-bottom:6px; gap:8px;}
   .budget-head .b-name{color:var(--cream); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   .budget-head .b-amt{font-family:'IBM Plex Mono',monospace; color:var(--cream-dim); font-size:11px; flex-shrink:0;}
   .budget-bar-track{height:6px; border-radius:999px; background:var(--ink-line); overflow:hidden;}
-  .budget-bar-fill{height:100%; border-radius:999px; background:var(--amber); transition:width 0.4s ease;}
+  .budget-bar-fill{height:100%; border-radius:999px; background:var(--amber); transition:width 0.8s cubic-bezier(.34,1.56,.64,1);}
   .budget-bar-fill.over{background:var(--bloom);}
-  .budget-warn{font-size:11px; color:var(--bloom-soft); margin-top:4px;}
+  .budget-warn{font-size:11px; color:var(--bloom-soft); margin-top:4px; animation: pulseGlow 1.5s ease-in-out infinite;}
   .fin-empty{background:var(--ink-soft); border-radius:16px; padding:18px; margin:0 20px 8px; text-align:center; font-size:12px; color:var(--cream-dim); line-height:1.5;}
 
-  .chart-card{background:var(--paper); border-radius:20px; padding:16px; margin:0 0 14px;}
+  .chart-card{background:var(--paper); border-radius:20px; padding:16px; margin:0 0 14px; transition: all 0.3s; animation: fadeInUp 0.4s ease;}
+  .chart-card:hover{box-shadow:0 4px 20px rgba(0,0,0,0.08);}
   .chart-card h3{font-size:13px; color:var(--charcoal); margin:0 0 10px;}
   .chart-empty{font-size:12px; color:var(--moss); text-align:center; padding:30px 0;}
 
-  .txn-row{display:flex; align-items:center; gap:12px; background:var(--ink-soft); border-radius:16px; padding:12px 16px; margin-bottom:8px; width:100%; text-align:left;}
+  .txn-row{display:flex; align-items:center; gap:12px; background:var(--ink-soft); border-radius:16px; padding:12px 16px; margin-bottom:8px; width:100%; text-align:left; transition: all 0.3s cubic-bezier(.34,1.56,.64,1); animation: fadeInUp 0.25s ease forwards;}
+  .txn-row:hover{transform:translateX(4px); background:var(--ink-line);}
+  .txn-row:active{transform:scale(0.97);}
   .txn-cat-dot{width:8px; height:8px; border-radius:999px; flex-shrink:0;}
   .txn-cat-dot.income{background:var(--mint);}
   .txn-cat-dot.expense{background:var(--bloom);}
@@ -189,21 +302,22 @@
 
   .fin-form-label{font-size:12px; color:var(--moss); margin:0 0 4px; display:block;}
   .type-toggle{display:flex; gap:8px; margin-bottom:14px;}
-  .type-toggle button{flex:1; padding:10px; border-radius:10px; background:var(--paper-soft); color:var(--charcoal); font-size:13px; font-weight:600; opacity:0.45;}
+  .type-toggle button{flex:1; padding:10px; border-radius:10px; background:var(--paper-soft); color:var(--charcoal); font-size:13px; font-weight:600; opacity:0.45; transition: all 0.3s;}
+  .type-toggle button:hover{opacity:0.7;}
   .type-toggle button.active{opacity:1;}
-  .type-toggle button.active[data-type="income"]{background:var(--mint);}
-  .type-toggle button.active[data-type="expense"]{background:var(--bloom-soft);}
-  .fin-cat-row{display:flex; align-items:center; gap:6px; margin-bottom:8px; flex-wrap:wrap;}
+  .type-toggle button.active[data-type="income"]{background:var(--mint); transform:scale(1.02);}
+  .type-toggle button.active[data-type="expense"]{background:var(--bloom-soft); transform:scale(1.02);}
+  .fin-cat-row{display:flex; align-items:center; gap:6px; margin-bottom:8px; flex-wrap:wrap; animation: fadeInUp 0.2s ease forwards;}
   .fin-cat-row .cat-name-input{flex:1 1 120px;}
   .fin-cat-row .cat-budget-input{width:104px; flex-shrink:0;}
 
   /* Modal Kategori & Anggaran: sama seperti modal transaksi, muncul di tengah layar */
-  #fin-settings-overlay{position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:50; padding:20px;}
-  #fin-settings-overlay .settings-card{border-radius:24px;}
+  #fin-settings-overlay{position:fixed; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(8px); display:flex; align-items:center; justify-content:center; z-index:50; padding:20px; animation: fadeInUp 0.3s ease;}
+  #fin-settings-overlay .settings-card{border-radius:24px; animation: scaleIn 0.3s cubic-bezier(.34,1.56,.64,1);}
 
   /* Modal transaksi: muncul di tengah layar (bukan bottom-sheet), header & tombol tetap terlihat, hanya isi form yang scroll */
-  #txn-overlay{position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:50; padding:20px;}
-  #txn-overlay .settings-card{display:flex; flex-direction:column; overflow:hidden; border-radius:24px;}
+  #txn-overlay{position:fixed; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(8px); display:flex; align-items:center; justify-content:center; z-index:50; padding:20px; animation: fadeInUp 0.3s ease;}
+  #txn-overlay .settings-card{display:flex; flex-direction:column; overflow:hidden; border-radius:24px; animation: scaleIn 0.3s cubic-bezier(.34,1.56,.64,1);}
   .txn-card-body{overflow-y:auto; flex:1; min-height:0; padding-right:2px; -webkit-overflow-scrolling:touch;}
   .txn-card-footer{flex-shrink:0; padding-top:10px;}
 </style>
@@ -211,19 +325,24 @@
 <body>
 
 <div id="loading-screen">
-  <div class="font-mono" style="font-size:13px; color:var(--cream-dim);">Menyiapkan kebunmu…</div>
+  <div class="font-mono" style="font-size:13px; color:var(--cream-dim);">🌱 Menyiapkan kebunmu…</div>
+  <div class="loading-dots">
+    <span class="loading-dot"></span>
+    <span class="loading-dot"></span>
+    <span class="loading-dot"></span>
+  </div>
 </div>
 
 <!-- GATE: masuk pakai kode -->
 <div id="gate-screen" class="hidden">
   <div class="gate-card">
-    <h1 class="font-display">Bertumbuh</h1>
+    <h1 class="font-display">🌱 Bertumbuh</h1>
     <p>Buat kode akses baru, atau masukkan kode yang sudah kamu punya untuk sinkron data dari HP lain.</p>
 
     <div id="gate-default">
-      <button class="gate-btn primary" id="btn-create-code">Buat Kode Baru</button>
+      <button class="gate-btn primary" id="btn-create-code">✨ Buat Kode Baru</button>
       <input class="gate-input font-mono" id="input-existing-code" placeholder="Masukkan kode yang sudah ada" />
-      <button class="gate-btn secondary" id="btn-use-existing-code">Masuk dengan Kode Ini</button>
+      <button class="gate-btn secondary" id="btn-use-existing-code">🔑 Masuk dengan Kode Ini</button>
     </div>
 
     <div id="gate-reveal" class="hidden">
@@ -231,8 +350,8 @@
         <div style="font-size:11px; color:var(--moss); margin-bottom:6px;">Kode akses kamu:</div>
         <div class="code" id="revealed-code"></div>
       </div>
-      <p class="gate-warning">Simpan kode ini baik-baik (screenshot atau catat). Kode ini satu-satunya cara untuk membuka data yang sama dari HP lain — kalau hilang, data tidak bisa diambil kembali.</p>
-      <button class="gate-btn primary" id="btn-confirm-saved">Sudah Saya Simpan, Lanjutkan</button>
+      <p class="gate-warning">⚠️ Simpan kode ini baik-baik (screenshot atau catat). Kode ini satu-satunya cara untuk membuka data yang sama dari HP lain — kalau hilang, data tidak bisa diambil kembali.</p>
+      <button class="gate-btn primary" id="btn-confirm-saved">✅ Sudah Saya Simpan, Lanjutkan</button>
     </div>
 
     <p id="gate-error" class="hidden" style="color:var(--bloom); font-size:12px; margin-top:8px;"></p>
@@ -343,7 +462,7 @@
 <div id="settings-overlay" class="hidden">
   <div class="settings-card">
     <div class="settings-head">
-      <h2 class="font-display">Atur Habit</h2>
+      <h2 class="font-display">⚙️ Atur Habit</h2>
       <button class="settings-close" id="btn-close-settings">✕</button>
     </div>
 
@@ -365,10 +484,10 @@
 <div id="garden-overlay" class="hidden">
   <div class="settings-card">
     <div class="settings-head">
-      <h2 class="font-display">Kebun Bulan Ini</h2>
+      <h2 class="font-display">🌿 Kebun Bulan Ini</h2>
       <button class="settings-close" id="btn-close-garden">✕</button>
     </div>
-    <p class="garden-intro">Satu tanaman kecil untuk tiap hari — semakin banyak habit yang dicentang hari itu, semakin mekar tanamannya. Tap tanggal untuk lompat ke hari itu.</p>
+    <p class="garden-intro">🌱 Satu tanaman kecil untuk tiap hari — semakin banyak habit yang dicentang hari itu, semakin mekar tanamannya. Tap tanggal untuk lompat ke hari itu.</p>
     <div class="garden-grid" id="garden-grid"></div>
   </div>
 </div>
@@ -377,14 +496,14 @@
 <div id="txn-overlay" class="hidden">
   <div class="settings-card">
     <div class="settings-head">
-      <h2 class="font-display" id="txn-modal-title">Tambah Transaksi</h2>
+      <h2 class="font-display" id="txn-modal-title">💰 Tambah Transaksi</h2>
       <button class="settings-close" id="btn-close-txn">✕</button>
     </div>
 
     <div class="txn-card-body">
       <div class="type-toggle">
-        <button type="button" class="active" data-type="income" id="txn-type-income">Pemasukan</button>
-        <button type="button" data-type="expense" id="txn-type-expense">Pengeluaran</button>
+        <button type="button" class="active" data-type="income" id="txn-type-income">📈 Pemasukan</button>
+        <button type="button" data-type="expense" id="txn-type-expense">📉 Pengeluaran</button>
       </div>
 
       <label class="fin-form-label">Jumlah (Rp)</label>
@@ -402,8 +521,8 @@
     </div>
 
     <div class="txn-card-footer">
-      <button class="gate-btn primary" id="btn-save-txn">Simpan</button>
-      <button class="settings-danger-btn hidden" id="btn-delete-txn">Hapus Transaksi</button>
+      <button class="gate-btn primary" id="btn-save-txn">💾 Simpan</button>
+      <button class="settings-danger-btn hidden" id="btn-delete-txn">🗑️ Hapus Transaksi</button>
     </div>
   </div>
 </div>
@@ -412,7 +531,7 @@
 <div id="fin-settings-overlay" class="hidden">
   <div class="settings-card">
     <div class="settings-head">
-      <h2 class="font-display">Kategori & Anggaran</h2>
+      <h2 class="font-display">🏷️ Kategori & Anggaran</h2>
       <button class="settings-close" id="btn-close-fin-settings">✕</button>
     </div>
 
@@ -504,6 +623,7 @@ const state = {
   month: today.getMonth(),
   selectedDay: today.getDate(),
   saveTimer: null,
+  monthDirection: 0, // -1 untuk prev, 1 untuk next
 };
 let pieChartInstance = null;
 let trendChartInstance = null;
@@ -613,8 +733,10 @@ function computeStreak(habitId){
   return streak;
 }
 
-function plantSVG(stageIdx){
+function plantSVG(stageIdx, animate = true){
   const C = { moss:'#3C5943', mossDeep:'#22352A', amber:'#E3A23C', bloomSoft:'#F0AFBC', bloom:'#D8677B' };
+  const amb = (rule) => animate ? ` style="animation: ${rule};"` : '';
+  const ambOrigin = (rule, ox, oy, extra) => animate ? ` style="animation: ${rule}; transform-origin:${ox}px ${oy}px;${extra ? ' '+extra : ''}"` : (extra ? ` style="${extra}"` : '');
   let inner = `
     <ellipse cx="100" cy="206" rx="72" ry="11" fill="${C.mossDeep}" opacity="0.9" />
     <ellipse cx="100" cy="200" rx="54" ry="7" fill="${C.moss}" opacity="0.55" />
@@ -627,25 +749,28 @@ function plantSVG(stageIdx){
   }
   if(stageIdx >= 2){
     inner += `
-      <ellipse cx="80" cy="163" rx="17" ry="8.5" fill="${C.moss}" transform="rotate(-25 80 163)" />
-      <ellipse cx="120" cy="163" rx="17" ry="8.5" fill="${C.moss}" transform="rotate(25 120 163)" />
+      <g transform="rotate(-25 80 163)"><ellipse cx="80" cy="163" rx="17" ry="8.5" fill="${C.moss}"${ambOrigin('leafFloat 3s ease-in-out infinite',80,163)} /></g>
+      <g transform="rotate(25 120 163)"><ellipse cx="120" cy="163" rx="17" ry="8.5" fill="${C.moss}"${ambOrigin('leafFloat 3.2s ease-in-out infinite',120,163)} /></g>
     `;
   }
   if(stageIdx >= 3){
     inner += `<path d="M100,152 C100,133 97,118 100,102" stroke="${C.moss}" stroke-width="5" fill="none" stroke-linecap="round" />`;
     inner += `
-      <ellipse cx="76" cy="128" rx="19" ry="9.5" fill="${C.moss}" transform="rotate(-20 76 128)" />
-      <ellipse cx="124" cy="128" rx="19" ry="9.5" fill="${C.moss}" transform="rotate(20 124 128)" />
+      <g transform="rotate(-20 76 128)"><ellipse cx="76" cy="128" rx="19" ry="9.5" fill="${C.moss}"${ambOrigin('leafFloat 3.5s ease-in-out infinite',76,128)} /></g>
+      <g transform="rotate(20 124 128)"><ellipse cx="124" cy="128" rx="19" ry="9.5" fill="${C.moss}"${ambOrigin('leafFloat 2.8s ease-in-out infinite',124,128)} /></g>
     `;
   }
   if(stageIdx === 4){
-    inner += `<circle cx="100" cy="98" r="14" fill="${C.bloomSoft}" stroke="${C.bloom}" stroke-width="3" />`;
+    inner += `<circle cx="100" cy="98" r="14" fill="${C.bloomSoft}" stroke="${C.bloom}" stroke-width="3"${amb('pulseGlow 2s ease-in-out infinite')} />`;
   }
   if(stageIdx === 5){
-    [0,60,120,180,240,300].forEach(angle => {
-      inner += `<ellipse cx="100" cy="98" rx="11" ry="19" fill="${C.bloomSoft}" transform="rotate(${angle} 100 98) translate(0 -17)" />`;
+    [0,60,120,180,240,300].forEach((angle, i) => {
+      const bloomStyle = animate
+        ? ` style="animation: petalSpread 0.8s ease ${i*0.08}s forwards; opacity:0; transform-origin:100px 98px;"`
+        : '';
+      inner += `<g transform="rotate(${angle} 100 98) translate(0 -17)"><ellipse cx="100" cy="98" rx="11" ry="19" fill="${C.bloomSoft}"${bloomStyle} /></g>`;
     });
-    inner += `<circle cx="100" cy="98" r="9" fill="${C.amber}" />`;
+    inner += `<circle cx="100" cy="98" r="9" fill="${C.amber}"${amb('pulseGlow 1.5s ease-in-out infinite')} />`;
   }
   return `<svg viewBox="0 0 200 220" aria-hidden="true">${inner}</svg>`;
 }
@@ -684,10 +809,10 @@ function scheduleSave(){
   state.saveTimer = setTimeout(async () => {
     try{
       await docRef().set({ habits: state.habits, months: state.months, categories: state.categories, transactions: state.transactions, budgets: state.budgets }, { merge: true });
-      showSaveStatus(false, 'Tersimpan.');
+      showSaveStatus(false, '✨ Tersimpan.');
     } catch(e){
       console.error(e);
-      showSaveStatus(true, 'Gagal menyimpan — periksa koneksi.');
+      showSaveStatus(true, '⚠️ Gagal menyimpan — periksa koneksi.');
     }
   }, 500);
 }
@@ -722,11 +847,11 @@ function renderDailyPlant(){
   const isRealToday = state.year === today.getFullYear() && state.month === today.getMonth() && state.selectedDay === today.getDate();
   const dt = new Date(state.year, state.month, state.selectedDay);
   const doneCount = state.habits.filter(h => isDone(state.year, state.month, state.selectedDay, h.id)).length;
-  const dayLabel = isRealToday ? 'Hari Ini' : `${DAY_NAMES[dt.getDay()]}, ${state.selectedDay} ${MONTH_NAMES[state.month]}`;
+  const dayLabel = isRealToday ? '🌟 Hari Ini' : `${DAY_NAMES[dt.getDay()]}, ${state.selectedDay} ${MONTH_NAMES[state.month]}`;
 
   document.getElementById('daily-plant').innerHTML = plantSVG(stageIdx);
   document.getElementById('daily-tag').textContent = `${dayLabel} · ${stage.tag}`;
-  document.getElementById('daily-title').textContent = state.habits.length ? stage.name : 'Belum Ada Habit';
+  document.getElementById('daily-title').textContent = state.habits.length ? stage.name : '🌱 Belum Ada Habit';
   document.getElementById('daily-note').textContent = state.habits.length ? `${doneCount}/${state.habits.length} habit selesai. ${stage.note}` : 'Tambahkan habit lewat ikon pengaturan di atas.';
   document.getElementById('daily-bar-fill').style.width = Math.round(pct*100) + '%';
   document.getElementById('daily-pct').textContent = Math.round(pct*100) + '%';
@@ -747,15 +872,15 @@ function spawnSparkles(container){
   if(!container) return;
   const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if(prefersReduced) return;
-  const count = 6;
+  const count = 8;
   for(let i=0;i<count;i++){
     const s = document.createElement('span');
     s.className = 'sparkle';
-    const angle = (Math.PI * 2 * i) / count + Math.random()*0.4;
-    const dist = 34 + Math.random()*14;
+    const angle = (Math.PI * 2 * i) / count + Math.random()*0.3;
+    const dist = 30 + Math.random()*18;
     s.style.setProperty('--sx', Math.round(Math.cos(angle)*dist) + 'px');
-    s.style.setProperty('--sy', Math.round(Math.sin(angle)*dist - 10) + 'px');
-    s.style.animationDelay = (Math.random()*0.12) + 's';
+    s.style.setProperty('--sy', Math.round(Math.sin(angle)*dist - 14) + 'px');
+    s.style.animationDelay = (Math.random()*0.15) + 's';
     container.appendChild(s);
     setTimeout(() => s.remove(), 1100);
   }
@@ -777,7 +902,17 @@ function triggerGrowthFeedback(day){
 }
 
 function renderMonthLabel(){
-  document.getElementById('month-label').textContent = `${MONTH_NAMES[state.month]} ${state.year}`;
+  const label = document.getElementById('month-label');
+  label.textContent = `${MONTH_NAMES[state.month]} ${state.year}`;
+  label.className = 'month-label font-display';
+  if(state.monthDirection === -1) {
+    label.classList.add('slide-left');
+    setTimeout(() => label.classList.remove('slide-left'), 350);
+  } else if(state.monthDirection === 1) {
+    label.classList.add('slide-right');
+    setTimeout(() => label.classList.remove('slide-right'), 350);
+  }
+  state.monthDirection = 0;
 }
 
 function renderDayStrip(){
@@ -793,11 +928,17 @@ function renderDayStrip(){
       <button class="day-pill${isSelected ? ' selected':''}${isToday && !isSelected ? ' today':''}" data-day="${d}">
         <span class="dname font-mono">${DAY_NAMES[dt.getDay()]}</span>
         <span class="dnum font-display">${d}</span>
-        <span class="day-mini-plant">${plantSVG(stageIdx)}</span>
+        <span class="day-mini-plant">${plantSVG(stageIdx, false)}</span>
       </button>
     `;
   }
-  document.getElementById('day-strip').innerHTML = html;
+  const strip = document.getElementById('day-strip');
+  strip.innerHTML = html;
+  // scroll ke hari yang dipilih
+  setTimeout(() => {
+    const selected = strip.querySelector('.day-pill.selected');
+    if(selected) selected.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }, 100);
 }
 
 function renderGardenGrid(){
@@ -811,7 +952,7 @@ function renderGardenGrid(){
     html += `
       <button class="garden-cell${isSelected ? ' g-selected':''}${isToday && !isSelected ? ' g-today':''}" data-garden-day="${d}">
         <span class="g-daynum">${d}</span>
-        <span class="g-plant">${plantSVG(stageIdx)}</span>
+        <span class="g-plant">${plantSVG(stageIdx, false)}</span>
       </button>
     `;
   }
@@ -823,15 +964,15 @@ function renderHabitList(){
   document.getElementById('habit-date-label').textContent = `${DAY_NAMES[dt.getDay()]}, ${state.selectedDay} ${MONTH_NAMES[state.month]}`;
 
   if(state.habits.length === 0){
-    document.getElementById('habit-list').innerHTML = `<div class="empty-habits">Belum ada habit. Tambahkan lewat ikon pengaturan di atas.</div>`;
+    document.getElementById('habit-list').innerHTML = `<div class="empty-habits">🌱 Belum ada habit. Tambahkan lewat ikon pengaturan di atas.</div>`;
     return;
   }
   let html = '';
-  state.habits.forEach(h => {
+  state.habits.forEach((h, index) => {
     const done = isDone(state.year, state.month, state.selectedDay, h.id);
     const streak = computeStreak(h.id);
     html += `
-      <div class="habit-row">
+      <div class="habit-row" style="animation-delay:${index * 0.04}s">
         <button class="habit-check${done ? ' done':''}" data-habit="${h.id}" aria-pressed="${done}" aria-label="Tandai ${h.name}">
           ${done ? '<svg width="13" height="10" viewBox="0 0 13 10" fill="none"><path d="M1 5L4.5 8.5L12 1" stroke="#232821" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>' : ''}
         </button>
@@ -844,7 +985,7 @@ function renderHabitList(){
 }
 
 function renderSettingsList(){
-  document.getElementById('settings-code-display').textContent = 'Kode aktif: ' + state.code;
+  document.getElementById('settings-code-display').textContent = '🔑 Kode aktif: ' + state.code;
   let html = '';
   state.habits.forEach(h => {
     html += `
@@ -895,23 +1036,23 @@ function renderBudgets(){
   const wrap = document.getElementById('budget-list');
   const expenseCats = state.categories.expense.filter(c => state.budgets[c.id] > 0);
   if(expenseCats.length === 0){
-    wrap.innerHTML = `<div class="fin-empty">Belum ada anggaran diatur. Tap ikon 🏷️ untuk membuat kategori pengeluaran dan mengatur batas anggaran bulanan.</div>`;
+    wrap.innerHTML = `<div class="fin-empty">📊 Belum ada anggaran diatur. Tap ikon 🏷️ untuk membuat kategori pengeluaran dan mengatur batas anggaran bulanan.</div>`;
     return;
   }
   let html = '';
-  expenseCats.forEach(c => {
+  expenseCats.forEach((c, index) => {
     const limit = state.budgets[c.id];
     const spent = computeCategorySpend(state.year, state.month, c.id);
     const pct = Math.min(spent / limit, 1);
     const over = spent > limit;
     html += `
-      <div class="budget-row">
+      <div class="budget-row" style="animation-delay:${index * 0.05}s">
         <div class="budget-head">
           <span class="b-name">${escapeHtml(c.name)}</span>
           <span class="b-amt">${formatRupiah(spent)} / ${formatRupiah(limit)}</span>
         </div>
         <div class="budget-bar-track"><div class="budget-bar-fill${over ? ' over' : ''}" style="width:${Math.round(pct*100)}%"></div></div>
-        ${over ? `<div class="budget-warn">Sudah melebihi anggaran bulan ini.</div>` : ''}
+        ${over ? `<div class="budget-warn">⚠️ Sudah melebihi anggaran bulan ini.</div>` : ''}
       </div>
     `;
   });
@@ -926,7 +1067,7 @@ function renderCharts(){
 
   if(pieChartInstance){ pieChartInstance.destroy(); pieChartInstance = null; }
   if(values.length === 0){
-    pieWrap.innerHTML = `<div class="chart-empty">Belum ada pengeluaran bulan ini.</div>`;
+    pieWrap.innerHTML = `<div class="chart-empty">📊 Belum ada pengeluaran bulan ini.</div>`;
   } else {
     pieWrap.innerHTML = `<canvas id="chart-pie"></canvas>`;
     const ctx = document.getElementById('chart-pie').getContext('2d');
@@ -942,7 +1083,7 @@ function renderCharts(){
   const hasAny = trend.some(t => t.income > 0 || t.expense > 0);
   if(trendChartInstance){ trendChartInstance.destroy(); trendChartInstance = null; }
   if(!hasAny){
-    trendWrap.innerHTML = `<div class="chart-empty">Belum ada data transaksi.</div>`;
+    trendWrap.innerHTML = `<div class="chart-empty">📈 Belum ada data transaksi.</div>`;
   } else {
     trendWrap.innerHTML = `<canvas id="chart-trend"></canvas>`;
     const ctx2 = document.getElementById('chart-trend').getContext('2d');
@@ -971,13 +1112,13 @@ function renderTxnList(){
   const wrap = document.getElementById('txn-list');
   const txns = [...monthTxns(state.year, state.month)].sort((a,b) => (b.day - a.day) || (b.ts - a.ts));
   if(txns.length === 0){
-    wrap.innerHTML = `<div class="fin-empty">Belum ada transaksi bulan ini. Tap tombol ＋ untuk menambahkan.</div>`;
+    wrap.innerHTML = `<div class="fin-empty">💳 Belum ada transaksi bulan ini. Tap tombol ＋ untuk menambahkan.</div>`;
     return;
   }
   let html = '';
-  txns.forEach(t => {
+  txns.forEach((t, index) => {
     html += `
-      <button class="txn-row" data-txn="${t.id}">
+      <button class="txn-row" data-txn="${t.id}" style="animation-delay:${index * 0.03}s">
         <span class="txn-day font-mono">${t.day}</span>
         <span class="txn-cat-dot ${t.type}"></span>
         <div class="txn-info">
@@ -995,7 +1136,7 @@ function renderCategorySelect(type){
   const sel = document.getElementById('txn-category');
   const list = state.categories[type] || [];
   let html = list.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
-  html += `<option value="__new__">+ Tambah kategori baru…</option>`;
+  html += `<option value="__new__">➕ Tambah kategori baru…</option>`;
   sel.innerHTML = html;
 }
 
@@ -1020,7 +1161,7 @@ function renderFinSettingsLists(){
       </div>
     `;
   });
-  expWrap.innerHTML = expHtml || `<div class="fin-empty" style="margin:0 0 8px;">Belum ada kategori pengeluaran.</div>`;
+  expWrap.innerHTML = expHtml || `<div class="fin-empty" style="margin:0 0 8px;">📭 Belum ada kategori pengeluaran.</div>`;
 
   const incWrap = document.getElementById('fin-income-cat-list');
   let incHtml = '';
@@ -1032,7 +1173,7 @@ function renderFinSettingsLists(){
       </div>
     `;
   });
-  incWrap.innerHTML = incHtml || `<div class="fin-empty" style="margin:0 0 8px;">Belum ada kategori pemasukan.</div>`;
+  incWrap.innerHTML = incHtml || `<div class="fin-empty" style="margin:0 0 8px;">📭 Belum ada kategori pemasukan.</div>`;
 }
 
 /* ======================================================================
@@ -1052,12 +1193,14 @@ function toggleDay(habitId, day){
 }
 
 function prevMonth(){
+  state.monthDirection = -1;
   if(state.month === 0){ state.year -= 1; state.month = 11; } else state.month -= 1;
   state.selectedDay = 1;
   renderAll();
   lastHeroStageIdx = getStageIndex(computeMonthPct());
 }
 function nextMonth(){
+  state.monthDirection = 1;
   if(state.month === 11){ state.year += 1; state.month = 0; } else state.month += 1;
   state.selectedDay = 1;
   renderAll();
@@ -1087,7 +1230,7 @@ function renameHabit(id, name){
 }
 
 async function resetData(){
-  if(!window.confirm('Hapus semua data habit dan riwayatnya? Kode akses tetap sama. Tindakan ini tidak bisa dibatalkan.')) return;
+  if(!window.confirm('⚠️ Hapus semua data habit dan riwayatnya? Kode akses tetap sama. Tindakan ini tidak bisa dibatalkan.')) return;
   state.habits = DEFAULT_HABITS;
   state.months = {};
   try{ await docRef().set({ habits: state.habits, months: state.months }, { merge: true }); } catch(e){ console.error(e); }
@@ -1098,7 +1241,7 @@ async function resetData(){
 }
 
 function switchCode(){
-  if(!window.confirm('Keluar dari kode ini di perangkat ini? Kamu bisa masuk lagi kapan saja dengan memasukkan kode yang sama.')) return;
+  if(!window.confirm('🔑 Keluar dari kode ini di perangkat ini? Kamu bisa masuk lagi kapan saja dengan memasukkan kode yang sama.')) return;
   localStorage.removeItem(CODE_STORAGE_KEY);
   window.location.reload();
 }
@@ -1127,7 +1270,7 @@ function setTxnType(type){
 
 function openTxnModal(existingTxn){
   state.editingTxnId = existingTxn ? existingTxn.id : null;
-  document.getElementById('txn-modal-title').textContent = existingTxn ? 'Edit Transaksi' : 'Tambah Transaksi';
+  document.getElementById('txn-modal-title').textContent = existingTxn ? '✏️ Edit Transaksi' : '💰 Tambah Transaksi';
   document.getElementById('btn-delete-txn').classList.toggle('hidden', !existingTxn);
   renderTxnDaySelect();
   const type = existingTxn ? existingTxn.type : 'expense';
@@ -1177,7 +1320,7 @@ function saveTxnFromForm(){
 }
 
 function deleteTxn(id){
-  if(!window.confirm('Hapus transaksi ini?')) return;
+  if(!window.confirm('🗑️ Hapus transaksi ini?')) return;
   const key = monthKey(state.year, state.month);
   state.transactions = { ...state.transactions, [key]: (state.transactions[key] || []).filter(t => t.id !== id) };
   renderFinance();
@@ -1219,7 +1362,7 @@ function setBudget(categoryId, amount){
 }
 
 async function resetFinanceData(){
-  if(!window.confirm('Hapus semua data keuangan (kategori, transaksi, anggaran)? Tindakan ini tidak bisa dibatalkan.')) return;
+  if(!window.confirm('⚠️ Hapus semua data keuangan (kategori, transaksi, anggaran)? Tindakan ini tidak bisa dibatalkan.')) return;
   state.categories = { income: [], expense: [] };
   state.transactions = {};
   state.budgets = {};
