@@ -100,7 +100,7 @@
   /* Tanaman harian */
   .daily-wrap{padding:10px 20px 0;}
   .daily-card{background:var(--ink-soft); border-radius:18px; padding:10px 14px; display:flex; align-items:center; gap:12px;}
-  .daily-plant{width:44px; height:44px; flex-shrink:0;}
+  .daily-plant{width:44px; height:44px; flex-shrink:0; position:relative;}
   .daily-plant svg{width:100%; height:100%; display:block; transform-origin:50% 100%;}
   .daily-plant.grow-pop svg{animation:growPop 0.6s cubic-bezier(.34,1.56,.64,1);}
   .daily-info{flex:1; min-width:0;}
@@ -263,28 +263,28 @@
       <div class="hero-wrap">
         <div class="hero-card">
           <div class="hero-top">
-            <div class="hero-plant" id="hero-plant"></div>
+            <div class="hero-plant" id="daily-plant"></div>
             <div style="min-width:0;">
-              <p class="hero-tag font-mono" id="hero-tag"></p>
-              <h1 class="hero-title font-display" id="hero-title"></h1>
-              <p class="hero-note" id="hero-note"></p>
+              <p class="hero-tag font-mono" id="daily-tag"></p>
+              <h1 class="hero-title font-display" id="daily-title"></h1>
+              <p class="hero-note" id="daily-note"></p>
             </div>
           </div>
           <div class="hero-bar-row">
-            <div class="hero-bar"><div class="hero-bar-fill" id="hero-bar-fill"></div></div>
-            <span class="hero-pct" id="hero-pct"></span>
+            <div class="hero-bar"><div class="hero-bar-fill" id="daily-bar-fill"></div></div>
+            <span class="hero-pct" id="daily-pct"></span>
           </div>
         </div>
       </div>
 
       <div class="daily-wrap">
         <div class="daily-card">
-          <div class="daily-plant" id="daily-plant"></div>
+          <div class="daily-plant" id="hero-plant"></div>
           <div class="daily-info">
-            <p class="daily-tag" id="daily-tag"></p>
-            <p class="daily-title" id="daily-title"></p>
+            <p class="daily-tag" id="hero-tag"></p>
+            <p class="daily-title" id="hero-title"></p>
           </div>
-          <span class="daily-pct" id="daily-pct"></span>
+          <span class="daily-pct" id="hero-pct"></span>
         </div>
       </div>
 
@@ -478,12 +478,12 @@ const DEFAULT_HABITS = [
 ];
 
 const STAGES = [
-  { name: 'Benih Baru Ditanam', tag: '0%', note: 'Belum ada yang dicentang bulan ini.' },
+  { name: 'Benih Baru Ditanam', tag: '0%', note: 'Belum ada yang dicentang.' },
   { name: 'Akar Mulai Mencengkeram', tag: '1–20%', note: 'Awal yang baik, terus lanjutkan.' },
   { name: 'Tunas Pertama Muncul', tag: '21–40%', note: 'Kebiasaan mulai kelihatan bentuknya.' },
   { name: 'Daun Mulai Rimbun', tag: '41–60%', note: 'Sudah lebih dari separuh jalan.' },
   { name: 'Kuncup Siap Mekar', tag: '61–80%', note: 'Tinggal sedikit lagi menuju mekar penuh.' },
-  { name: 'Mekar Sepenuhnya', tag: '81–100%', note: 'Bulan ini benar-benar bertumbuh.' },
+  { name: 'Mekar Sepenuhnya', tag: '81–100%', note: 'Benar-benar bertumbuh hari ini.' },
 ];
 
 const MONTH_NAMES = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
@@ -710,23 +710,25 @@ function renderHero(){
   const stage = STAGES[stageIdx];
 
   document.getElementById('hero-plant').innerHTML = plantSVG(stageIdx);
-  document.getElementById('hero-tag').textContent = `${MONTH_NAMES[state.month]} ${state.year} · ${stage.tag}`;
+  document.getElementById('hero-tag').textContent = `${MONTH_NAMES[state.month]} ${state.year}`;
   document.getElementById('hero-title').textContent = stage.name;
-  document.getElementById('hero-note').textContent = stage.note;
-  document.getElementById('hero-bar-fill').style.width = Math.round(pct*100) + '%';
   document.getElementById('hero-pct').textContent = Math.round(pct*100) + '%';
 }
 
 function renderDailyPlant(){
   const pct = dayPct(state.year, state.month, state.selectedDay);
   const stageIdx = getStageIndex(pct);
+  const stage = STAGES[stageIdx];
   const isRealToday = state.year === today.getFullYear() && state.month === today.getMonth() && state.selectedDay === today.getDate();
   const dt = new Date(state.year, state.month, state.selectedDay);
   const doneCount = state.habits.filter(h => isDone(state.year, state.month, state.selectedDay, h.id)).length;
+  const dayLabel = isRealToday ? 'Hari Ini' : `${DAY_NAMES[dt.getDay()]}, ${state.selectedDay} ${MONTH_NAMES[state.month]}`;
 
   document.getElementById('daily-plant').innerHTML = plantSVG(stageIdx);
-  document.getElementById('daily-tag').textContent = isRealToday ? 'HARI INI' : `${DAY_NAMES[dt.getDay()].toUpperCase()}, ${state.selectedDay} ${MONTH_NAMES[state.month].toUpperCase()}`;
-  document.getElementById('daily-title').textContent = state.habits.length ? `${doneCount}/${state.habits.length} habit selesai` : 'Belum ada habit';
+  document.getElementById('daily-tag').textContent = `${dayLabel} · ${stage.tag}`;
+  document.getElementById('daily-title').textContent = state.habits.length ? stage.name : 'Belum Ada Habit';
+  document.getElementById('daily-note').textContent = state.habits.length ? `${doneCount}/${state.habits.length} habit selesai. ${stage.note}` : 'Tambahkan habit lewat ikon pengaturan di atas.';
+  document.getElementById('daily-bar-fill').style.width = Math.round(pct*100) + '%';
   document.getElementById('daily-pct').textContent = Math.round(pct*100) + '%';
 }
 
