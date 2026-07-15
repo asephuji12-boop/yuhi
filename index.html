@@ -320,6 +320,29 @@
   #txn-overlay .settings-card{display:flex; flex-direction:column; overflow:hidden; border-radius:24px; animation: scaleIn 0.3s cubic-bezier(.34,1.56,.64,1);}
   .txn-card-body{overflow-y:auto; flex:1; min-height:0; padding-right:2px; -webkit-overflow-scrolling:touch;}
   .txn-card-footer{flex-shrink:0; padding-top:10px;}
+
+  /* ===================== CATATAN HARIAN ===================== */
+  .note-wrap{padding:10px 20px 0;}
+  .note-card{width:100%; text-align:left; background:var(--ink-soft); border-radius:18px; padding:12px 14px; display:flex; align-items:center; gap:12px; transition: all 0.3s; animation: fadeInUp 0.4s ease;}
+  .note-card:hover{transform: scale(1.01); background:var(--ink-line);}
+  .note-icon{font-size:22px; flex-shrink:0;}
+  .note-info{flex:1; min-width:0;}
+  .note-label{font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.04em; color:var(--cream-dim); margin:0;}
+  .note-preview{font-size:13px; color:var(--cream); margin:2px 0 0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .note-preview.empty{color:var(--cream-dim); font-style:italic;}
+
+  #note-overlay{position:fixed; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(8px); display:flex; align-items:center; justify-content:center; z-index:50; padding:20px; animation: fadeInUp 0.3s ease;}
+  #note-overlay .settings-card{border-radius:24px; animation: scaleIn 0.3s cubic-bezier(.34,1.56,.64,1);}
+  .note-textarea{width:100%; min-height:160px; padding:12px 14px; border-radius:14px; background:var(--paper-soft); color:var(--charcoal); font-size:14px; line-height:1.5; border:none; resize:vertical; margin-bottom:14px; font-family:'Inter',sans-serif;}
+  .note-textarea:focus{box-shadow:0 0 0 2px var(--amber); outline:none;}
+
+  /* Indikator titik kecil di kalender untuk hari yang sudah ada catatannya */
+  .day-pill{position:relative;}
+  .garden-cell{position:relative;}
+  .day-pill.has-note::before, .garden-cell.has-note::before{
+    content:''; position:absolute; top:5px; right:6px; width:5px; height:5px; border-radius:999px; background:var(--amber);
+  }
+  .day-pill.selected.has-note::before{ background:var(--charcoal); }
 </style>
 </head>
 <body>
@@ -408,6 +431,16 @@
       </div>
 
       <div class="day-strip" id="day-strip"></div>
+
+      <div class="note-wrap">
+        <button class="note-card" id="btn-open-note">
+          <span class="note-icon">📝</span>
+          <div class="note-info">
+            <p class="note-label" id="note-label">Catatan Hari Ini</p>
+            <p class="note-preview" id="note-preview">Tap untuk menulis jurnal singkat…</p>
+          </div>
+        </button>
+      </div>
 
       <div class="habit-section">
         <p class="habit-date-label" id="habit-date-label"></p>
@@ -553,6 +586,19 @@
   </div>
 </div>
 
+<!-- CATATAN MODAL -->
+<div id="note-overlay" class="hidden">
+  <div class="settings-card">
+    <div class="settings-head">
+      <h2 class="font-display" id="note-modal-title">📝 Catatan</h2>
+      <button class="settings-close" id="btn-close-note">✕</button>
+    </div>
+    <textarea class="note-textarea" id="note-textarea" placeholder="Tulis catatan singkat tentang hari ini…"></textarea>
+    <button class="gate-btn primary" id="btn-save-note">💾 Simpan</button>
+    <button class="settings-danger-btn hidden" id="btn-delete-note">🗑️ Hapus Catatan</button>
+  </div>
+</div>
+
 <!-- TAB BAR + FAB -->
 <div class="fixed-frame">
   <button class="fab hidden" id="fab-add-txn" aria-label="Tambah transaksi">＋</button>
@@ -617,6 +663,7 @@ const state = {
   categories: { income: [], expense: [] },
   transactions: {},
   budgets: {},
+  notes: {},
   activeTab: 'kebun',
   editingTxnId: null,
   year: today.getFullYear(),
@@ -673,6 +720,15 @@ function computeTrend(monthsBack){
     if(m < 0){ m = 11; y -= 1; }
   }
   return result;
+}
+
+function dateKey(y, m, d){ return `${y}-${pad(m+1)}-${pad(d)}`; }
+function getNoteText(y, m, d){
+  const n = state.notes[dateKey(y, m, d)];
+  return n ? n.text : '';
+}
+function hasNote(y, m, d){
+  return !!getNoteText(y, m, d).trim();
 }
 
 function generateAccessCode(){
@@ -790,13 +846,15 @@ async function loadFromFirestore(){
       state.categories = data.categories || { income: [], expense: [] };
       state.transactions = data.transactions || {};
       state.budgets = data.budgets || {};
+      state.notes = data.notes || {};
     } else {
       state.habits = DEFAULT_HABITS;
       state.months = {};
       state.categories = { income: [], expense: [] };
       state.transactions = {};
       state.budgets = {};
-      await docRef().set({ habits: state.habits, months: state.months, categories: state.categories, transactions: state.transactions, budgets: state.budgets });
+      state.notes = {};
+      await docRef().set({ habits: state.habits, months: state.months, categories: state.categories, transactions: state.transactions, budgets: state.budgets, notes: state.notes });
     }
   } catch(e){
     console.error(e);
@@ -808,7 +866,7 @@ function scheduleSave(){
   if(state.saveTimer) clearTimeout(state.saveTimer);
   state.saveTimer = setTimeout(async () => {
     try{
-      await docRef().set({ habits: state.habits, months: state.months, categories: state.categories, transactions: state.transactions, budgets: state.budgets }, { merge: true });
+      await docRef().set({ habits: state.habits, months: state.months, categories: state.categories, transactions: state.transactions, budgets: state.budgets, notes: state.notes }, { merge: true });
       showSaveStatus(false, '✨ Tersimpan.');
     } catch(e){
       console.error(e);
@@ -925,7 +983,7 @@ function renderDayStrip(){
     const isToday = isRealCurrentMonth && d === today.getDate();
     const stageIdx = getStageIndex(dayPct(state.year, state.month, d));
     html += `
-      <button class="day-pill${isSelected ? ' selected':''}${isToday && !isSelected ? ' today':''}" data-day="${d}">
+      <button class="day-pill${isSelected ? ' selected':''}${isToday && !isSelected ? ' today':''}${hasNote(state.year, state.month, d) ? ' has-note':''}" data-day="${d}">
         <span class="dname font-mono">${DAY_NAMES[dt.getDay()]}</span>
         <span class="dnum font-display">${d}</span>
         <span class="day-mini-plant">${plantSVG(stageIdx, false)}</span>
@@ -950,7 +1008,7 @@ function renderGardenGrid(){
     const isToday = isRealCurrentMonth && d === today.getDate();
     const stageIdx = getStageIndex(dayPct(state.year, state.month, d));
     html += `
-      <button class="garden-cell${isSelected ? ' g-selected':''}${isToday && !isSelected ? ' g-today':''}" data-garden-day="${d}">
+      <button class="garden-cell${isSelected ? ' g-selected':''}${isToday && !isSelected ? ' g-today':''}${hasNote(state.year, state.month, d) ? ' has-note':''}" data-garden-day="${d}">
         <span class="g-daynum">${d}</span>
         <span class="g-plant">${plantSVG(stageIdx, false)}</span>
       </button>
@@ -1004,12 +1062,29 @@ function escapeHtml(str){
   return div.innerHTML;
 }
 
+function renderNoteCard(){
+  const dt = new Date(state.year, state.month, state.selectedDay);
+  const isRealToday = state.year === today.getFullYear() && state.month === today.getMonth() && state.selectedDay === today.getDate();
+  const label = isRealToday ? '📝 Catatan Hari Ini' : `📝 Catatan · ${DAY_NAMES[dt.getDay()]}, ${state.selectedDay} ${MONTH_NAMES[state.month]}`;
+  const text = getNoteText(state.year, state.month, state.selectedDay);
+  document.getElementById('note-label').textContent = label;
+  const preview = document.getElementById('note-preview');
+  if(text.trim()){
+    preview.textContent = text.length > 60 ? text.slice(0, 60) + '…' : text;
+    preview.classList.remove('empty');
+  } else {
+    preview.textContent = 'Tap untuk menulis jurnal singkat…';
+    preview.classList.add('empty');
+  }
+}
+
 function renderAll(){
   renderHero();
   renderDailyPlant();
   renderMonthLabel();
   renderDayStrip();
   renderHabitList();
+  renderNoteCard();
   if(lastHeroStageIdx === null) lastHeroStageIdx = getStageIndex(computeMonthPct());
   if(state.activeTab === 'keuangan') renderFinance();
 }
@@ -1373,6 +1448,51 @@ async function resetFinanceData(){
 }
 
 /* ======================================================================
+   6c) ACTIONS — CATATAN HARIAN
+   ====================================================================== */
+function openNoteModal(){
+  const dt = new Date(state.year, state.month, state.selectedDay);
+  const isRealToday = state.year === today.getFullYear() && state.month === today.getMonth() && state.selectedDay === today.getDate();
+  const text = getNoteText(state.year, state.month, state.selectedDay);
+  document.getElementById('note-modal-title').textContent = isRealToday ? '📝 Catatan Hari Ini' : `📝 Catatan · ${DAY_NAMES[dt.getDay()]}, ${state.selectedDay} ${MONTH_NAMES[state.month]}`;
+  document.getElementById('note-textarea').value = text;
+  document.getElementById('btn-delete-note').classList.toggle('hidden', !text.trim());
+  document.getElementById('note-overlay').classList.remove('hidden');
+  setTimeout(() => document.getElementById('note-textarea').focus(), 150);
+}
+function closeNoteModal(){
+  document.getElementById('note-overlay').classList.add('hidden');
+}
+function saveNoteFromForm(){
+  const text = document.getElementById('note-textarea').value;
+  const key = dateKey(state.year, state.month, state.selectedDay);
+  const notes = { ...state.notes };
+  if(text.trim()){
+    notes[key] = { text, updatedAt: Date.now() };
+  } else {
+    delete notes[key];
+  }
+  state.notes = notes;
+  renderNoteCard();
+  renderDayStrip();
+  if(!document.getElementById('garden-overlay').classList.contains('hidden')) renderGardenGrid();
+  scheduleSave();
+  closeNoteModal();
+}
+function deleteNote(){
+  if(!window.confirm('🗑️ Hapus catatan hari ini?')) return;
+  const key = dateKey(state.year, state.month, state.selectedDay);
+  const notes = { ...state.notes };
+  delete notes[key];
+  state.notes = notes;
+  renderNoteCard();
+  renderDayStrip();
+  if(!document.getElementById('garden-overlay').classList.contains('hidden')) renderGardenGrid();
+  scheduleSave();
+  closeNoteModal();
+}
+
+/* ======================================================================
    7) GATE (masuk / buat kode)
    ====================================================================== */
 async function enterApp(code){
@@ -1437,6 +1557,7 @@ function initAppHandlers(){
     renderDayStrip();
     renderHabitList();
     renderDailyPlant();
+    renderNoteCard();
     document.getElementById('garden-overlay').classList.add('hidden');
   });
 
@@ -1447,6 +1568,7 @@ function initAppHandlers(){
     renderDayStrip();
     renderHabitList();
     renderDailyPlant();
+    renderNoteCard();
   });
 
   document.getElementById('habit-list').addEventListener('click', (e) => {
@@ -1555,6 +1677,12 @@ function initAppHandlers(){
     if(rename){ const [type,id] = rename.dataset.catRename.split(':'); renameFinanceCategory(type,id,rename.value); }
   });
   document.getElementById('btn-reset-finance').addEventListener('click', resetFinanceData);
+
+  /* --- Catatan harian --- */
+  document.getElementById('btn-open-note').addEventListener('click', openNoteModal);
+  document.getElementById('btn-close-note').addEventListener('click', closeNoteModal);
+  document.getElementById('btn-save-note').addEventListener('click', saveNoteFromForm);
+  document.getElementById('btn-delete-note').addEventListener('click', deleteNote);
 }
 
 /* ======================================================================
