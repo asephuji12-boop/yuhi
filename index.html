@@ -9,6 +9,7 @@
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <style>
@@ -86,9 +87,8 @@
 
   <div id="gate-screen" class="hidden">
     <h1 class="font-display">🕌 Data Santri</h1>
-    <p>Masukkan kode akses untuk membuka data. Kode ini menentukan data mana yang tersimpan/terbuka.</p>
-    <input id="gate-code" placeholder="mis. pesantren-suko" autocomplete="off" />
-    <button class="btn-primary" id="btn-gate-enter">Buka</button>
+    <p>Login dengan akun Google untuk membuka data absen milikmu sendiri. Data tidak dibagikan ke akun lain.</p>
+    <button class="btn-primary" id="btn-google-login">Login dengan Google</button>
   </div>
 
   <div id="app-screen" class="hidden">
@@ -97,7 +97,7 @@
         <h1 class="font-display">Data Santri</h1>
         <div class="sub" id="kode-label"></div>
       </div>
-      <button class="icon-btn" id="btn-ganti-kode">Ganti Kode</button>
+      <button class="icon-btn" id="btn-logout">Keluar</button>
     </header>
 
     <main>
@@ -187,28 +187,44 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
+const auth = firebase.auth();
 
-const CODE_STORAGE_KEY = 'santri_app_code';
+/* ======================================================================
+   DAFTAR PUTIH PETUGAS — hanya email di bawah ini yang boleh login.
+   Tambahkan/hapus email sesuai kebutuhan (huruf kecil semua, dipisah koma).
+   ====================================================================== */
+const ALLOWED_EMAILS = [
+  'ganti-dengan-email-petugas@gmail.com',
+];
+
 const PROGRAMS = ['Diniyyah Pagi','Diniyyah Siang','Pos Pagi','Pos Siang','Ngaji Sore',"Muthola'ah","Penunggu Muthola'ah"];
-const state = { code: null, santri: [], alfaByProgram: {} }; // santri: [{id, nama, alamat, kelas, kamar}]
+const state = { uid: null, santri: [], alfaByProgram: {} }; // santri: [{id, nama, alamat, kelas, kamar}]
 // alfaByProgram[program][tanggal] = { santriId: true(hadir) }
 
-function docRef(){ return db.collection('santri_app').doc(state.code); }
+/* Data SANTRI: satu dokumen BERSAMA untuk semua petugas */
+function santriDocRef(){ return db.collection('santri_app_shared').doc('data'); }
+/* Data ALFA: dokumen TERPISAH per akun Google (uid) */
+function alfaDocRef(){ return db.collection('santri_app_users').doc(state.uid); }
 
 /* ======================================================================
    2) LOAD / SAVE
    ====================================================================== */
 async function loadFromFirestore(){
   try{
-    const snap = await docRef().get();
-    if(snap.exists){
-      const data = snap.data();
-      state.santri = data.santri || [];
-      state.alfaByProgram = data.alfaByProgram || {};
+    const [santriSnap, alfaSnap] = await Promise.all([santriDocRef().get(), alfaDocRef().get()]);
+
+    if(santriSnap.exists){
+      state.santri = santriSnap.data().santri || [];
     } else {
       state.santri = [];
+      await santriDocRef().set({ santri: [] });
+    }
+
+    if(alfaSnap.exists){
+      state.alfaByProgram = alfaSnap.data().alfaByProgram || {};
+    } else {
       state.alfaByProgram = {};
-      await docRef().set({ santri: [], alfaByProgram: {} });
+      await alfaDocRef().set({ alfaByProgram: {} });
     }
   }catch(e){
     console.error(e);
@@ -216,15 +232,28 @@ async function loadFromFirestore(){
   }
 }
 
-let saveTimer = null;
-function saveToFirestore(){
-  clearTimeout(saveTimer);
-  saveTimer = setTimeout(async () => {
+let saveSantriTimer = null;
+function saveSantriToFirestore(){
+  clearTimeout(saveSantriTimer);
+  saveSantriTimer = setTimeout(async () => {
     try{
-      await docRef().set({ santri: state.santri, alfaByProgram: state.alfaByProgram });
+      await santriDocRef().set({ santri: state.santri });
     }catch(e){
       console.error(e);
-      showToast('Gagal menyimpan. Cek koneksi internet.');
+      showToast('Gagal menyimpan data santri. Cek koneksi internet.');
+    }
+  }, 300);
+}
+
+let saveAlfaTimer = null;
+function saveAlfaToFirestore(){
+  clearTimeout(saveAlfaTimer);
+  saveAlfaTimer = setTimeout(async () => {
+    try{
+      await alfaDocRef().set({ alfaByProgram: state.alfaByProgram });
+    }catch(e){
+      console.error(e);
+      showToast('Gagal menyimpan absen. Cek koneksi internet.');
     }
   }, 300);
 }
@@ -238,29 +267,41 @@ function showToast(msg){
 }
 
 /* ======================================================================
-   3) GATE
+   3) LOGIN GOOGLE
    ====================================================================== */
 function initGateHandlers(){
-  document.getElementById('btn-gate-enter').addEventListener('click', enterWithCode);
-  document.getElementById('gate-code').addEventListener('keydown', e => { if(e.key === 'Enter') enterWithCode(); });
-  document.getElementById('btn-ganti-kode').addEventListener('click', () => {
-    localStorage.removeItem(CODE_STORAGE_KEY);
-    location.reload();
+  document.getElementById('btn-google-login').addEventListener('click', () => {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    auth.signInWithPopup(provider).catch(e => {
+      console.error(e);
+      showToast('Login gagal: ' + e.message);
+    });
   });
-}
+  document.getElementById('btn-logout').addEventListener('click', () => auth.signOut());
 
-async function enterWithCode(){
-  const val = document.getElementById('gate-code').value.trim();
-  if(!val){ showToast('Isi kode dulu.'); return; }
-  state.code = val;
-  localStorage.setItem(CODE_STORAGE_KEY, val);
-  document.getElementById('gate-screen').classList.add('hidden');
-  document.getElementById('loading-screen').classList.remove('hidden');
-  await loadFromFirestore();
-  document.getElementById('loading-screen').classList.add('hidden');
-  document.getElementById('app-screen').classList.remove('hidden');
-  document.getElementById('kode-label').textContent = 'kode: ' + state.code;
-  renderAll();
+  auth.onAuthStateChanged(async (user) => {
+    if(user){
+      const email = (user.email || '').toLowerCase();
+      if(!ALLOWED_EMAILS.map(e => e.toLowerCase()).includes(email)){
+        showToast('Email ' + email + ' belum diizinkan sebagai petugas.');
+        await auth.signOut();
+        return;
+      }
+      state.uid = user.uid;
+      document.getElementById('gate-screen').classList.add('hidden');
+      document.getElementById('loading-screen').classList.remove('hidden');
+      await loadFromFirestore();
+      document.getElementById('loading-screen').classList.add('hidden');
+      document.getElementById('app-screen').classList.remove('hidden');
+      document.getElementById('kode-label').textContent = user.displayName || user.email || '';
+      renderAll();
+    } else {
+      state.uid = null;
+      document.getElementById('app-screen').classList.add('hidden');
+      document.getElementById('loading-screen').classList.add('hidden');
+      document.getElementById('gate-screen').classList.remove('hidden');
+    }
+  });
 }
 
 /* ======================================================================
@@ -293,7 +334,7 @@ function initSantriHandlers(){
     };
     state.santri.push(santri);
     ['in-id','in-nama','in-alamat','in-kelas','in-kamar'].forEach(id => document.getElementById(id).value = '');
-    saveToFirestore();
+    saveSantriToFirestore();
     renderAll();
     showToast('Santri ditambahkan.');
   });
@@ -304,7 +345,7 @@ function initSantriHandlers(){
 function deleteSantri(idx){
   if(!confirm('Hapus santri ini?')) return;
   state.santri.splice(idx, 1);
-  saveToFirestore();
+  saveSantriToFirestore();
   renderAll();
 }
 
@@ -386,7 +427,7 @@ function handleImportFile(e){
         });
         added++;
       });
-      saveToFirestore();
+      saveSantriToFirestore();
       renderAll();
       showToast(added + ' santri berhasil diimport.');
     }catch(err){
@@ -431,7 +472,7 @@ function initAlfaHandlers(){
     const tgl = tglInput.value || todayStr();
     if(!state.alfaByProgram[prog]) state.alfaByProgram[prog] = {};
     state.alfaByProgram[prog][tgl] = { ...draftHadir };
-    saveToFirestore();
+    saveAlfaToFirestore();
     showToast('Absen ' + prog + ' tanggal ' + tgl + ' disimpan.');
   });
 
@@ -490,22 +531,7 @@ function renderAll(){
   initSantriHandlers();
   initImportExportHandlers();
   initAlfaHandlers();
-
-  const savedCode = localStorage.getItem(CODE_STORAGE_KEY);
-  document.getElementById('loading-screen').classList.add('hidden');
-
-  if(savedCode){
-    state.code = savedCode;
-    document.getElementById('loading-screen').classList.remove('hidden');
-    loadFromFirestore().then(() => {
-      document.getElementById('loading-screen').classList.add('hidden');
-      document.getElementById('app-screen').classList.remove('hidden');
-      document.getElementById('kode-label').textContent = 'kode: ' + state.code;
-      renderAll();
-    });
-  } else {
-    document.getElementById('gate-screen').classList.remove('hidden');
-  }
+  // onAuthStateChanged (di initGateHandlers) yang menentukan tampilan gate/app/loading
 })();
 </script>
 </body>
