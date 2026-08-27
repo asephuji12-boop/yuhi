@@ -152,6 +152,16 @@
         </section>
 
         <section class="block">
+          <h2>Import / Export Absen</h2>
+          <div class="btn-row">
+            <button class="btn-ghost" id="btn-import-alfa">⬆️ Import Excel</button>
+            <button class="btn-ghost" id="btn-export-alfa">⬇️ Export Excel</button>
+          </div>
+          <input type="file" id="file-import-alfa" accept=".xlsx,.xls,.csv">
+          <p style="font-size:11px; color:var(--cream-dim); margin:6px 0 0;">Berlaku untuk Program &amp; Tanggal yang dipilih di atas. Kolom Excel: No, ID, Nama, Kelas, Status (isi "Hadir" atau "Alfa"). Setelah import, tekan <b>Simpan Absen</b> untuk menyimpan ke server.</p>
+        </section>
+
+        <section class="block">
           <h2>Roster Absen</h2>
           <div class="search-box"><input class="field" id="cari-alfa" placeholder="Cari nama / ID…"></div>
           <div class="btn-row">
@@ -235,14 +245,18 @@ async function loadFromFirestore(){
 let saveSantriTimer = null;
 function saveSantriToFirestore(){
   clearTimeout(saveSantriTimer);
-  saveSantriTimer = setTimeout(async () => {
-    try{
-      await santriDocRef().set({ santri: state.santri });
-    }catch(e){
-      console.error(e);
-      showToast('Gagal menyimpan data santri. Cek koneksi internet.');
-    }
-  }, 300);
+  return new Promise((resolve, reject) => {
+    saveSantriTimer = setTimeout(async () => {
+      try{
+        await santriDocRef().set({ santri: state.santri });
+        resolve();
+      }catch(e){
+        console.error('Gagal menyimpan santri:', e);
+        showToast('Gagal menyimpan: ' + (e && e.message ? e.message : 'cek koneksi/izin Firestore.'));
+        reject(e);
+      }
+    }, 300);
+  });
 }
 
 let saveAlfaTimer = null;
@@ -322,7 +336,8 @@ function initTabHandlers(){
    5) SANTRI CRUD
    ====================================================================== */
 function initSantriHandlers(){
-  document.getElementById('btn-tambah-santri').addEventListener('click', () => {
+  document.getElementById('btn-tambah-santri').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-tambah-santri');
     const nama = document.getElementById('in-nama').value.trim();
     if(!nama){ showToast('Nama wajib diisi.'); return; }
     const santri = {
@@ -333,10 +348,21 @@ function initSantriHandlers(){
       kamar: document.getElementById('in-kamar').value.trim(),
     };
     state.santri.push(santri);
-    ['in-id','in-nama','in-alamat','in-kelas','in-kamar'].forEach(id => document.getElementById(id).value = '');
-    saveSantriToFirestore();
     renderAll();
-    showToast('Santri ditambahkan.');
+    btn.disabled = true;
+    btn.textContent = 'Menyimpan…';
+    try{
+      await saveSantriToFirestore();
+      ['in-id','in-nama','in-alamat','in-kelas','in-kamar'].forEach(id => document.getElementById(id).value = '');
+      showToast('Santri ditambahkan.');
+    }catch(e){
+      // Gagal simpan ke server -> batalkan penambahan lokal supaya tidak menyesatkan
+      state.santri.pop();
+      renderAll();
+    }finally{
+      btn.disabled = false;
+      btn.textContent = '+ Tambah Santri';
+    }
   });
 
   document.getElementById('cari-santri').addEventListener('input', renderSantriList);
@@ -517,6 +543,72 @@ function renderAlfaList(){
 }
 
 /* ======================================================================
+   5b) IMPORT / EXPORT EXCEL - ABSEN ALFA
+   ====================================================================== */
+function initAlfaImportExportHandlers(){
+  document.getElementById('btn-export-alfa').addEventListener('click', exportAlfaExcel);
+  document.getElementById('btn-import-alfa').addEventListener('click', () => document.getElementById('file-import-alfa').click());
+  document.getElementById('file-import-alfa').addEventListener('change', handleImportAlfaFile);
+}
+
+function exportAlfaExcel(){
+  const prog = document.getElementById('alfa-program').value;
+  const tgl = document.getElementById('alfa-tanggal').value || todayStr();
+  const rows = [...state.santri]
+    .sort((a, b) => a.nama.localeCompare(b.nama))
+    .map((s, i) => ({
+      No: i + 1,
+      ID: s.id || '',
+      Nama: s.nama || '',
+      Kelas: s.kelas || '',
+      Status: draftHadir[santriKey(s)] ? 'Hadir' : 'Alfa',
+    }));
+  if(rows.length === 0){ showToast('Belum ada data santri untuk diexport.'); return; }
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  // Nama sheet Excel maksimal 31 karakter & tidak boleh berisi karakter tertentu
+  const sheetName = prog.replace(/[\\/?*[\]:]/g, '').slice(0, 31) || 'Absen';
+  XLSX.utils.book_append_sheet(wb, ws, sheetName);
+  const safeProg = prog.replace(/[^a-zA-Z0-9]+/g, '-');
+  XLSX.writeFile(wb, `absen-${safeProg}-${tgl}.xlsx`);
+}
+
+function handleImportAlfaFile(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (evt) => {
+    try{
+      const wb = XLSX.read(evt.target.result, { type: 'binary' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+      let matched = 0, unmatched = 0;
+      rows.forEach(r => {
+        const id = String(r.ID || r.id || '').trim();
+        const nama = String(r.Nama || r.nama || '').trim();
+        const statusRaw = String(r.Status || r.status || '').trim().toLowerCase();
+        const hadir = statusRaw.startsWith('h'); // "Hadir" -> true, "Alfa"/lainnya/kosong -> false
+        const santri = state.santri.find(s =>
+          (id && String(s.id || '').trim() === id) ||
+          (!id && nama && s.nama.trim().toLowerCase() === nama.toLowerCase())
+        );
+        if(!santri){ unmatched++; return; }
+        const key = santriKey(santri);
+        if(hadir) draftHadir[key] = true; else delete draftHadir[key];
+        matched++;
+      });
+      renderAlfaList();
+      showToast(`${matched} santri diperbarui dari file` + (unmatched ? `, ${unmatched} baris tidak cocok.` : '.') + ' Tekan Simpan Absen untuk menyimpan.');
+    }catch(err){
+      console.error(err);
+      showToast('Gagal membaca file. Pastikan formatnya benar.');
+    }
+    e.target.value = '';
+  };
+  reader.readAsBinaryString(file);
+}
+
+/* ======================================================================
    6) RENDER ALL + INIT
    ====================================================================== */
 function renderAll(){
@@ -531,6 +623,7 @@ function renderAll(){
   initSantriHandlers();
   initImportExportHandlers();
   initAlfaHandlers();
+  initAlfaImportExportHandlers();
   // onAuthStateChanged (di initGateHandlers) yang menentukan tampilan gate/app/loading
 })();
 </script>
