@@ -235,21 +235,6 @@
           </div>
         </section>
 
-        <section class="block glass" style="padding:12px 16px;">
-          <h2 style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; margin:0;" id="toggle-ie-santri">
-            <span>Import / Export</span>
-            <button type="button" class="icon-btn" id="btn-toggle-ie-santri" style="font-size:10px; padding:4px 8px;">Tampilkan</button>
-          </h2>
-          <div id="box-ie-santri" class="hidden" style="margin-top:10px;">
-            <div class="btn-row">
-              <button class="btn-ghost" id="btn-import"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 19V5M6 11l6-6 6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Import Excel</button>
-              <button class="btn-ghost" id="btn-export"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M6 13l6 6 6-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Export Excel</button>
-            </div>
-            <input type="file" id="file-import" accept=".xlsx,.xls,.csv">
-            <p style="font-size:11px; color:var(--cream-dim); margin:6px 0 0;">Kolom Excel: No, ID, Nama, Alamat, Kelas, Kamar.</p>
-          </div>
-        </section>
-
         <section class="block glass">
           <h2>Daftar Santri</h2>
           <div class="search-box"><input class="field" id="cari-santri" placeholder="Cari nama / ID / kelas…"></div>
@@ -275,21 +260,6 @@
           <label class="flabel">Tanggal</label>
           <input class="field" type="date" id="alfa-tanggal">
           <p style="font-size:12px; color:var(--cream-dim); margin:0 0 8px;">Centang = <b>Alfa</b> (tidak hadir). Kosongkan centang untuk santri yang <b>Hadir</b>, lalu tekan Simpan.</p>
-        </section>
-
-        <section class="block glass" style="padding:12px 16px;">
-          <h2 style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; margin:0;" id="toggle-ie-alfa">
-            <span>Import / Export Absen</span>
-            <button type="button" class="icon-btn" id="btn-toggle-ie-alfa" style="font-size:10px; padding:4px 8px;">Tampilkan</button>
-          </h2>
-          <div id="box-ie-alfa" class="hidden" style="margin-top:10px;">
-            <div class="btn-row">
-              <button class="btn-ghost" id="btn-import-alfa"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 19V5M6 11l6-6 6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Import Excel</button>
-              <button class="btn-ghost" id="btn-export-alfa"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M6 13l6 6 6-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Export Excel</button>
-            </div>
-            <input type="file" id="file-import-alfa" accept=".xlsx,.xls,.csv">
-            <p style="font-size:11px; color:var(--cream-dim); margin:6px 0 0;">Berlaku untuk Program &amp; Tanggal yang dipilih di atas. Kolom Excel: No, ID, Nama, Kelas, Status (isi "Hadir" atau "Alfa"). Setelah import, tekan <b>Simpan Absen</b> untuk menyimpan ke server.</p>
-          </div>
         </section>
 
         <section class="block glass">
@@ -328,26 +298,43 @@
           <button class="btn-block" id="btn-tambah-izin">+ Tambah Izin</button>
         </section>
 
-        <section class="block glass" style="padding:12px 16px;">
-          <h2 style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; margin:0;" id="toggle-ie-izin">
-            <span>Import / Export Izin</span>
-            <button type="button" class="icon-btn" id="btn-toggle-ie-izin" style="font-size:10px; padding:4px 8px;">Tampilkan</button>
-          </h2>
-          <div id="box-ie-izin" class="hidden" style="margin-top:10px;">
-            <div class="btn-row">
-              <button class="btn-ghost" id="btn-import-izin"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 19V5M6 11l6-6 6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Import Excel</button>
-              <button class="btn-ghost" id="btn-export-izin"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M6 13l6 6 6-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Export Excel</button>
-            </div>
-            <input type="file" id="file-import-izin" accept=".xlsx,.xls,.csv">
-            <p style="font-size:11px; color:var(--cream-dim); margin:6px 0 0;">Kolom Excel: No, ID, Nama, Kelas, Mulai, Selesai, Keterangan. Tanggal format YYYY-MM-DD.</p>
-          </div>
-        </section>
-
         <section class="block glass">
           <h2>Daftar Perizinan</h2>
           <div class="search-box"><input class="field" id="cari-izin" placeholder="Cari nama / ID…"></div>
           <div id="list-izin"></div>
           <div class="empty hidden" id="list-izin-empty">Belum ada data izin.</div>
+        </section>
+      </section>
+
+      <section class="tab-panel" id="panel-data">
+        <section class="block glass" style="padding:12px 16px;">
+          <h2 style="margin:0 0 10px;">Import / Export Santri</h2>
+          <div class="btn-row">
+            <button class="btn-ghost" id="btn-import"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 19V5M6 11l6-6 6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Import Excel</button>
+            <button class="btn-ghost" id="btn-export"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M6 13l6 6 6-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Export Excel</button>
+          </div>
+          <input type="file" id="file-import" accept=".xlsx,.xls,.csv">
+          <p style="font-size:11px; color:var(--cream-dim); margin:6px 0 0;">Kolom Excel: No, ID, Nama, Alamat, Kelas, Kamar.</p>
+        </section>
+
+        <section class="block glass" style="padding:12px 16px;">
+          <h2 style="margin:0 0 10px;">Import / Export Absen</h2>
+          <div class="btn-row">
+            <button class="btn-ghost" id="btn-import-alfa"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 19V5M6 11l6-6 6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Import Excel</button>
+            <button class="btn-ghost" id="btn-export-alfa"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M6 13l6 6 6-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Export Excel</button>
+          </div>
+          <input type="file" id="file-import-alfa" accept=".xlsx,.xls,.csv">
+          <p style="font-size:11px; color:var(--cream-dim); margin:6px 0 0;">Berlaku untuk Program &amp; Tanggal yang dipilih di tab Alfa. Kolom Excel: No, ID, Nama, Kelas, Status (isi "Hadir" atau "Alfa"). Setelah import, buka tab Alfa lalu tekan <b>Simpan Absen</b> untuk menyimpan ke server.</p>
+        </section>
+
+        <section class="block glass" style="padding:12px 16px;">
+          <h2 style="margin:0 0 10px;">Import / Export Izin</h2>
+          <div class="btn-row">
+            <button class="btn-ghost" id="btn-import-izin"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 19V5M6 11l6-6 6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Import Excel</button>
+            <button class="btn-ghost" id="btn-export-izin"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M6 13l6 6 6-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Export Excel</button>
+          </div>
+          <input type="file" id="file-import-izin" accept=".xlsx,.xls,.csv">
+          <p style="font-size:11px; color:var(--cream-dim); margin:6px 0 0;">Kolom Excel: No, ID, Nama, Kelas, Mulai, Selesai, Keterangan. Tanggal format YYYY-MM-DD.</p>
         </section>
       </section>
     </main>
@@ -364,6 +351,10 @@
       <button class="tab-btn" data-tab="izin">
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="10.5" width="14" height="9.5" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="15" r="1.3" fill="currentColor"/></svg>
         <span class="dot"></span>Izin
+      </button>
+      <button class="tab-btn" data-tab="data">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3v13M12 16l-4-4M12 16l4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="dot"></span>Data
       </button>
     </nav>
   </div>
@@ -584,9 +575,11 @@ function applyAdminUiRestrictions(){
   document.getElementById('form-santri-title').closest('section.block').classList.toggle('hidden', !isAdmin);
   document.querySelector('.tab-btn[data-tab="izin"]').classList.toggle('hidden', !isAdmin);
   document.getElementById('panel-izin').classList.toggle('hidden', !isAdmin);
+  document.querySelector('.tab-btn[data-tab="data"]').classList.toggle('hidden', !isAdmin);
+  document.getElementById('panel-data').classList.toggle('hidden', !isAdmin);
   document.getElementById('block-rekap-alfa').classList.toggle('hidden', !isAdmin);
-  // Kalau akun non-admin sedang berada di tab Izin (mustahil, tapi jaga-jaga), pindah ke tab Santri.
-  if(!isAdmin && document.getElementById('panel-izin').classList.contains('active')){
+  // Kalau akun non-admin sedang berada di tab Izin/Data (mustahil, tapi jaga-jaga), pindah ke tab Santri.
+  if(!isAdmin && (document.getElementById('panel-izin').classList.contains('active') || document.getElementById('panel-data').classList.contains('active'))){
     document.querySelector('.tab-btn[data-tab="santri"]').click();
   }
 }
@@ -1276,6 +1269,7 @@ function initImportExportToggle(headerId, btnId, boxId){
   const header = document.getElementById(headerId);
   const btn = document.getElementById(btnId);
   const box = document.getElementById(boxId);
+  if(!header || !btn || !box) return;
   const toggle = () => {
     const willShow = box.classList.contains('hidden');
     box.classList.toggle('hidden', !willShow);
@@ -1288,9 +1282,6 @@ function initImportExportToggle(headerId, btnId, boxId){
 (function init(){
   initGateHandlers();
   initTabHandlers();
-  initImportExportToggle('toggle-ie-santri', 'btn-toggle-ie-santri', 'box-ie-santri');
-  initImportExportToggle('toggle-ie-alfa', 'btn-toggle-ie-alfa', 'box-ie-alfa');
-  initImportExportToggle('toggle-ie-izin', 'btn-toggle-ie-izin', 'box-ie-izin');
   initSantriHandlers();
   initImportExportHandlers();
   initAlfaHandlers();
