@@ -110,6 +110,7 @@
   .list-row .no{font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--cream-dim); width:20px; flex-shrink:0;}
   .list-row .name{font-weight:600; font-size:14px; letter-spacing:-0.005em;}
   .list-row .meta{font-size:11px; color:var(--cream-dim); font-family:'IBM Plex Mono',monospace; margin-top:2px;}
+  .list-row .key-line{font-weight:700; font-size:13px; color:var(--cream); margin-top:1px;}
 
   input.field, select.field{
     width:100%; padding:12px 13px; border-radius:12px; border:1px solid var(--ink-line); background:var(--ink-soft);
@@ -243,8 +244,8 @@
           <h2>Daftar Santri</h2>
           <div class="search-box"><input class="field" id="cari-santri" placeholder="Cari nama / ID…"></div>
           <div class="form-grid" style="margin-bottom:9px;">
-            <select class="field" id="santri-kelas-filter" style="margin-bottom:0;"><option value="">Semua Kelas</option></select>
-            <select class="field" id="santri-kamar-filter" style="margin-bottom:0;"><option value="">Semua Kamar</option></select>
+            <select class="field" id="santri-kelas-filter" style="margin-bottom:0;"><option value="">— Pilih Kelas —</option></select>
+            <select class="field" id="santri-kamar-filter" style="margin-bottom:0;"><option value="">— Pilih Kamar —</option></select>
           </div>
           <div class="count-label" id="count-label"></div>
           <div id="list-santri"></div>
@@ -779,8 +780,8 @@ function refreshSantriFilterOptions(){
       [...values].sort().map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
     el.value = [...values].includes(current) ? current : '';
   };
-  fillSelect('santri-kelas-filter', kelasSet, 'Semua Kelas');
-  fillSelect('santri-kamar-filter', kamarSet, 'Semua Kamar');
+  fillSelect('santri-kelas-filter', kelasSet, '— Pilih Kelas —');
+  fillSelect('santri-kamar-filter', kamarSet, '— Pilih Kamar —');
 }
 
 function renderSantriList(){
@@ -819,7 +820,8 @@ function renderSantriList(){
       <div class="no">${displayIdx + 1}</div>
       <div style="flex:1;">
         <div class="name" style="display:flex; flex-wrap:wrap; gap:6px; align-items:baseline;">${escapeHtml(s.nama)}<span style="font-weight:700;">${escapeHtml(s.alamat || '-')}</span></div>
-        <div class="meta">Kelas ${escapeHtml(s.kelas || '-')} · Kamar ${escapeHtml(s.kamar || '-')}</div>
+        <div class="key-line">Kelas ${escapeHtml(s.kelas || '-')}</div>
+        <div class="meta">Kamar ${escapeHtml(s.kamar || '-')}</div>
         <div class="wajib-tags">${escapeHtml(wajibText)}</div>
       </div>
       ${aksi}`;
@@ -1005,8 +1007,9 @@ function renderAlfaList(){
     const periode = izin ? (izin.selesai && izin.selesai !== izin.mulai ? `${izin.mulai} s/d ${izin.selesai}` : izin.mulai) : '';
     row.innerHTML = `
       <div style="flex:1;">
-        <div class="name">${escapeHtml(s.nama)}</div>
-        <div class="meta">ID: ${escapeHtml(s.id || '-')} · ${escapeHtml(s.kelas || '-')}</div>
+        <div class="name" style="display:flex; flex-wrap:wrap; gap:6px; align-items:baseline;">${escapeHtml(s.nama)}<span style="font-weight:700;">${escapeHtml(s.alamat || '-')}</span></div>
+        <div class="key-line">Kelas ${escapeHtml(s.kelas || '-')}</div>
+        <div class="meta">ID: ${escapeHtml(s.id || '-')}</div>
         ${izin ? `<div class="badge-lock" style="margin-top:4px;"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="10.5" width="14" height="9.5" rx="2" stroke="currentColor" stroke-width="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" stroke="currentColor" stroke-width="2"/></svg>Izin ${escapeHtml(periode)}${izin.keterangan ? ' · ' + escapeHtml(izin.keterangan) : ''}</div>` : ''}
       </div>
       ${izin ? '' : `<input type="checkbox" data-check="${escapeHtml(key)}" ${alfa ? 'checked' : ''} style="width:20px; height:20px; accent-color:var(--bloom);">`}`;
@@ -1203,6 +1206,7 @@ function deleteIzin(idx){
 function renderIzinList(){
   const q = document.getElementById('cari-izin').value.trim().toLowerCase();
   const container = document.getElementById('list-izin');
+  const bySantriKey = key => state.santri.find(s => santriKey(s) === key) || {};
   const indexed = state.izin.map((iz, i) => ({ iz, i }));
   const list = indexed.filter(({iz}) => !q ||
     iz.nama.toLowerCase().includes(q) || (iz.santriKey||'').toLowerCase().includes(q));
@@ -1211,11 +1215,13 @@ function renderIzinList(){
   document.getElementById('list-izin-empty').classList.toggle('hidden', state.izin.length > 0);
   list.forEach(({iz, i}) => {
     const periode = iz.selesai && iz.selesai !== iz.mulai ? `${iz.mulai} s/d ${iz.selesai}` : iz.mulai;
+    const s = bySantriKey(iz.santriKey);
     const row = document.createElement('div');
     row.className = 'list-row';
     row.innerHTML = `
       <div style="flex:1;">
-        <div class="name">${escapeHtml(iz.nama)}</div>
+        <div class="name" style="display:flex; flex-wrap:wrap; gap:6px; align-items:baseline;">${escapeHtml(iz.nama)}<span style="font-weight:700;">${escapeHtml(s.alamat || '-')}</span></div>
+        <div class="key-line">Kelas ${escapeHtml(s.kelas || '-')}</div>
         <div class="meta">${escapeHtml(periode)}</div>
         <div class="meta">${escapeHtml(iz.keterangan || '-')}</div>
       </div>
