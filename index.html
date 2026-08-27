@@ -391,6 +391,36 @@ const ADMIN_EMAILS = [
 ];
 
 const PROGRAMS = ['Diniyyah Pagi','Diniyyah Siang','Pos Pagi','Pos Siang','Ngaji Sore',"Muthola'ah","Penunggu Muthola'ah"];
+
+/* ======================================================================
+   SINKRONISASI KE GOOGLE SHEETS (opsional)
+   Isi dua nilai di bawah dengan URL Web App & token dari Apps Script
+   (lihat Code.gs). Selama SHEET_SYNC_URL masih kosong, fitur ini
+   otomatis nonaktif — aplikasi tetap berjalan normal tanpa Sheets.
+   ====================================================================== */
+const SHEET_SYNC_URL = 'https://script.google.com/macros/s/AKfycbyqKOsopxOHmUjNmwjqyiRCXhd6v1WNP3shsNpacG9EyJhp3swNjINyNLkKrt6jNVu-2w/exec'; // contoh: 'https://script.google.com/macros/s/AKfycb.../exec'
+const SHEET_SYNC_TOKEN = 'O88rlIfuw5mW_cL92VdW3MMFjVcziiH3'; // harus SAMA PERSIS dengan SECRET_TOKEN di Code.gs
+
+function syncAbsenToSheet(prog, tgl, bersih){
+  if(!SHEET_SYNC_URL) return; // belum dikonfigurasi, lewati diam-diam
+  const rows = state.santri
+    .filter(s => isWajib(s, prog))
+    .sort((a, b) => a.nama.localeCompare(b.nama))
+    .map(s => {
+      const key = santriKey(s);
+      const status = getActiveIzin(key, tgl) ? 'Izin' : (bersih[key] ? 'Hadir' : 'Alfa');
+      return { id: s.id || '', nama: s.nama || '', kelas: s.kelas || '', status };
+    });
+  // mode:'no-cors' = kirim "tembak-lupakan": kita tidak bisa membaca
+  // responsnya dari browser, tapi skrip di sisi Google tetap berjalan
+  // dan menulis ke Sheet. Ini pola standar untuk Apps Script Web App.
+  fetch(SHEET_SYNC_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ token: SHEET_SYNC_TOKEN, program: prog, tanggal: tgl, rows }),
+  }).catch(err => console.error('Gagal sinkron ke Sheets:', err));
+}
 const state = { uid: null, isAdmin: false, santri: [], izin: [], alfaByProgram: {} };
 // santri: [{id, nama, alamat, kelas, kamar, programWajib:[...] }] — programWajib undefined/kosong-field = wajib SEMUA program (kompatibilitas data lama)
 // izin: [{id, santriKey, nama, mulai, selesai, keterangan}] — selesai boleh sama dengan mulai (izin satu hari)
@@ -826,6 +856,7 @@ function initAlfaHandlers(){
     if(!state.alfaByProgram[prog]) state.alfaByProgram[prog] = {};
     state.alfaByProgram[prog][tgl] = bersih;
     saveAlfaToFirestore();
+    syncAbsenToSheet(prog, tgl, bersih);
     renderRekapAlfa();
     showToast('Absen ' + prog + ' tanggal ' + tgl + ' disimpan.');
   });
