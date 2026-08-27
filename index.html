@@ -239,10 +239,15 @@
 
         <section class="block glass">
           <h2>Daftar Santri</h2>
-          <div class="search-box"><input class="field" id="cari-santri" placeholder="Cari nama / ID / kelas…"></div>
+          <div class="search-box"><input class="field" id="cari-santri" placeholder="Cari nama / ID…"></div>
+          <div class="form-grid" style="margin-bottom:9px;">
+            <select class="field" id="santri-kelas-filter" style="margin-bottom:0;"><option value="">Semua Kelas</option></select>
+            <select class="field" id="santri-kamar-filter" style="margin-bottom:0;"><option value="">Semua Kamar</option></select>
+          </div>
           <div class="count-label" id="count-label"></div>
           <div id="list-santri"></div>
           <div class="empty hidden" id="list-santri-empty">Belum ada data santri.</div>
+          <div class="empty" id="list-santri-hint">Ketik nama/ID atau pilih filter Kelas/Kamar untuk menampilkan daftar santri.</div>
         </section>
       </section>
 
@@ -733,6 +738,8 @@ function initSantriHandlers(){
 
   document.getElementById('btn-batal-edit').addEventListener('click', () => resetSantriForm(true));
   document.getElementById('cari-santri').addEventListener('input', renderSantriList);
+  document.getElementById('santri-kelas-filter').addEventListener('change', renderSantriList);
+  document.getElementById('santri-kamar-filter').addEventListener('change', renderSantriList);
 }
 
 function deleteSantri(idx){
@@ -744,16 +751,43 @@ function deleteSantri(idx){
   renderAll();
 }
 
+function refreshSantriFilterOptions(){
+  const kelasSet = new Set(), kamarSet = new Set();
+  state.santri.forEach(s => {
+    if(s.kelas) kelasSet.add(s.kelas);
+    if(s.kamar) kamarSet.add(s.kamar);
+  });
+  const fillSelect = (id, values, allLabel) => {
+    const el = document.getElementById(id);
+    const current = el.value;
+    el.innerHTML = `<option value="">${allLabel}</option>` +
+      [...values].sort().map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+    el.value = [...values].includes(current) ? current : '';
+  };
+  fillSelect('santri-kelas-filter', kelasSet, 'Semua Kelas');
+  fillSelect('santri-kamar-filter', kamarSet, 'Semua Kamar');
+}
+
 function renderSantriList(){
   const q = document.getElementById('cari-santri').value.trim().toLowerCase();
+  const kelasFilter = document.getElementById('santri-kelas-filter').value;
+  const kamarFilter = document.getElementById('santri-kamar-filter').value;
   const container = document.getElementById('list-santri');
+  const aktif = !!(q || kelasFilter || kamarFilter);
+  document.getElementById('list-santri-hint').classList.toggle('hidden', aktif);
+  document.getElementById('count-label').classList.toggle('hidden', !aktif);
+  if(!aktif){
+    container.innerHTML = '';
+    document.getElementById('list-santri-empty').classList.add('hidden');
+    return;
+  }
   const indexed = state.santri.map((s, i) => ({ s, i }));
-  const list = indexed.filter(({s}) => !q ||
-    s.nama.toLowerCase().includes(q) ||
-    (s.id||'').toLowerCase().includes(q) ||
-    (s.kelas||'').toLowerCase().includes(q));
+  const list = indexed.filter(({s}) =>
+    (!q || s.nama.toLowerCase().includes(q) || (s.id||'').toLowerCase().includes(q)) &&
+    (!kelasFilter || s.kelas === kelasFilter) &&
+    (!kamarFilter || s.kamar === kamarFilter));
   container.innerHTML = '';
-  document.getElementById('list-santri-empty').classList.toggle('hidden', state.santri.length > 0);
+  document.getElementById('list-santri-empty').classList.toggle('hidden', list.length > 0);
   document.getElementById('count-label').textContent = list.length + ' dari ' + state.santri.length + ' santri';
   list.forEach(({s, i}, displayIdx) => {
     const row = document.createElement('div');
@@ -769,8 +803,7 @@ function renderSantriList(){
     row.innerHTML = `
       <div class="no">${displayIdx + 1}</div>
       <div style="flex:1;">
-        <div class="name">${escapeHtml(s.nama)}</div>
-        <div class="meta">${escapeHtml(s.alamat || '-')}</div>
+        <div class="name" style="display:flex; flex-wrap:wrap; gap:6px; align-items:baseline;">${escapeHtml(s.nama)}<span style="font-weight:700;">${escapeHtml(s.alamat || '-')}</span></div>
         <div class="meta">Kelas ${escapeHtml(s.kelas || '-')} · Kamar ${escapeHtml(s.kamar || '-')}</div>
         <div class="wajib-tags">${escapeHtml(wajibText)}</div>
       </div>
@@ -1258,6 +1291,7 @@ function handleImportIzinFile(e){
    7) RENDER ALL + INIT
    ====================================================================== */
 function renderAll(){
+  refreshSantriFilterOptions();
   renderSantriList();
   refreshAlfaKelasFilterOptions();
   loadDraftForCurrent();
