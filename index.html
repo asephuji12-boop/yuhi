@@ -293,6 +293,14 @@
           <div class="empty hidden" id="list-alfa-empty">Belum ada data santri. Tambahkan dulu di menu Santri.</div>
           <button class="btn-block" id="btn-simpan-alfa">Simpan Absen</button>
         </section>
+
+        <section class="block glass hidden" id="block-rekap-alfa">
+          <h2>Rekap Semua Petugas</h2>
+          <p style="font-size:11px; color:var(--cream-dim); margin:-6px 0 10px;">Khusus admin. Menggabungkan absen tersimpan dari semua program &amp; tanggal, siapa pun petugas yang mengisinya.</p>
+          <div class="search-box"><input class="field" id="cari-rekap-alfa" placeholder="Cari program / tanggal…"></div>
+          <div id="list-rekap-alfa"></div>
+          <div class="empty hidden" id="rekap-alfa-empty">Belum ada absen yang disimpan.</div>
+        </section>
       </section>
 
       <section class="tab-panel" id="panel-izin">
@@ -388,10 +396,10 @@ const state = { uid: null, isAdmin: false, santri: [], izin: [], alfaByProgram: 
 // izin: [{id, santriKey, nama, mulai, selesai, keterangan}] — selesai boleh sama dengan mulai (izin satu hari)
 // alfaByProgram[program][tanggal] = { santriId: true(hadir) }
 
-/* Data SANTRI + IZIN: satu dokumen BERSAMA untuk semua petugas */
+/* Data SANTRI + IZIN + ALFA: satu dokumen BERSAMA untuk semua petugas.
+   Semua yang login (admin maupun bukan) membaca & menulis dokumen yang sama,
+   jadi absen yang diisi siapa pun langsung terlihat oleh admin. */
 function santriDocRef(){ return db.collection('santri_app_shared').doc('data'); }
-/* Data ALFA: dokumen TERPISAH per akun Google (uid) */
-function alfaDocRef(){ return db.collection('santri_app_users').doc(state.uid); }
 
 function santriKey(s){ return s.id || s.nama; }
 
@@ -412,22 +420,18 @@ function getActiveIzin(key, tanggal){
    ====================================================================== */
 async function loadFromFirestore(){
   try{
-    const [santriSnap, alfaSnap] = await Promise.all([santriDocRef().get(), alfaDocRef().get()]);
+    const santriSnap = await santriDocRef().get();
 
     if(santriSnap.exists){
-      state.santri = santriSnap.data().santri || [];
-      state.izin = santriSnap.data().izin || [];
+      const data = santriSnap.data();
+      state.santri = data.santri || [];
+      state.izin = data.izin || [];
+      state.alfaByProgram = data.alfaByProgram || {};
     } else {
       state.santri = [];
       state.izin = [];
-      await santriDocRef().set({ santri: [], izin: [] });
-    }
-
-    if(alfaSnap.exists){
-      state.alfaByProgram = alfaSnap.data().alfaByProgram || {};
-    } else {
       state.alfaByProgram = {};
-      await alfaDocRef().set({ alfaByProgram: {} });
+      await santriDocRef().set({ santri: [], izin: [], alfaByProgram: {} });
     }
   }catch(e){
     console.error(e);
@@ -441,7 +445,7 @@ function saveSantriToFirestore(){
   return new Promise((resolve, reject) => {
     saveSantriTimer = setTimeout(async () => {
       try{
-        await santriDocRef().set({ santri: state.santri, izin: state.izin });
+        await santriDocRef().set({ santri: state.santri }, { merge: true });
         resolve();
       }catch(e){
         console.error('Gagal menyimpan santri:', e);
@@ -458,7 +462,7 @@ function saveIzinToFirestore(){
   return new Promise((resolve, reject) => {
     saveIzinTimer = setTimeout(async () => {
       try{
-        await santriDocRef().set({ santri: state.santri, izin: state.izin });
+        await santriDocRef().set({ izin: state.izin }, { merge: true });
         resolve();
       }catch(e){
         console.error('Gagal menyimpan izin:', e);
@@ -474,7 +478,7 @@ function saveAlfaToFirestore(){
   clearTimeout(saveAlfaTimer);
   saveAlfaTimer = setTimeout(async () => {
     try{
-      await alfaDocRef().set({ alfaByProgram: state.alfaByProgram });
+      await santriDocRef().set({ alfaByProgram: state.alfaByProgram }, { merge: true });
     }catch(e){
       console.error(e);
       showToast('Gagal menyimpan absen. Cek koneksi internet.');
@@ -503,6 +507,7 @@ function applyAdminUiRestrictions(){
   document.getElementById('form-santri-title').closest('section.block').classList.toggle('hidden', !isAdmin);
   document.querySelector('.tab-btn[data-tab="izin"]').classList.toggle('hidden', !isAdmin);
   document.getElementById('panel-izin').classList.toggle('hidden', !isAdmin);
+  document.getElementById('block-rekap-alfa').classList.toggle('hidden', !isAdmin);
   // Kalau akun non-admin sedang berada di tab Izin (mustahil, tapi jaga-jaga), pindah ke tab Santri.
   if(!isAdmin && document.getElementById('panel-izin').classList.contains('active')){
     document.querySelector('.tab-btn[data-tab="santri"]').click();
@@ -821,8 +826,12 @@ function initAlfaHandlers(){
     if(!state.alfaByProgram[prog]) state.alfaByProgram[prog] = {};
     state.alfaByProgram[prog][tgl] = bersih;
     saveAlfaToFirestore();
+    renderRekapAlfa();
     showToast('Absen ' + prog + ' tanggal ' + tgl + ' disimpan.');
   });
+
+  const cariRekap = document.getElementById('cari-rekap-alfa');
+  if(cariRekap) cariRekap.addEventListener('input', renderRekapAlfa);
 
   loadDraftForCurrent();
 }
@@ -865,6 +874,50 @@ function renderAlfaList(){
       if(cb.checked) draftHadir[cb.dataset.check] = true;
       else delete draftHadir[cb.dataset.check];
     });
+  });
+}
+
+/* Rekap gabungan (khusus admin): menjumlah Hadir/Alfa/Izin per Program+Tanggal
+   dari state.alfaByProgram, tanpa peduli akun mana yang menyimpannya. */
+function renderRekapAlfa(){
+  if(!state.isAdmin) return;
+  const searchEl = document.getElementById('cari-rekap-alfa');
+  const q = searchEl ? searchEl.value.trim().toLowerCase() : '';
+  const container = document.getElementById('list-rekap-alfa');
+  const rows = [];
+  PROGRAMS.forEach(prog => {
+    const byTanggal = state.alfaByProgram[prog] || {};
+    Object.keys(byTanggal).forEach(tgl => {
+      const wajibList = state.santri.filter(s => isWajib(s, prog));
+      const saved = byTanggal[tgl] || {};
+      let hadir = 0, izin = 0, alfa = 0;
+      wajibList.forEach(s => {
+        const key = santriKey(s);
+        if(getActiveIzin(key, tgl)) izin++;
+        else if(saved[key]) hadir++;
+        else alfa++;
+      });
+      rows.push({ prog, tgl, hadir, izin, alfa, total: wajibList.length });
+    });
+  });
+  rows.sort((a,b) => b.tgl.localeCompare(a.tgl) || a.prog.localeCompare(b.prog));
+  const filtered = rows.filter(r => !q || r.prog.toLowerCase().includes(q) || r.tgl.includes(q));
+  container.innerHTML = '';
+  document.getElementById('rekap-alfa-empty').classList.toggle('hidden', rows.length > 0);
+  filtered.forEach(r => {
+    const row = document.createElement('div');
+    row.className = 'list-row';
+    row.innerHTML = `
+      <div style="flex:1;">
+        <div class="name">${escapeHtml(r.prog)}</div>
+        <div class="meta">${escapeHtml(r.tgl)} · dari ${r.total} wajib</div>
+      </div>
+      <div style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:11px; line-height:1.6;">
+        <div style="color:var(--mint);">Hadir ${r.hadir}</div>
+        <div style="color:var(--bloom-soft);">Alfa ${r.alfa}</div>
+        <div style="color:var(--cream-dim);">Izin ${r.izin}</div>
+      </div>`;
+    container.appendChild(row);
   });
 }
 
@@ -1113,6 +1166,7 @@ function renderAll(){
   renderSantriList();
   loadDraftForCurrent();
   renderAlfaList();
+  renderRekapAlfa();
   refreshIzinSantriOptions();
   renderIzinList();
 }
