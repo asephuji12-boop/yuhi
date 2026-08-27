@@ -775,8 +775,8 @@ function renderSantriList(){
       <div class="no">${displayIdx + 1}</div>
       <div style="flex:1;">
         <div class="name">${escapeHtml(s.nama)}</div>
-        <div class="meta">ID: ${escapeHtml(s.id || '-')} · ${escapeHtml(s.kelas || '-')} · Kamar ${escapeHtml(s.kamar || '-')}</div>
         <div class="meta">${escapeHtml(s.alamat || '-')}</div>
+        <div class="meta">Kelas ${escapeHtml(s.kelas || '-')} · Kamar ${escapeHtml(s.kamar || '-')}</div>
         <div class="wajib-tags">${escapeHtml(wajibText)}</div>
       </div>
       ${aksi}`;
