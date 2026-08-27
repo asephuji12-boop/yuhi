@@ -252,10 +252,22 @@ const auth = firebase.auth();
    ====================================================================== */
 const ALLOWED_EMAILS = [
   'asephuji12@gmail.com',
+  'marhalahmutawasith@gmail.com',
+  'tarbiyyah71@gmail.com',
+];
+
+/* ======================================================================
+   DAFTAR ADMIN — subset dari ALLOWED_EMAILS di atas.
+   Hanya email di bawah ini yang boleh Tambah/Edit/Hapus Santri dan buka tab Izin.
+   Akun lain di ALLOWED_EMAILS tetap bisa login & pakai tab Absen, tapi read-only di tab Santri.
+   ====================================================================== */
+const ADMIN_EMAILS = [
+  'asephuji12@gmail.com',
+  'marhalahmutawasith@gmail.com',
 ];
 
 const PROGRAMS = ['Diniyyah Pagi','Diniyyah Siang','Pos Pagi','Pos Siang','Ngaji Sore',"Muthola'ah","Penunggu Muthola'ah"];
-const state = { uid: null, santri: [], izin: [], alfaByProgram: {} };
+const state = { uid: null, isAdmin: false, santri: [], izin: [], alfaByProgram: {} };
 // santri: [{id, nama, alamat, kelas, kamar, programWajib:[...] }] — programWajib undefined/kosong-field = wajib SEMUA program (kompatibilitas data lama)
 // izin: [{id, santriKey, nama, mulai, selesai, keterangan}] — selesai boleh sama dengan mulai (izin satu hari)
 // alfaByProgram[program][tanggal] = { santriId: true(hadir) }
@@ -363,6 +375,25 @@ function showToast(msg){
 }
 
 /* ======================================================================
+   2b) BATASAN AKSES ADMIN
+   Non-admin: tidak lihat form Tambah/Edit Santri, tidak lihat tombol Edit/Hapus
+   santri, dan tab Izin disembunyikan total.
+   Catatan: ini pembatasan tampilan (front-end). Karena data disimpan di
+   Firestore dengan dokumen bersama, keamanan sepenuhnya juga sebaiknya
+   diatur lewat Firestore Security Rules di console Firebase.
+   ====================================================================== */
+function applyAdminUiRestrictions(){
+  const isAdmin = state.isAdmin;
+  document.getElementById('form-santri-title').closest('section.block').classList.toggle('hidden', !isAdmin);
+  document.querySelector('.tab-btn[data-tab="izin"]').classList.toggle('hidden', !isAdmin);
+  document.getElementById('panel-izin').classList.toggle('hidden', !isAdmin);
+  // Kalau akun non-admin sedang berada di tab Izin (mustahil, tapi jaga-jaga), pindah ke tab Santri.
+  if(!isAdmin && document.getElementById('panel-izin').classList.contains('active')){
+    document.querySelector('.tab-btn[data-tab="santri"]').click();
+  }
+}
+
+/* ======================================================================
    3) LOGIN GOOGLE
    ====================================================================== */
 function initGateHandlers(){
@@ -384,6 +415,8 @@ function initGateHandlers(){
         return;
       }
       state.uid = user.uid;
+      state.isAdmin = ADMIN_EMAILS.map(e => e.toLowerCase()).includes(email);
+      applyAdminUiRestrictions();
       document.getElementById('gate-screen').classList.add('hidden');
       document.getElementById('loading-screen').classList.remove('hidden');
       await loadFromFirestore();
@@ -442,6 +475,7 @@ function resetSantriForm(){
 }
 
 function startEditSantri(idx){
+  if(!state.isAdmin){ showToast('Hanya admin yang bisa mengubah santri.'); return; }
   const s = state.santri[idx];
   if(!s) return;
   editingSantriIdx = idx;
@@ -461,6 +495,7 @@ function initSantriHandlers(){
   renderWajibChecklist(undefined);
 
   document.getElementById('btn-tambah-santri').addEventListener('click', async () => {
+    if(!state.isAdmin){ showToast('Hanya admin yang bisa menambah/mengubah santri.'); return; }
     const btn = document.getElementById('btn-tambah-santri');
     const nama = document.getElementById('in-nama').value.trim();
     if(!nama){ showToast('Nama wajib diisi.'); return; }
@@ -498,6 +533,7 @@ function initSantriHandlers(){
 }
 
 function deleteSantri(idx){
+  if(!state.isAdmin){ showToast('Hanya admin yang bisa menghapus santri.'); return; }
   if(!confirm('Hapus santri ini?')) return;
   if(editingSantriIdx === idx) resetSantriForm();
   state.santri.splice(idx, 1);
@@ -521,6 +557,12 @@ function renderSantriList(){
     row.className = 'list-row';
     const wajibList = Array.isArray(s.programWajib) ? s.programWajib : PROGRAMS;
     const wajibText = wajibList.length === PROGRAMS.length ? 'Wajib: semua program' : (wajibList.length ? 'Wajib: ' + wajibList.join(', ') : 'Wajib: tidak ada');
+    const aksi = state.isAdmin
+      ? `<div style="display:flex; flex-direction:column; gap:4px;">
+          <button class="btn-danger" data-edit="${i}" style="color:var(--mint);">Edit</button>
+          <button class="btn-danger" data-del="${i}">Hapus</button>
+        </div>`
+      : '';
     row.innerHTML = `
       <div class="no">${displayIdx + 1}</div>
       <div style="flex:1;">
@@ -529,10 +571,7 @@ function renderSantriList(){
         <div class="meta">${escapeHtml(s.alamat || '-')}</div>
         <div class="wajib-tags">${escapeHtml(wajibText)}</div>
       </div>
-      <div style="display:flex; flex-direction:column; gap:4px;">
-        <button class="btn-danger" data-edit="${i}" style="color:var(--mint);">Edit</button>
-        <button class="btn-danger" data-del="${i}">Hapus</button>
-      </div>`;
+      ${aksi}`;
     container.appendChild(row);
   });
   container.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => deleteSantri(Number(b.dataset.del))));
@@ -570,6 +609,7 @@ function exportExcel(){
 }
 
 function handleImportFile(e){
+  if(!state.isAdmin){ showToast('Hanya admin yang bisa import data santri.'); e.target.value = ''; return; }
   const file = e.target.files[0];
   if(!file) return;
   const reader = new FileReader();
@@ -789,6 +829,7 @@ function initIzinHandlers(){
   refreshIzinSantriOptions();
 
   document.getElementById('btn-tambah-izin').addEventListener('click', async () => {
+    if(!state.isAdmin){ showToast('Hanya admin yang bisa mengelola izin.'); return; }
     const btn = document.getElementById('btn-tambah-izin');
     const key = document.getElementById('izin-santri').value;
     const santri = state.santri.find(s => santriKey(s) === key);
@@ -829,6 +870,7 @@ function initIzinHandlers(){
 }
 
 function deleteIzin(idx){
+  if(!state.isAdmin){ showToast('Hanya admin yang bisa mengelola izin.'); return; }
   if(!confirm('Hapus data izin ini?')) return;
   state.izin.splice(idx, 1);
   saveIzinToFirestore();
@@ -895,6 +937,7 @@ function exportIzinExcel(){
 }
 
 function handleImportIzinFile(e){
+  if(!state.isAdmin){ showToast('Hanya admin yang bisa import data izin.'); e.target.value = ''; return; }
   const file = e.target.files[0];
   if(!file) return;
   const reader = new FileReader();
