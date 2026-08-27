@@ -285,6 +285,7 @@
         <section class="block glass">
           <h2>Roster Absen</h2>
           <div class="search-box"><input class="field" id="cari-alfa" placeholder="Cari nama / ID…"></div>
+          <select class="field" id="alfa-kelas-filter"><option value="">Semua Kelas</option></select>
           <div class="btn-row">
             <button class="btn-ghost" id="btn-centang-semua">Tandai Semua Alfa</button>
             <button class="btn-ghost" id="btn-kosongkan-semua">Hadir Semua (Kosongkan)</button>
@@ -859,14 +860,16 @@ function initAlfaHandlers(){
   const tglInput = document.getElementById('alfa-tanggal');
   tglInput.value = todayStr();
 
-  progSelect.addEventListener('change', () => { loadDraftForCurrent(); renderAlfaList(); });
+  progSelect.addEventListener('change', () => { refreshAlfaKelasFilterOptions(); loadDraftForCurrent(); renderAlfaList(); });
   tglInput.addEventListener('change', () => { loadDraftForCurrent(); renderAlfaList(); });
   document.getElementById('cari-alfa').addEventListener('input', renderAlfaList);
+  document.getElementById('alfa-kelas-filter').addEventListener('change', renderAlfaList);
 
   document.getElementById('btn-centang-semua').addEventListener('click', () => {
     const prog = progSelect.value;
     const tgl = tglInput.value || todayStr();
-    state.santri.filter(s => isWajib(s, prog)).forEach(s => {
+    const kelasFilter = document.getElementById('alfa-kelas-filter').value;
+    state.santri.filter(s => isWajib(s, prog) && (!kelasFilter || (s.kelas||'').trim() === kelasFilter)).forEach(s => {
       const key = santriKey(s);
       if(!getActiveIzin(key, tgl)) draftAlfa[key] = true;
     });
@@ -874,7 +877,8 @@ function initAlfaHandlers(){
   });
   document.getElementById('btn-kosongkan-semua').addEventListener('click', () => {
     const prog = progSelect.value;
-    state.santri.filter(s => isWajib(s, prog)).forEach(s => delete draftAlfa[santriKey(s)]);
+    const kelasFilter = document.getElementById('alfa-kelas-filter').value;
+    state.santri.filter(s => isWajib(s, prog) && (!kelasFilter || (s.kelas||'').trim() === kelasFilter)).forEach(s => delete draftAlfa[santriKey(s)]);
     renderAlfaList();
   });
 
@@ -895,7 +899,22 @@ function initAlfaHandlers(){
   const cariRekap = document.getElementById('cari-rekap-alfa');
   if(cariRekap) cariRekap.addEventListener('input', renderRekapAlfa);
 
+  refreshAlfaKelasFilterOptions();
   loadDraftForCurrent();
+}
+
+/* Isi ulang pilihan dropdown filter Kelas berdasarkan kelas yang benar-benar
+   dipakai oleh santri wajib program yang sedang dipilih. Kelas bebas teks
+   (bukan daftar tetap), jadi opsinya diambil dari data santri itu sendiri.
+   Pilihan yang sedang aktif dipertahankan kalau masih tersedia di daftar baru. */
+function refreshAlfaKelasFilterOptions(){
+  const prog = document.getElementById('alfa-program').value;
+  const select = document.getElementById('alfa-kelas-filter');
+  const current = select.value;
+  const wajibList = state.santri.filter(s => isWajib(s, prog));
+  const kelasList = [...new Set(wajibList.map(s => (s.kelas || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+  select.innerHTML = '<option value="">Semua Kelas</option>' + kelasList.map(k => `<option value="${escapeHtml(k)}">${escapeHtml(k)}</option>`).join('');
+  if(kelasList.includes(current)) select.value = current;
 }
 
 function loadDraftForCurrent(){
@@ -907,11 +926,15 @@ function loadDraftForCurrent(){
 
 function renderAlfaList(){
   const q = document.getElementById('cari-alfa').value.trim().toLowerCase();
+  const kelasFilter = document.getElementById('alfa-kelas-filter').value;
   const prog = document.getElementById('alfa-program').value;
   const tgl = document.getElementById('alfa-tanggal').value || todayStr();
   const container = document.getElementById('list-alfa');
   const wajibList = state.santri.filter(s => isWajib(s, prog));
-  const list = wajibList.filter(s => !q || s.nama.toLowerCase().includes(q) || (s.id||'').toLowerCase().includes(q));
+  const list = wajibList.filter(s =>
+    (!q || s.nama.toLowerCase().includes(q) || (s.id||'').toLowerCase().includes(q)) &&
+    (!kelasFilter || (s.kelas||'').trim() === kelasFilter)
+  );
   container.innerHTML = '';
   document.getElementById('list-alfa-empty').classList.toggle('hidden', wajibList.length > 0);
   list.sort((a,b) => a.nama.localeCompare(b.nama)).forEach(s => {
@@ -1226,6 +1249,7 @@ function handleImportIzinFile(e){
    ====================================================================== */
 function renderAll(){
   renderSantriList();
+  refreshAlfaKelasFilterOptions();
   loadDraftForCurrent();
   renderAlfaList();
   renderRekapAlfa();
