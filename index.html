@@ -112,19 +112,24 @@
     <main>
       <section class="tab-panel active" id="panel-santri">
         <section class="block">
-          <h2 id="form-santri-title">Tambah Santri</h2>
-          <div class="form-grid">
-            <div><label class="flabel">ID</label><input class="field" id="in-id"></div>
-            <div><label class="flabel">Kelas</label><input class="field" id="in-kelas"></div>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; gap:8px;">
+            <h2 id="form-santri-title" style="margin:0;">Tambah Santri</h2>
+            <button class="btn-ghost" id="btn-toggle-santri-form" style="flex:0 0 auto; padding:8px 12px;">+ Tambah Santri</button>
           </div>
-          <label class="flabel">Nama</label><input class="field" id="in-nama">
-          <label class="flabel">Alamat</label><input class="field" id="in-alamat">
-          <label class="flabel">Kamar</label><input class="field" id="in-kamar">
-          <label class="flabel">Wajib Ikut Program (centang yang wajib)</label>
-          <div class="chk-grid" id="chk-wajib-grid"></div>
-          <div class="btn-row-2">
-            <button class="btn-block" id="btn-tambah-santri" style="flex:1;">+ Tambah Santri</button>
-            <button class="btn-ghost hidden" id="btn-batal-edit" style="flex:0 0 auto;">Batal</button>
+          <div id="santri-form-body" class="hidden">
+            <div class="form-grid">
+              <div><label class="flabel">ID</label><input class="field" id="in-id"></div>
+              <div><label class="flabel">Kelas</label><input class="field" id="in-kelas"></div>
+            </div>
+            <label class="flabel">Nama</label><input class="field" id="in-nama">
+            <label class="flabel">Alamat</label><input class="field" id="in-alamat">
+            <label class="flabel">Kamar</label><input class="field" id="in-kamar">
+            <label class="flabel">Wajib Ikut Program (centang yang wajib)</label>
+            <div class="chk-grid" id="chk-wajib-grid"></div>
+            <div class="btn-row-2">
+              <button class="btn-block" id="btn-tambah-santri" style="flex:1;">+ Tambah Santri</button>
+              <button class="btn-ghost" id="btn-batal-edit" style="flex:0 0 auto;">Batal</button>
+            </div>
           </div>
         </section>
 
@@ -253,7 +258,7 @@ const auth = firebase.auth();
 const ALLOWED_EMAILS = [
   'asephuji12@gmail.com',
   'marhalahmutawasith@gmail.com',
-  'zakky6595@gmail.com',
+  'tarbiyyah71@gmail.com',
 ];
 
 /* ======================================================================
@@ -465,13 +470,18 @@ function getCheckedWajib(){
   return Array.from(document.querySelectorAll('#chk-wajib-grid [data-wajib]:checked')).map(cb => cb.dataset.wajib);
 }
 
-function resetSantriForm(){
+function setSantriFormOpen(open){
+  document.getElementById('santri-form-body').classList.toggle('hidden', !open);
+  document.getElementById('btn-toggle-santri-form').textContent = open ? 'Tutup' : '+ Tambah Santri';
+}
+
+function resetSantriForm(collapse){
   editingSantriIdx = null;
   ['in-id','in-nama','in-alamat','in-kelas','in-kamar'].forEach(id => document.getElementById(id).value = '');
   renderWajibChecklist(undefined);
   document.getElementById('form-santri-title').textContent = 'Tambah Santri';
   document.getElementById('btn-tambah-santri').textContent = '+ Tambah Santri';
-  document.getElementById('btn-batal-edit').classList.add('hidden');
+  if(collapse) setSantriFormOpen(false);
 }
 
 function startEditSantri(idx){
@@ -487,12 +497,17 @@ function startEditSantri(idx){
   renderWajibChecklist(s.programWajib);
   document.getElementById('form-santri-title').textContent = 'Edit Santri';
   document.getElementById('btn-tambah-santri').textContent = 'Simpan Perubahan';
-  document.getElementById('btn-batal-edit').classList.remove('hidden');
+  setSantriFormOpen(true);
   document.getElementById('form-santri-title').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function initSantriHandlers(){
   renderWajibChecklist(undefined);
+
+  document.getElementById('btn-toggle-santri-form').addEventListener('click', () => {
+    const isOpen = !document.getElementById('santri-form-body').classList.contains('hidden');
+    if(isOpen){ resetSantriForm(true); } else { resetSantriForm(false); setSantriFormOpen(true); }
+  });
 
   document.getElementById('btn-tambah-santri').addEventListener('click', async () => {
     if(!state.isAdmin){ showToast('Hanya admin yang bisa menambah/mengubah santri.'); return; }
@@ -516,7 +531,7 @@ function initSantriHandlers(){
     btn.textContent = isEdit ? 'Menyimpan…' : 'Menyimpan…';
     try{
       await saveSantriToFirestore();
-      resetSantriForm();
+      resetSantriForm(true);
       showToast(isEdit ? 'Perubahan santri disimpan.' : 'Santri ditambahkan.');
     }catch(e){
       // Gagal simpan ke server -> batalkan perubahan lokal supaya tidak menyesatkan
@@ -528,14 +543,14 @@ function initSantriHandlers(){
     }
   });
 
-  document.getElementById('btn-batal-edit').addEventListener('click', resetSantriForm);
+  document.getElementById('btn-batal-edit').addEventListener('click', () => resetSantriForm(true));
   document.getElementById('cari-santri').addEventListener('input', renderSantriList);
 }
 
 function deleteSantri(idx){
   if(!state.isAdmin){ showToast('Hanya admin yang bisa menghapus santri.'); return; }
   if(!confirm('Hapus santri ini?')) return;
-  if(editingSantriIdx === idx) resetSantriForm();
+  if(editingSantriIdx === idx) resetSantriForm(true);
   state.santri.splice(idx, 1);
   saveSantriToFirestore();
   renderAll();
