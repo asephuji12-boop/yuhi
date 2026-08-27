@@ -425,7 +425,7 @@ function syncAbsenToSheet(prog, tgl, bersih){
     .map(s => {
       const key = santriKey(s);
       const status = getActiveIzin(key, tgl) ? 'Izin' : (bersih[key] ? 'Alfa' : 'Hadir');
-      return { id: s.id || '', nama: s.nama || '', kelas: s.kelas || '', status };
+      return { id: s.id || '', nama: s.nama || '', kelas: s.kelas || '', alamat: s.alamat || '', kamar: s.kamar || '', status };
     });
   // mode:'no-cors' = kirim "tembak-lupakan": kita tidak bisa membaca
   // responsnya dari browser, tapi skrip di sisi Google tetap berjalan
