@@ -236,13 +236,18 @@
         </section>
 
         <section class="block glass">
-          <h2>Import / Export</h2>
-          <div class="btn-row">
-            <button class="btn-ghost" id="btn-import"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 19V5M6 11l6-6 6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Import Excel</button>
-            <button class="btn-ghost" id="btn-export"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M6 13l6 6 6-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Export Excel</button>
+          <h2 style="display:flex; align-items:center; justify-content:space-between; cursor:pointer;" id="toggle-ie-santri">
+            <span>Import / Export</span>
+            <button type="button" class="icon-btn" id="btn-toggle-ie-santri" style="font-size:11px; padding:5px 10px;">Tampilkan</button>
+          </h2>
+          <div id="box-ie-santri" class="hidden">
+            <div class="btn-row">
+              <button class="btn-ghost" id="btn-import"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 19V5M6 11l6-6 6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Import Excel</button>
+              <button class="btn-ghost" id="btn-export"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M6 13l6 6 6-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Export Excel</button>
+            </div>
+            <input type="file" id="file-import" accept=".xlsx,.xls,.csv">
+            <p style="font-size:11px; color:var(--cream-dim); margin:6px 0 0;">Kolom Excel: No, ID, Nama, Alamat, Kelas, Kamar.</p>
           </div>
-          <input type="file" id="file-import" accept=".xlsx,.xls,.csv">
-          <p style="font-size:11px; color:var(--cream-dim); margin:6px 0 0;">Kolom Excel: No, ID, Nama, Alamat, Kelas, Kamar.</p>
         </section>
 
         <section class="block glass">
@@ -273,13 +278,18 @@
         </section>
 
         <section class="block glass">
-          <h2>Import / Export Absen</h2>
-          <div class="btn-row">
-            <button class="btn-ghost" id="btn-import-alfa"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 19V5M6 11l6-6 6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Import Excel</button>
-            <button class="btn-ghost" id="btn-export-alfa"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M6 13l6 6 6-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Export Excel</button>
+          <h2 style="display:flex; align-items:center; justify-content:space-between; cursor:pointer;" id="toggle-ie-alfa">
+            <span>Import / Export Absen</span>
+            <button type="button" class="icon-btn" id="btn-toggle-ie-alfa" style="font-size:11px; padding:5px 10px;">Tampilkan</button>
+          </h2>
+          <div id="box-ie-alfa" class="hidden">
+            <div class="btn-row">
+              <button class="btn-ghost" id="btn-import-alfa"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 19V5M6 11l6-6 6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Import Excel</button>
+              <button class="btn-ghost" id="btn-export-alfa"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M6 13l6 6 6-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Export Excel</button>
+            </div>
+            <input type="file" id="file-import-alfa" accept=".xlsx,.xls,.csv">
+            <p style="font-size:11px; color:var(--cream-dim); margin:6px 0 0;">Berlaku untuk Program &amp; Tanggal yang dipilih di atas. Kolom Excel: No, ID, Nama, Kelas, Status (isi "Hadir" atau "Alfa"). Setelah import, tekan <b>Simpan Absen</b> untuk menyimpan ke server.</p>
           </div>
-          <input type="file" id="file-import-alfa" accept=".xlsx,.xls,.csv">
-          <p style="font-size:11px; color:var(--cream-dim); margin:6px 0 0;">Berlaku untuk Program &amp; Tanggal yang dipilih di atas. Kolom Excel: No, ID, Nama, Kelas, Status (isi "Hadir" atau "Alfa"). Setelah import, tekan <b>Simpan Absen</b> untuk menyimpan ke server.</p>
         </section>
 
         <section class="block glass">
@@ -319,13 +329,18 @@
         </section>
 
         <section class="block glass">
-          <h2>Import / Export Izin</h2>
-          <div class="btn-row">
-            <button class="btn-ghost" id="btn-import-izin"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 19V5M6 11l6-6 6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Import Excel</button>
-            <button class="btn-ghost" id="btn-export-izin"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M6 13l6 6 6-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Export Excel</button>
+          <h2 style="display:flex; align-items:center; justify-content:space-between; cursor:pointer;" id="toggle-ie-izin">
+            <span>Import / Export Izin</span>
+            <button type="button" class="icon-btn" id="btn-toggle-ie-izin" style="font-size:11px; padding:5px 10px;">Tampilkan</button>
+          </h2>
+          <div id="box-ie-izin" class="hidden">
+            <div class="btn-row">
+              <button class="btn-ghost" id="btn-import-izin"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 19V5M6 11l6-6 6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Import Excel</button>
+              <button class="btn-ghost" id="btn-export-izin"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M6 13l6 6 6-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Export Excel</button>
+            </div>
+            <input type="file" id="file-import-izin" accept=".xlsx,.xls,.csv">
+            <p style="font-size:11px; color:var(--cream-dim); margin:6px 0 0;">Kolom Excel: No, ID, Nama, Kelas, Mulai, Selesai, Keterangan. Tanggal format YYYY-MM-DD.</p>
           </div>
-          <input type="file" id="file-import-izin" accept=".xlsx,.xls,.csv">
-          <p style="font-size:11px; color:var(--cream-dim); margin:6px 0 0;">Kolom Excel: No, ID, Nama, Kelas, Mulai, Selesai, Keterangan. Tanggal format YYYY-MM-DD.</p>
         </section>
 
         <section class="block glass">
@@ -1257,9 +1272,25 @@ function renderAll(){
   renderIzinList();
 }
 
+function initImportExportToggle(headerId, btnId, boxId){
+  const header = document.getElementById(headerId);
+  const btn = document.getElementById(btnId);
+  const box = document.getElementById(boxId);
+  const toggle = () => {
+    const willShow = box.classList.contains('hidden');
+    box.classList.toggle('hidden', !willShow);
+    btn.textContent = willShow ? 'Sembunyikan' : 'Tampilkan';
+  };
+  header.addEventListener('click', toggle);
+  btn.addEventListener('click', (e) => { e.stopPropagation(); toggle(); });
+}
+
 (function init(){
   initGateHandlers();
   initTabHandlers();
+  initImportExportToggle('toggle-ie-santri', 'btn-toggle-ie-santri', 'box-ie-santri');
+  initImportExportToggle('toggle-ie-alfa', 'btn-toggle-ie-alfa', 'box-ie-alfa');
+  initImportExportToggle('toggle-ie-izin', 'btn-toggle-ie-izin', 'box-ie-izin');
   initSantriHandlers();
   initImportExportHandlers();
   initAlfaHandlers();
