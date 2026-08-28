@@ -260,15 +260,7 @@
           <div class="form-grid">
             <div>
               <label class="flabel">Program</label>
-              <select class="field" id="alfa-program" style="padding:10px 11px; font-size:13px;">
-                <option value="Diniyyah Pagi">Diniyyah Pagi</option>
-                <option value="Diniyyah Siang">Diniyyah Siang</option>
-                <option value="Pos Pagi">Pos Pagi</option>
-                <option value="Pos Siang">Pos Siang</option>
-                <option value="Ngaji Sore">Ngaji Sore</option>
-                <option value="Muthola'ah">Muthola'ah</option>
-                <option value="Penunggu Muthola'ah">Penunggu Muthola'ah</option>
-              </select>
+              <select class="field" id="alfa-program" style="padding:10px 11px; font-size:13px;"></select>
             </div>
             <div>
               <label class="flabel">Tanggal</label>
@@ -937,6 +929,7 @@ function initAlfaHandlers(){
   const progSelect = document.getElementById('alfa-program');
   const tglInput = document.getElementById('alfa-tanggal');
   tglInput.value = todayStr();
+  progSelect.innerHTML = PROGRAMS.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
 
   progSelect.addEventListener('change', () => { refreshAlfaKelasFilterOptions(); loadDraftForCurrent(); renderAlfaList(); });
   tglInput.addEventListener('change', () => { loadDraftForCurrent(); renderAlfaList(); });
