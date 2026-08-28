@@ -281,7 +281,7 @@
         <section class="block glass">
           <h2>Roster Absen</h2>
           <div class="search-box"><input class="field" id="cari-alfa" placeholder="Cari nama / ID…"></div>
-          <select class="field" id="alfa-kelas-filter"><option value="">Semua Kelas</option></select>
+          <select class="field" id="alfa-kelas-filter"></select>
           <div class="btn-row">
             <button class="btn-ghost" id="btn-centang-semua">Tandai Semua Alfa</button>
             <button class="btn-ghost" id="btn-kosongkan-semua">Hadir Semua (Kosongkan)</button>
@@ -973,8 +973,9 @@ function refreshAlfaKelasFilterOptions(){
   const current = select.value;
   const wajibList = state.santri.filter(s => isWajib(s, prog));
   const kelasList = [...new Set(wajibList.map(s => (s.kelas || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
-  select.innerHTML = '<option value="">Semua Kelas</option>' + kelasList.map(k => `<option value="${escapeHtml(k)}">${escapeHtml(k)}</option>`).join('');
+  select.innerHTML = kelasList.map(k => `<option value="${escapeHtml(k)}">${escapeHtml(k)}</option>`).join('');
   if(kelasList.includes(current)) select.value = current;
+  else if(kelasList.length) select.value = kelasList[0];
 }
 
 function loadDraftForCurrent(){
