@@ -193,11 +193,28 @@
     </svg>
     <div class="eyebrow">Manajemen Pesantren</div>
     <h1 class="font-display">Data Santri</h1>
-    <p>Masuk dengan akun Google untuk membuka data absen milikmu sendiri. Data tidak dibagikan ke akun lain.</p>
-    <button class="btn-primary" id="btn-google-login">
-      <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.9c1.7-1.56 2.7-3.87 2.7-6.62Z" fill="#4285F4"/><path d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.9-2.26c-.8.54-1.84.86-3.06.86-2.35 0-4.34-1.59-5.05-3.72H.95v2.33A9 9 0 0 0 9 18Z" fill="#34A853"/><path d="M3.95 10.7A5.4 5.4 0 0 1 3.67 9c0-.59.1-1.16.28-1.7V4.97H.95A9 9 0 0 0 0 9c0 1.45.35 2.83.95 4.03l3-2.33Z" fill="#FBBC05"/><path d="M9 3.58c1.32 0 2.51.46 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .95 4.97l3 2.33C4.66 5.17 6.65 3.58 9 3.58Z" fill="#EA4335"/></svg>
-      Masuk dengan Google
-    </button>
+    <p id="gate-desc">Masuk dengan nomor HP petugas. Kode OTP akan dikirim lewat SMS.</p>
+
+    <div id="otp-step-hp" style="width:100%; max-width:300px; text-align:left;">
+      <label class="flabel">Nomor HP</label>
+      <input class="field" type="tel" id="in-login-hp" placeholder="08xxxxxxxxxx" autocomplete="username" inputmode="numeric">
+      <button class="btn-primary" id="btn-otp-send" style="width:100%; justify-content:center; margin-top:6px;">
+        Kirim Kode OTP
+      </button>
+    </div>
+
+    <div id="otp-step-kode" class="hidden" style="width:100%; max-width:300px; text-align:left;">
+      <label class="flabel">Kode OTP</label>
+      <input class="field" type="text" id="in-login-otp" placeholder="6 digit kode" inputmode="numeric" autocomplete="one-time-code" maxlength="6">
+      <button class="btn-primary" id="btn-otp-verify" style="width:100%; justify-content:center; margin-top:6px;">
+        Verifikasi &amp; Masuk
+      </button>
+      <button class="btn-ghost" id="btn-otp-ganti-nomor" style="width:100%; justify-content:center; margin-top:8px;">
+        Ganti nomor HP
+      </button>
+    </div>
+
+    <div id="recaptcha-container"></div>
   </div>
 
   <div id="app-screen" class="hidden">
@@ -410,24 +427,31 @@ const db = firebase.firestore();
 const auth = firebase.auth();
 
 /* ======================================================================
-   DAFTAR PUTIH PETUGAS — hanya email di bawah ini yang boleh login.
-   Tambahkan/hapus email sesuai kebutuhan (huruf kecil semua, dipisah koma).
+   DAFTAR PUTIH PETUGAS — hanya nomor HP di bawah ini yang boleh login.
+   Format WAJIB E.164 (diawali +62, tanpa spasi/strip), sesuai format yang
+   dikembalikan Firebase Phone Auth. Contoh: 081234567890 -> '+6281234567890'.
    ====================================================================== */
-const ALLOWED_EMAILS = [
-  'asephuji12@gmail.com',
-  'marhalahmutawasith@gmail.com',
-  'tarbiyyah71@gmail.com',
+const ALLOWED_PHONES = [
+  '+6281234567890', // contoh — ganti dengan nomor HP petugas sebenarnya
 ];
 
 /* ======================================================================
-   DAFTAR ADMIN — subset dari ALLOWED_EMAILS di atas.
-   Hanya email di bawah ini yang boleh Tambah/Edit/Hapus Santri dan buka tab Izin.
-   Akun lain di ALLOWED_EMAILS tetap bisa login & pakai tab Absen, tapi read-only di tab Santri.
+   DAFTAR ADMIN — subset dari ALLOWED_PHONES di atas.
+   Hanya nomor HP di bawah ini yang boleh Tambah/Edit/Hapus Santri dan buka tab Izin.
+   Nomor lain di ALLOWED_PHONES tetap bisa login & pakai tab Absen, tapi read-only di tab Santri.
    ====================================================================== */
-const ADMIN_EMAILS = [
-  'asephuji12@gmail.com',
-  'marhalahmutawasith@gmail.com',
+const ADMIN_PHONES = [
+  '+6281234567890', // contoh — ganti dengan nomor HP admin sebenarnya
 ];
+
+/* Menormalkan input nomor HP jadi format E.164 (+62...) untuk dikirim ke Firebase. */
+function normalizeToE164(raw){
+  let p = (raw || '').replace(/[^\d]/g, '');
+  if(p.startsWith('0')) p = '62' + p.slice(1);
+  else if(p.startsWith('8')) p = '62' + p; // jaga-jaga kalau user ketik tanpa 0/62 di depan
+  else if(p.startsWith('620')) p = '62' + p.slice(3);
+  return '+' + p;
+}
 
 const PROGRAMS = ['Diniyyah Pagi','Diniyyah Siang','Pos Pagi','Pos Siang','Ngaji Sore',"Muthola'ah","Penunggu Muthola'ah",'Keaktifan Musyawaroh Harian','Keaktifan Musyawaroh Instansi','Ruqmannaum Malam','Absen Hadiri'];
 
@@ -618,38 +642,94 @@ function applyAdminUiRestrictions(){
 }
 
 /* ======================================================================
-   3) LOGIN GOOGLE
+   3) LOGIN NOMOR HP + KODE OTP (Firebase Phone Auth)
    ====================================================================== */
+let confirmationResult = null;
+let recaptchaVerifier = null;
+
+function getRecaptcha(){
+  if(!recaptchaVerifier){
+    recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', { size: 'invisible' });
+  }
+  return recaptchaVerifier;
+}
+
+function showOtpStep(kode){
+  document.getElementById('otp-step-hp').classList.toggle('hidden', kode);
+  document.getElementById('otp-step-kode').classList.toggle('hidden', !kode);
+  document.getElementById('gate-desc').textContent = kode
+    ? 'Masukkan kode OTP yang dikirim lewat SMS.'
+    : 'Masuk dengan nomor HP petugas. Kode OTP akan dikirim lewat SMS.';
+}
+
 function initGateHandlers(){
-  document.getElementById('btn-google-login').addEventListener('click', () => {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    auth.signInWithPopup(provider).catch(e => {
+  document.getElementById('btn-otp-send').addEventListener('click', () => {
+    const hpRaw = document.getElementById('in-login-hp').value.trim();
+    if(!hpRaw){
+      showToast('Isi nomor HP terlebih dahulu.');
+      return;
+    }
+    const e164 = normalizeToE164(hpRaw);
+    auth.signInWithPhoneNumber(e164, getRecaptcha()).then(result => {
+      confirmationResult = result;
+      showOtpStep(true);
+      showToast('Kode OTP terkirim ke ' + e164);
+    }).catch(e => {
       console.error(e);
-      showToast('Login gagal: ' + e.message);
+      let pesan = 'Gagal mengirim kode OTP.';
+      if(e.code === 'auth/invalid-phone-number') pesan = 'Format nomor HP tidak valid.';
+      else if(e.code === 'auth/too-many-requests') pesan = 'Terlalu banyak percobaan. Coba lagi nanti.';
+      showToast(pesan);
+      if(recaptchaVerifier){ recaptchaVerifier.render().then(id => grecaptcha.reset(id)); }
     });
   });
+
+  document.getElementById('btn-otp-verify').addEventListener('click', () => {
+    const kode = document.getElementById('in-login-otp').value.trim();
+    if(!kode || !confirmationResult){
+      showToast('Masukkan kode OTP.');
+      return;
+    }
+    confirmationResult.confirm(kode).catch(e => {
+      console.error(e);
+      let pesan = 'Kode OTP salah atau kedaluwarsa.';
+      if(e.code === 'auth/code-expired') pesan = 'Kode OTP kedaluwarsa, kirim ulang.';
+      showToast(pesan);
+    });
+  });
+
+  document.getElementById('btn-otp-ganti-nomor').addEventListener('click', () => {
+    confirmationResult = null;
+    document.getElementById('in-login-otp').value = '';
+    showOtpStep(false);
+  });
+
   document.getElementById('btn-logout').addEventListener('click', () => auth.signOut());
 
   auth.onAuthStateChanged(async (user) => {
     if(user){
-      const email = (user.email || '').toLowerCase();
-      if(!ALLOWED_EMAILS.map(e => e.toLowerCase()).includes(email)){
-        showToast('Email ' + email + ' belum diizinkan sebagai petugas.');
+      const phone = user.phoneNumber || '';
+      if(!ALLOWED_PHONES.includes(phone)){
+        showToast('Nomor ' + phone + ' belum diizinkan sebagai petugas.');
         await auth.signOut();
         return;
       }
       state.uid = user.uid;
-      state.isAdmin = ADMIN_EMAILS.map(e => e.toLowerCase()).includes(email);
+      state.isAdmin = ADMIN_PHONES.includes(phone);
       applyAdminUiRestrictions();
       document.getElementById('gate-screen').classList.add('hidden');
       document.getElementById('loading-screen').classList.remove('hidden');
       await loadFromFirestore();
       document.getElementById('loading-screen').classList.add('hidden');
       document.getElementById('app-screen').classList.remove('hidden');
-      document.getElementById('kode-label').textContent = user.displayName || user.email || '';
+      document.getElementById('kode-label').textContent = phone;
       renderAll();
     } else {
       state.uid = null;
+      confirmationResult = null;
+      document.getElementById('in-login-hp').value = '';
+      document.getElementById('in-login-otp').value = '';
+      showOtpStep(false);
       document.getElementById('app-screen').classList.add('hidden');
       document.getElementById('loading-screen').classList.add('hidden');
       document.getElementById('gate-screen').classList.remove('hidden');
