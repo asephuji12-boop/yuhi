@@ -354,6 +354,24 @@
           <input type="file" id="file-import-izin" accept=".xlsx,.xls,.csv">
           <p style="font-size:11px; color:var(--cream-dim); margin:6px 0 0;">Kolom Excel: No, ID, Nama, Kelas, Mulai, Selesai, Keterangan. Tanggal format YYYY-MM-DD.</p>
         </section>
+
+        <section class="block glass" style="padding:12px 16px;">
+          <h2 style="margin:0 0 10px;">Backup / Restore Semua Data</h2>
+          <div class="btn-row">
+            <button class="btn-ghost" id="btn-import-all"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 19V5M6 11l6-6 6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Import Semua Data</button>
+            <button class="btn-ghost" id="btn-export-all"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M6 13l6 6 6-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Export Semua Data</button>
+          </div>
+          <input type="file" id="file-import-all" accept=".json">
+          <p style="font-size:11px; color:var(--cream-dim); margin:6px 0 0;">Export menyimpan seluruh data (santri, absen, izin) dalam satu file <b>.json</b> sebagai cadangan lengkap. Import akan menimpa semua data yang sedang ada di aplikasi dengan isi file cadangan tersebut.</p>
+        </section>
+
+        <section class="block glass" style="padding:12px 16px; border-color:#a33;">
+          <h2 style="margin:0 0 10px; color:#e08080;">Hapus Semua Data</h2>
+          <div class="btn-row">
+            <button class="btn-ghost" id="btn-reset-all" style="border-color:#a33; color:#e08080;"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 7h16M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2m2 0-1 12a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L6 7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Hapus Semua Data dari Awal</button>
+          </div>
+          <p style="font-size:11px; color:var(--cream-dim); margin:6px 0 0;">Menghapus seluruh data santri, absen, dan izin dari aplikasi (mulai dari nol). File Excel yang sudah pernah diexport <b>tidak ikut terhapus</b>, karena tersimpan terpisah di perangkat Anda. Sebaiknya lakukan <b>Export Semua Data</b> dulu sebelum menghapus.</p>
+        </section>
       </section>
     </main>
 
@@ -1241,6 +1259,83 @@ function initIzinImportExportHandlers(){
   document.getElementById('file-import-izin').addEventListener('change', handleImportIzinFile);
 }
 
+/* ======================================================================
+   6c) BACKUP / RESTORE SEMUA DATA (JSON) & RESET
+   ====================================================================== */
+function initBackupRestoreHandlers(){
+  document.getElementById('btn-export-all').addEventListener('click', exportAllDataJson);
+  document.getElementById('btn-import-all').addEventListener('click', () => document.getElementById('file-import-all').click());
+  document.getElementById('file-import-all').addEventListener('change', handleImportAllFile);
+  document.getElementById('btn-reset-all').addEventListener('click', resetAllData);
+}
+
+function exportAllDataJson(){
+  const backup = {
+    jenis: 'backup-semua-data-santri',
+    dibuatPada: new Date().toISOString(),
+    santri: state.santri,
+    izin: state.izin,
+    alfaByProgram: state.alfaByProgram,
+  };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const tgl = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = `backup-semua-data-${tgl}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  showToast('Semua data berhasil diexport.');
+}
+
+function handleImportAllFile(e){
+  if(!state.isAdmin){ showToast('Hanya admin yang bisa import semua data.'); e.target.value = ''; return; }
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = async (evt) => {
+    try{
+      const data = JSON.parse(evt.target.result);
+      if(!data || (typeof data !== 'object') || !Array.isArray(data.santri)){
+        showToast('File tidak dikenali sebagai file cadangan yang valid.');
+        return;
+      }
+      if(!confirm('Import akan MENIMPA semua data santri, absen, dan izin yang sedang ada di aplikasi dengan isi file ini. Lanjutkan?')) return;
+      state.santri = Array.isArray(data.santri) ? data.santri : [];
+      state.izin = Array.isArray(data.izin) ? data.izin : [];
+      state.alfaByProgram = (data.alfaByProgram && typeof data.alfaByProgram === 'object') ? data.alfaByProgram : {};
+      await santriDocRef().set({ santri: state.santri, izin: state.izin, alfaByProgram: state.alfaByProgram, absenFormat: 'alfa' }, { merge: true });
+      renderAll();
+      showToast('Semua data berhasil diimport.');
+    }catch(err){
+      console.error(err);
+      showToast('Gagal membaca file cadangan. Pastikan file .json hasil Export Semua Data.');
+    }finally{
+      e.target.value = '';
+    }
+  };
+  reader.readAsText(file);
+}
+
+async function resetAllData(){
+  if(!state.isAdmin){ showToast('Hanya admin yang bisa menghapus semua data.'); return; }
+  if(!confirm('Semua data santri, absen, dan izin di aplikasi akan DIHAPUS dan dimulai dari awal. File Excel yang sudah pernah diexport tidak ikut terhapus. Yakin lanjut?')) return;
+  if(!confirm('Konfirmasi sekali lagi: data yang dihapus tidak bisa dikembalikan kecuali Anda punya file cadangan (Export Semua Data). Lanjutkan hapus semua data?')) return;
+  try{
+    state.santri = [];
+    state.izin = [];
+    state.alfaByProgram = {};
+    await santriDocRef().set({ santri: [], izin: [], alfaByProgram: {}, absenFormat: 'alfa' });
+    renderAll();
+    showToast('Semua data aplikasi telah dihapus.');
+  }catch(err){
+    console.error(err);
+    showToast('Gagal menghapus data. Cek koneksi internet.');
+  }
+}
+
 function exportIzinExcel(){
   const bySantri = key => state.santri.find(s => santriKey(s) === key) || {};
   const rows = [...state.izin]
@@ -1346,6 +1441,7 @@ function initImportExportToggle(headerId, btnId, boxId){
   initAlfaImportExportHandlers();
   initIzinHandlers();
   initIzinImportExportHandlers();
+  initBackupRestoreHandlers();
   // onAuthStateChanged (di initGateHandlers) yang menentukan tampilan gate/app/loading
 })();
 </script>
