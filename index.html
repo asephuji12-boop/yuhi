@@ -150,7 +150,7 @@
   }
   .count-label{font-size:11.5px; color:var(--cream-dim); margin-bottom:10px; font-family:'IBM Plex Mono',monospace;}
   #loading-screen{flex:1; display:flex; align-items:center; justify-content:center; font-size:13px; color:var(--cream-dim); font-family:'IBM Plex Mono',monospace; letter-spacing:0.04em; gap:10px; position:relative; z-index:1;}
-  #file-import,#file-import-alfa,#file-import-izin,#file-import-sakit{display:none;}
+  #file-import,#file-import-alfa,#file-import-izin{display:none;}
 
   .chk-grid{display:grid; grid-template-columns:1fr 1fr; gap:7px 10px; margin:2px 0 12px;}
   .chk-item{display:flex; align-items:center; gap:7px; font-size:12.5px; color:var(--cream-dim);}
@@ -273,7 +273,7 @@
 
       <section class="tab-panel" id="panel-alfa">
         <section class="block glass" style="padding:12px 16px;">
-          <h2 style="margin:0 0 10px;">Absen Alfa (Manual)</h2>
+          <h2 style="margin:0 0 10px;">Absen (Manual)</h2>
           <div class="form-grid">
             <div>
               <label class="flabel">Program</label>
@@ -284,7 +284,7 @@
               <input class="field" type="date" id="alfa-tanggal" style="padding:10px 11px; font-size:13px;">
             </div>
           </div>
-          <p style="font-size:12px; color:var(--cream-dim); margin:0 0 8px;">Centang = <b>Alfa</b> (tidak hadir). Kosongkan centang untuk santri yang <b>Hadir</b>, lalu tekan Simpan.</p>
+          <p style="font-size:12px; color:var(--cream-dim); margin:0 0 8px;">Centang salah satu: <b>Alfa</b> (tidak hadir tanpa keterangan), <b>Sakit</b>, atau <b>Izin</b>. Kosongkan semua centang untuk santri yang <b>Hadir</b>, lalu tekan Simpan.</p>
         </section>
 
         <section class="block glass">
@@ -301,39 +301,6 @@
           <div class="empty hidden" id="list-alfa-empty">Belum ada data santri. Tambahkan dulu di menu Santri.</div>
           <div class="empty" id="list-alfa-hint">Pilih Kelas atau Kamar untuk menampilkan roster absen.</div>
           <button class="btn-block" id="btn-simpan-alfa">Simpan Absen</button>
-        </section>
-      </section>
-
-      <section class="tab-panel" id="panel-sakit">
-        <section class="block glass" style="padding:12px 16px;">
-          <h2 style="margin:0 0 10px;">Absen Sakit (Manual)</h2>
-          <div class="form-grid">
-            <div>
-              <label class="flabel">Program</label>
-              <select class="field" id="sakit-program" style="padding:10px 11px; font-size:13px;"></select>
-            </div>
-            <div>
-              <label class="flabel">Tanggal</label>
-              <input class="field" type="date" id="sakit-tanggal" style="padding:10px 11px; font-size:13px;">
-            </div>
-          </div>
-          <p style="font-size:12px; color:var(--cream-dim); margin:0 0 8px;">Centang = <b>Sakit</b> (tidak hadir karena sakit, tidak dihitung Alfa). Kosongkan centang untuk santri yang <b>Hadir</b>, lalu tekan Simpan.</p>
-        </section>
-
-        <section class="block glass">
-          <h2>Roster Sakit</h2>
-          <div class="form-grid" style="margin-bottom:9px;">
-            <select class="field" id="sakit-kelas-filter" style="margin-bottom:0;"></select>
-            <select class="field" id="sakit-kamar-filter" style="margin-bottom:0;"><option value="">— Pilih Kamar —</option></select>
-          </div>
-          <div class="btn-row">
-            <button class="btn-ghost" id="btn-centang-semua-sakit">Tandai Semua Sakit</button>
-            <button class="btn-ghost" id="btn-kosongkan-semua-sakit">Hadir Semua (Kosongkan)</button>
-          </div>
-          <div id="list-sakit"></div>
-          <div class="empty hidden" id="list-sakit-empty">Belum ada data santri. Tambahkan dulu di menu Santri.</div>
-          <div class="empty" id="list-sakit-hint">Pilih Kelas atau Kamar untuk menampilkan roster sakit.</div>
-          <button class="btn-block" id="btn-simpan-sakit">Simpan Absen Sakit</button>
         </section>
       </section>
 
@@ -390,17 +357,7 @@
             <button class="btn-ghost" id="btn-export-alfa"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M6 13l6 6 6-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Export Excel</button>
           </div>
           <input type="file" id="file-import-alfa" accept=".xlsx,.xls,.csv">
-          <p style="font-size:11px; color:var(--cream-dim); margin:6px 0 0;">Berlaku untuk Program &amp; Tanggal yang dipilih di tab Alfa. Kolom Excel: No, ID, Nama, Kelas, Status (isi "Hadir" atau "Alfa"). <b>Pencocokan baris memakai kolom ID</b> — baris tanpa ID tidak akan cocok dengan santri manapun. Setelah import, buka tab Alfa lalu tekan <b>Simpan Absen</b> untuk menyimpan ke server.</p>
-        </section>
-
-        <section class="block glass" style="padding:12px 16px;">
-          <h2 style="margin:0 0 10px;">Import / Export Sakit</h2>
-          <div class="btn-row">
-            <button class="btn-ghost" id="btn-import-sakit"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 19V5M6 11l6-6 6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Import Excel</button>
-            <button class="btn-ghost" id="btn-export-sakit"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M6 13l6 6 6-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Export Excel</button>
-          </div>
-          <input type="file" id="file-import-sakit" accept=".xlsx,.xls,.csv">
-          <p style="font-size:11px; color:var(--cream-dim); margin:6px 0 0;">Berlaku untuk Program &amp; Tanggal yang dipilih di tab Sakit. Kolom Excel: No, ID, Nama, Kelas, Status (isi "Hadir" atau "Sakit"). <b>Pencocokan baris memakai kolom ID</b> — baris tanpa ID tidak akan cocok dengan santri manapun. Setelah import, buka tab Sakit lalu tekan <b>Simpan Absen Sakit</b> untuk menyimpan ke server.</p>
+          <p style="font-size:11px; color:var(--cream-dim); margin:6px 0 0;">Berlaku untuk Program &amp; Tanggal yang dipilih di tab Alfa. Kolom Excel: No, ID, Nama, Kelas, Status (isi "Hadir", "Alfa", "Sakit", atau "Izin"). <b>Pencocokan baris memakai kolom ID</b> — baris tanpa ID tidak akan cocok dengan santri manapun. Setelah import, buka tab Alfa lalu tekan <b>Simpan Absen</b> untuk menyimpan ke server.</p>
         </section>
 
         <section class="block glass" style="padding:12px 16px;">
@@ -441,10 +398,6 @@
       <button class="tab-btn" data-tab="alfa">
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="4" width="14" height="17" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M9 3.5h6v2H9z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8.5 12.5 10.5 14.5 15.5 10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span class="dot"></span>Alfa
-      </button>
-      <button class="tab-btn" data-tab="sakit">
-        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="4" width="14" height="17" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M9 3.5h6v2H9z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 10v6M9 13h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-        <span class="dot"></span>Sakit
       </button>
       <button class="tab-btn" data-tab="izin">
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="10.5" width="14" height="9.5" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="15" r="1.3" fill="currentColor"/></svg>
@@ -545,11 +498,12 @@ function syncAbsenToSheet(prog, tgl, bersih){
     body: JSON.stringify({ token: SHEET_SYNC_TOKEN, program: prog, tanggal: tgl, rows }),
   }).catch(err => console.error('Gagal sinkron ke Sheets:', err));
 }
-const state = { uid: null, isAdmin: false, santri: [], izin: [], alfaByProgram: {}, sakitByProgram: {} };
+const state = { uid: null, isAdmin: false, santri: [], izin: [], alfaByProgram: {}, sakitByProgram: {}, izinHarianByProgram: {} };
 // santri: [{id, nama, alamat, kelas, kamar, programWajib:[...] }] — programWajib undefined/kosong-field = wajib SEMUA program (kompatibilitas data lama)
-// izin: [{id, santriKey, nama, mulai, selesai, keterangan}] — ini data "Pulang", selesai boleh sama dengan mulai (satu hari)
+// izin: [{id, santriKey, nama, mulai, selesai, keterangan}] — ini data "Pulang" (rentang tanggal, dikelola admin di tab Pulang), selesai boleh sama dengan mulai (satu hari)
 // alfaByProgram[program][tanggal] = { santriId: true(ALFA) } — tidak ada entri = Hadir
 // sakitByProgram[program][tanggal] = { santriId: true(SAKIT) } — tidak ada entri = Hadir (sama seperti alfaByProgram)
+// izinHarianByProgram[program][tanggal] = { santriId: true(IZIN harian dari tab Alfa) } — status harian terpisah dari data "Pulang" di atas, tidak muncul di tab Pulang
 
 /* Data SANTRI + IZIN + ALFA: satu dokumen BERSAMA untuk semua petugas.
    Semua yang login (admin maupun bukan) membaca & menulis dokumen yang sama,
@@ -580,6 +534,12 @@ function getActiveSakit(key, program, tanggal){
   return !!(byTanggal && byTanggal[tanggal] && byTanggal[tanggal][key]);
 }
 
+/* Cek status "Izin" harian (centang di tab Alfa) — terpisah dari data "Pulang" (state.izin) */
+function getActiveIzinHarian(key, program, tanggal){
+  const byTanggal = state.izinHarianByProgram[program];
+  return !!(byTanggal && byTanggal[tanggal] && byTanggal[tanggal][key]);
+}
+
 /* ======================================================================
    2) LOAD / SAVE
    ====================================================================== */
@@ -593,13 +553,15 @@ async function loadFromFirestore(){
       state.izin = data.izin || [];
       state.alfaByProgram = data.alfaByProgram || {};
       state.sakitByProgram = data.sakitByProgram || {};
+      state.izinHarianByProgram = data.izinHarianByProgram || {};
       await migrateAlfaFormatIfNeeded(data);
     } else {
       state.santri = [];
       state.izin = [];
       state.alfaByProgram = {};
       state.sakitByProgram = {};
-      await santriDocRef().set({ santri: [], izin: [], alfaByProgram: {}, sakitByProgram: {}, absenFormat: 'alfa' });
+      state.izinHarianByProgram = {};
+      await santriDocRef().set({ santri: [], izin: [], alfaByProgram: {}, sakitByProgram: {}, izinHarianByProgram: {}, absenFormat: 'alfa' });
     }
   }catch(e){
     console.error(e);
@@ -693,6 +655,19 @@ function saveSakitToFirestore(){
     }catch(e){
       console.error(e);
       showToast('Gagal menyimpan absen sakit. Cek koneksi internet.');
+    }
+  }, 300);
+}
+
+let saveIzinHarianTimer = null;
+function saveIzinHarianToFirestore(){
+  clearTimeout(saveIzinHarianTimer);
+  saveIzinHarianTimer = setTimeout(async () => {
+    try{
+      await santriDocRef().set({ izinHarianByProgram: state.izinHarianByProgram }, { merge: true });
+    }catch(e){
+      console.error(e);
+      showToast('Gagal menyimpan absen izin. Cek koneksi internet.');
     }
   }, 300);
 }
@@ -1171,6 +1146,8 @@ function handleImportFile(e){
    5) ABSEN ALFA (per program, manual)
    ====================================================================== */
 let draftAlfa = {};
+let draftSakit = {};
+let draftIzinHarian = {};
 
 function todayStr(){
   const d = new Date();
@@ -1196,7 +1173,7 @@ function initAlfaHandlers(){
     if(!kelasFilter && !kamarFilter){ showToast('Pilih Kelas atau Kamar terlebih dahulu.'); return; }
     state.santri.filter(s => isWajib(s, prog) && (!kelasFilter || (s.kelas||'').trim() === kelasFilter) && (!kamarFilter || (s.kamar||'').trim() === kamarFilter)).forEach(s => {
       const key = santriKey(s);
-      if(!getActiveIzin(key, tgl) && !getActiveSakit(key, prog, tgl)) draftAlfa[key] = true;
+      if(!getActiveIzin(key, tgl)){ draftAlfa[key] = true; delete draftSakit[key]; delete draftIzinHarian[key]; }
     });
     renderAlfaList();
   });
@@ -1205,20 +1182,31 @@ function initAlfaHandlers(){
     const kelasFilter = document.getElementById('alfa-kelas-filter').value;
     const kamarFilter = document.getElementById('alfa-kamar-filter').value;
     if(!kelasFilter && !kamarFilter){ showToast('Pilih Kelas atau Kamar terlebih dahulu.'); return; }
-    state.santri.filter(s => isWajib(s, prog) && (!kelasFilter || (s.kelas||'').trim() === kelasFilter) && (!kamarFilter || (s.kamar||'').trim() === kamarFilter)).forEach(s => delete draftAlfa[santriKey(s)]);
+    state.santri.filter(s => isWajib(s, prog) && (!kelasFilter || (s.kelas||'').trim() === kelasFilter) && (!kamarFilter || (s.kamar||'').trim() === kamarFilter)).forEach(s => {
+      const key = santriKey(s);
+      delete draftAlfa[key]; delete draftSakit[key]; delete draftIzinHarian[key];
+    });
     renderAlfaList();
   });
 
   document.getElementById('btn-simpan-alfa').addEventListener('click', () => {
     const prog = progSelect.value;
     const tgl = tglInput.value || todayStr();
-    // Buang entri santri yang sedang terkunci (pulang/sakit) supaya tidak ikut tersimpan sebagai hadir/alfa
-    const bersih = {};
-    Object.keys(draftAlfa).forEach(key => { if(!getActiveIzin(key, tgl) && !getActiveSakit(key, prog, tgl)) bersih[key] = draftAlfa[key]; });
+    // Buang entri santri yang sedang terkunci (pulang) supaya tidak ikut tersimpan
+    const bersihAlfa = {}, bersihSakit = {}, bersihIzinHarian = {};
+    Object.keys(draftAlfa).forEach(key => { if(!getActiveIzin(key, tgl)) bersihAlfa[key] = draftAlfa[key]; });
+    Object.keys(draftSakit).forEach(key => { if(!getActiveIzin(key, tgl)) bersihSakit[key] = draftSakit[key]; });
+    Object.keys(draftIzinHarian).forEach(key => { if(!getActiveIzin(key, tgl)) bersihIzinHarian[key] = draftIzinHarian[key]; });
     if(!state.alfaByProgram[prog]) state.alfaByProgram[prog] = {};
-    state.alfaByProgram[prog][tgl] = bersih;
+    state.alfaByProgram[prog][tgl] = bersihAlfa;
+    if(!state.sakitByProgram[prog]) state.sakitByProgram[prog] = {};
+    state.sakitByProgram[prog][tgl] = bersihSakit;
+    if(!state.izinHarianByProgram[prog]) state.izinHarianByProgram[prog] = {};
+    state.izinHarianByProgram[prog][tgl] = bersihIzinHarian;
     saveAlfaToFirestore();
-    syncAbsenToSheet(prog, tgl, bersih);
+    saveSakitToFirestore();
+    saveIzinHarianToFirestore();
+    syncAbsenToSheet(prog, tgl, bersihAlfa);
     renderRekapAlfa();
     showToast('Absen ' + prog + ' tanggal ' + tgl + ' disimpan.');
   });
@@ -1262,8 +1250,12 @@ function refreshAlfaKamarFilterOptions(){
 function loadDraftForCurrent(){
   const prog = document.getElementById('alfa-program').value;
   const tgl = document.getElementById('alfa-tanggal').value || todayStr();
-  const saved = (state.alfaByProgram[prog] && state.alfaByProgram[prog][tgl]) || {};
-  draftAlfa = { ...saved };
+  const savedAlfa = (state.alfaByProgram[prog] && state.alfaByProgram[prog][tgl]) || {};
+  const savedSakit = (state.sakitByProgram[prog] && state.sakitByProgram[prog][tgl]) || {};
+  const savedIzinHarian = (state.izinHarianByProgram[prog] && state.izinHarianByProgram[prog][tgl]) || {};
+  draftAlfa = { ...savedAlfa };
+  draftSakit = { ...savedSakit };
+  draftIzinHarian = { ...savedIzinHarian };
 }
 
 function renderAlfaList(){
@@ -1289,28 +1281,53 @@ function renderAlfaList(){
   list.sort((a,b) => a.nama.localeCompare(b.nama)).forEach(s => {
     const key = santriKey(s);
     const alfa = !!draftAlfa[key];
-    const izin = getActiveIzin(key, tgl);
-    const sakit = !izin && getActiveSakit(key, prog, tgl);
-    const terkunci = izin || sakit;
-    const row = document.createElement('label');
+    const sakit = !!draftSakit[key];
+    const izinH = !!draftIzinHarian[key];
+    const izin = getActiveIzin(key, tgl); // data "Pulang" (rentang tanggal, dari tab Pulang) — mengunci total
+    const terkunci = !!izin;
+    const row = document.createElement('div');
     row.className = 'list-row' + (terkunci ? ' locked' : '');
-    row.style.cursor = terkunci ? 'default' : 'pointer';
     const periode = izin ? (izin.selesai && izin.selesai !== izin.mulai ? `${izin.mulai} s/d ${izin.selesai}` : izin.mulai) : '';
+    const statusBoxes = `
+      <div style="display:flex; gap:12px; align-items:center; flex-shrink:0;">
+        <label style="display:flex; flex-direction:column; align-items:center; gap:3px; font-size:10px; color:var(--cream-dim); cursor:pointer;">
+          <input type="checkbox" data-status="alfa" data-key="${escapeHtml(key)}" ${alfa ? 'checked' : ''} style="width:20px; height:20px; accent-color:var(--bloom);">
+          Alfa
+        </label>
+        <label style="display:flex; flex-direction:column; align-items:center; gap:3px; font-size:10px; color:var(--cream-dim); cursor:pointer;">
+          <input type="checkbox" data-status="sakit" data-key="${escapeHtml(key)}" ${sakit ? 'checked' : ''} style="width:20px; height:20px; accent-color:var(--amber);">
+          Sakit
+        </label>
+        <label style="display:flex; flex-direction:column; align-items:center; gap:3px; font-size:10px; color:var(--cream-dim); cursor:pointer;">
+          <input type="checkbox" data-status="izin" data-key="${escapeHtml(key)}" ${izinH ? 'checked' : ''} style="width:20px; height:20px; accent-color:var(--mint);">
+          Izin
+        </label>
+      </div>`;
     row.innerHTML = `
       <div style="flex:1;">
         <div class="name" style="display:flex; flex-wrap:wrap; gap:6px; align-items:baseline;">${escapeHtml(s.nama)}<span style="font-weight:700;">${escapeHtml(s.alamat || '-')}</span></div>
         <div class="key-line">Kelas ${escapeHtml(s.kelas || '-')}</div>
         <div class="meta">ID: ${escapeHtml(s.id || '-')}</div>
         ${izin ? `<div class="badge-lock" style="margin-top:4px;"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="10.5" width="14" height="9.5" rx="2" stroke="currentColor" stroke-width="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" stroke="currentColor" stroke-width="2"/></svg>Pulang ${escapeHtml(periode)}${izin.keterangan ? ' · ' + escapeHtml(izin.keterangan) : ''}</div>` : ''}
-        ${sakit ? `<div class="badge-lock" style="margin-top:4px;"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="4" width="14" height="17" rx="2" stroke="currentColor" stroke-width="2"/><path d="M12 10v6M9 13h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Sakit</div>` : ''}
       </div>
-      ${terkunci ? '' : `<input type="checkbox" data-check="${escapeHtml(key)}" ${alfa ? 'checked' : ''} style="width:20px; height:20px; accent-color:var(--bloom);">`}`;
+      ${terkunci ? '' : statusBoxes}`;
     container.appendChild(row);
   });
-  container.querySelectorAll('[data-check]').forEach(cb => {
+  container.querySelectorAll('[data-status]').forEach(cb => {
     cb.addEventListener('change', () => {
-      if(cb.checked) draftAlfa[cb.dataset.check] = true;
-      else delete draftAlfa[cb.dataset.check];
+      const key = cb.dataset.key;
+      const status = cb.dataset.status;
+      if(cb.checked){
+        // Mutually exclusive: satu santri hanya boleh satu status per hari.
+        if(status === 'alfa'){ draftAlfa[key] = true; delete draftSakit[key]; delete draftIzinHarian[key]; }
+        else if(status === 'sakit'){ draftSakit[key] = true; delete draftAlfa[key]; delete draftIzinHarian[key]; }
+        else if(status === 'izin'){ draftIzinHarian[key] = true; delete draftAlfa[key]; delete draftSakit[key]; }
+      } else {
+        if(status === 'alfa') delete draftAlfa[key];
+        else if(status === 'sakit') delete draftSakit[key];
+        else if(status === 'izin') delete draftIzinHarian[key];
+      }
+      renderAlfaList();
     });
   });
 }
@@ -1328,15 +1345,16 @@ function renderRekapAlfa(){
     Object.keys(byTanggal).forEach(tgl => {
       const wajibList = state.santri.filter(s => isWajib(s, prog));
       const saved = byTanggal[tgl] || {};
-      let hadir = 0, izin = 0, sakit = 0, alfa = 0;
+      let hadir = 0, pulang = 0, sakit = 0, izinH = 0, alfa = 0;
       wajibList.forEach(s => {
         const key = santriKey(s);
-        if(getActiveIzin(key, tgl)) izin++;
+        if(getActiveIzin(key, tgl)) pulang++;
         else if(getActiveSakit(key, prog, tgl)) sakit++;
+        else if(getActiveIzinHarian(key, prog, tgl)) izinH++;
         else if(saved[key]) alfa++;
         else hadir++;
       });
-      rows.push({ prog, tgl, hadir, izin, sakit, alfa, total: wajibList.length });
+      rows.push({ prog, tgl, hadir, pulang, sakit, izinH, alfa, total: wajibList.length });
     });
   });
   rows.sort((a,b) => b.tgl.localeCompare(a.tgl) || a.prog.localeCompare(b.prog));
@@ -1355,7 +1373,8 @@ function renderRekapAlfa(){
         <div style="color:var(--mint);">Hadir ${r.hadir}</div>
         <div style="color:var(--bloom-soft);">Alfa ${r.alfa}</div>
         <div style="color:var(--amber-soft);">Sakit ${r.sakit}</div>
-        <div style="color:var(--cream-dim);">Pulang ${r.izin}</div>
+        <div style="color:var(--mint);">Izin ${r.izinH}</div>
+        <div style="color:var(--cream-dim);">Pulang ${r.pulang}</div>
       </div>`;
     container.appendChild(row);
   });
@@ -1378,7 +1397,7 @@ function exportAlfaExcel(){
     .sort((a, b) => a.nama.localeCompare(b.nama))
     .map((s, i) => {
       const key = santriKey(s);
-      const status = getActiveIzin(key, tgl) ? 'Pulang' : (getActiveSakit(key, prog, tgl) ? 'Sakit' : (draftAlfa[key] ? 'Alfa' : 'Hadir'));
+      const status = getActiveIzin(key, tgl) ? 'Pulang' : (draftSakit[key] ? 'Sakit' : (draftIzinHarian[key] ? 'Izin' : (draftAlfa[key] ? 'Alfa' : 'Hadir')));
       return { No: i + 1, ID: s.id || '', Nama: s.nama || '', Kelas: s.kelas || '', Status: status };
     });
   if(rows.length === 0){ showToast('Belum ada santri wajib di program ini untuk diexport.'); return; }
@@ -1401,220 +1420,26 @@ function handleImportAlfaFile(e){
       const ws = wb.Sheets[wb.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
       const tgl = document.getElementById('alfa-tanggal').value || todayStr();
-      const prog = document.getElementById('alfa-program').value;
       let matched = 0, unmatched = 0, locked = 0;
       rows.forEach(r => {
         const id = String(r.ID || r.id || '').trim();
         const statusRaw = String(r.Status || r.status || '').trim().toLowerCase();
-        const alfa = statusRaw.startsWith('a') && !statusRaw.startsWith('ai'); // "Alfa" -> true (hindari salah baca "Alfa" vs kata lain)
         // Pencocokan HANYA berdasarkan ID -> baris tanpa ID tidak akan pernah cocok.
         const santri = id ? state.santri.find(s => s.id === id) : null;
         if(!santri){ unmatched++; return; }
         const key = santriKey(santri);
-        if(getActiveIzin(key, tgl) || getActiveSakit(key, prog, tgl)){ locked++; return; } // status terkunci karena pulang/sakit, tidak diubah dari import
-        if(alfa) draftAlfa[key] = true; else delete draftAlfa[key];
+        if(getActiveIzin(key, tgl)){ locked++; return; } // status terkunci karena pulang, tidak diubah dari import
+        delete draftAlfa[key]; delete draftSakit[key]; delete draftIzinHarian[key];
+        if(statusRaw.startsWith('a') && !statusRaw.startsWith('ai')) draftAlfa[key] = true; // "Alfa"
+        else if(statusRaw.startsWith('s')) draftSakit[key] = true; // "Sakit"
+        else if(statusRaw.startsWith('i')) draftIzinHarian[key] = true; // "Izin"
         matched++;
       });
       renderAlfaList();
       let msg = `${matched} santri diperbarui dari file.`;
-      if(locked) msg += ` ${locked} terkunci (pulang/sakit), dilewati.`;
-      if(unmatched) msg += ` ${unmatched} baris tidak cocok.`;
-      showToast(msg + ' Tekan Simpan Absen untuk menyimpan.');
-    }catch(err){
-      console.error(err);
-      showToast('Gagal membaca file. Pastikan formatnya benar.');
-    }
-    e.target.value = '';
-  };
-  reader.readAsBinaryString(file);
-}
-
-/* ======================================================================
-   5c) ABSEN SAKIT (per program, manual) — pola sama persis dengan Absen Alfa,
-   bedanya: dicentang = Sakit (tidak dihitung Alfa), bukan Alfa.
-   ====================================================================== */
-let draftSakit = {};
-
-function initSakitHandlers(){
-  const progSelect = document.getElementById('sakit-program');
-  const tglInput = document.getElementById('sakit-tanggal');
-  tglInput.value = todayStr();
-  progSelect.innerHTML = PROGRAMS.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
-
-  progSelect.addEventListener('change', () => { refreshSakitKelasFilterOptions(); refreshSakitKamarFilterOptions(); loadDraftSakitForCurrent(); renderSakitList(); });
-  tglInput.addEventListener('change', () => { loadDraftSakitForCurrent(); renderSakitList(); });
-  document.getElementById('sakit-kelas-filter').addEventListener('change', renderSakitList);
-  document.getElementById('sakit-kamar-filter').addEventListener('change', renderSakitList);
-
-  document.getElementById('btn-centang-semua-sakit').addEventListener('click', () => {
-    const prog = progSelect.value;
-    const tgl = tglInput.value || todayStr();
-    const kelasFilter = document.getElementById('sakit-kelas-filter').value;
-    const kamarFilter = document.getElementById('sakit-kamar-filter').value;
-    if(!kelasFilter && !kamarFilter){ showToast('Pilih Kelas atau Kamar terlebih dahulu.'); return; }
-    state.santri.filter(s => isWajib(s, prog) && (!kelasFilter || (s.kelas||'').trim() === kelasFilter) && (!kamarFilter || (s.kamar||'').trim() === kamarFilter)).forEach(s => {
-      const key = santriKey(s);
-      if(!getActiveIzin(key, tgl)) draftSakit[key] = true;
-    });
-    renderSakitList();
-  });
-  document.getElementById('btn-kosongkan-semua-sakit').addEventListener('click', () => {
-    const prog = progSelect.value;
-    const kelasFilter = document.getElementById('sakit-kelas-filter').value;
-    const kamarFilter = document.getElementById('sakit-kamar-filter').value;
-    if(!kelasFilter && !kamarFilter){ showToast('Pilih Kelas atau Kamar terlebih dahulu.'); return; }
-    state.santri.filter(s => isWajib(s, prog) && (!kelasFilter || (s.kelas||'').trim() === kelasFilter) && (!kamarFilter || (s.kamar||'').trim() === kamarFilter)).forEach(s => delete draftSakit[santriKey(s)]);
-    renderSakitList();
-  });
-
-  document.getElementById('btn-simpan-sakit').addEventListener('click', () => {
-    const prog = progSelect.value;
-    const tgl = tglInput.value || todayStr();
-    // Buang entri santri yang sedang terkunci (pulang) supaya tidak ikut tersimpan
-    const bersih = {};
-    Object.keys(draftSakit).forEach(key => { if(!getActiveIzin(key, tgl)) bersih[key] = draftSakit[key]; });
-    if(!state.sakitByProgram[prog]) state.sakitByProgram[prog] = {};
-    state.sakitByProgram[prog][tgl] = bersih;
-    saveSakitToFirestore();
-    renderAlfaList();
-    renderRekapAlfa();
-    showToast('Absen Sakit ' + prog + ' tanggal ' + tgl + ' disimpan.');
-  });
-
-  refreshSakitKelasFilterOptions();
-  refreshSakitKamarFilterOptions();
-  loadDraftSakitForCurrent();
-}
-
-function refreshSakitKelasFilterOptions(){
-  const prog = document.getElementById('sakit-program').value;
-  const select = document.getElementById('sakit-kelas-filter');
-  const current = select.value;
-  const wajibList = state.santri.filter(s => isWajib(s, prog));
-  const kelasList = [...new Set(wajibList.map(s => (s.kelas || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
-  select.innerHTML = `<option value="">— Pilih Kelas —</option>` + kelasList.map(k => `<option value="${escapeHtml(k)}">${escapeHtml(k)}</option>`).join('');
-  select.value = kelasList.includes(current) ? current : '';
-}
-
-function refreshSakitKamarFilterOptions(){
-  const prog = document.getElementById('sakit-program').value;
-  const select = document.getElementById('sakit-kamar-filter');
-  const current = select.value;
-  const wajibList = state.santri.filter(s => isWajib(s, prog));
-  const kamarList = [...new Set(wajibList.map(s => (s.kamar || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
-  select.innerHTML = `<option value="">— Pilih Kamar —</option>` + kamarList.map(k => `<option value="${escapeHtml(k)}">${escapeHtml(k)}</option>`).join('');
-  select.value = kamarList.includes(current) ? current : '';
-}
-
-function loadDraftSakitForCurrent(){
-  const prog = document.getElementById('sakit-program').value;
-  const tgl = document.getElementById('sakit-tanggal').value || todayStr();
-  const saved = (state.sakitByProgram[prog] && state.sakitByProgram[prog][tgl]) || {};
-  draftSakit = { ...saved };
-}
-
-function renderSakitList(){
-  const kelasFilter = document.getElementById('sakit-kelas-filter').value;
-  const kamarFilter = document.getElementById('sakit-kamar-filter').value;
-  const prog = document.getElementById('sakit-program').value;
-  const tgl = document.getElementById('sakit-tanggal').value || todayStr();
-  const container = document.getElementById('list-sakit');
-  const aktif = !!(kelasFilter || kamarFilter);
-  document.getElementById('list-sakit-hint').classList.toggle('hidden', aktif);
-  if(!aktif){
-    container.innerHTML = '';
-    document.getElementById('list-sakit-empty').classList.add('hidden');
-    return;
-  }
-  const wajibList = state.santri.filter(s => isWajib(s, prog));
-  const list = wajibList.filter(s =>
-    (!kelasFilter || (s.kelas||'').trim() === kelasFilter) &&
-    (!kamarFilter || (s.kamar||'').trim() === kamarFilter)
-  );
-  container.innerHTML = '';
-  document.getElementById('list-sakit-empty').classList.toggle('hidden', wajibList.length > 0);
-  list.sort((a,b) => a.nama.localeCompare(b.nama)).forEach(s => {
-    const key = santriKey(s);
-    const sakit = !!draftSakit[key];
-    const izin = getActiveIzin(key, tgl);
-    const row = document.createElement('label');
-    row.className = 'list-row' + (izin ? ' locked' : '');
-    row.style.cursor = izin ? 'default' : 'pointer';
-    const periode = izin ? (izin.selesai && izin.selesai !== izin.mulai ? `${izin.mulai} s/d ${izin.selesai}` : izin.mulai) : '';
-    row.innerHTML = `
-      <div style="flex:1;">
-        <div class="name" style="display:flex; flex-wrap:wrap; gap:6px; align-items:baseline;">${escapeHtml(s.nama)}<span style="font-weight:700;">${escapeHtml(s.alamat || '-')}</span></div>
-        <div class="key-line">Kelas ${escapeHtml(s.kelas || '-')}</div>
-        <div class="meta">ID: ${escapeHtml(s.id || '-')}</div>
-        ${izin ? `<div class="badge-lock" style="margin-top:4px;"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="10.5" width="14" height="9.5" rx="2" stroke="currentColor" stroke-width="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" stroke="currentColor" stroke-width="2"/></svg>Pulang ${escapeHtml(periode)}${izin.keterangan ? ' · ' + escapeHtml(izin.keterangan) : ''}</div>` : ''}
-      </div>
-      ${izin ? '' : `<input type="checkbox" data-check="${escapeHtml(key)}" ${sakit ? 'checked' : ''} style="width:20px; height:20px; accent-color:var(--amber);">`}`;
-    container.appendChild(row);
-  });
-  container.querySelectorAll('[data-check]').forEach(cb => {
-    cb.addEventListener('change', () => {
-      if(cb.checked) draftSakit[cb.dataset.check] = true;
-      else delete draftSakit[cb.dataset.check];
-    });
-  });
-}
-
-/* ======================================================================
-   5d) IMPORT / EXPORT EXCEL - ABSEN SAKIT
-   ====================================================================== */
-function initSakitImportExportHandlers(){
-  document.getElementById('btn-export-sakit').addEventListener('click', exportSakitExcel);
-  document.getElementById('btn-import-sakit').addEventListener('click', () => document.getElementById('file-import-sakit').click());
-  document.getElementById('file-import-sakit').addEventListener('change', handleImportSakitFile);
-}
-
-function exportSakitExcel(){
-  const prog = document.getElementById('sakit-program').value;
-  const tgl = document.getElementById('sakit-tanggal').value || todayStr();
-  const rows = state.santri
-    .filter(s => isWajib(s, prog))
-    .sort((a, b) => a.nama.localeCompare(b.nama))
-    .map((s, i) => {
-      const key = santriKey(s);
-      const status = getActiveIzin(key, tgl) ? 'Pulang' : (draftSakit[key] ? 'Sakit' : 'Hadir');
-      return { No: i + 1, ID: s.id || '', Nama: s.nama || '', Kelas: s.kelas || '', Status: status };
-    });
-  if(rows.length === 0){ showToast('Belum ada santri wajib di program ini untuk diexport.'); return; }
-  const ws = XLSX.utils.json_to_sheet(rows);
-  const wb = XLSX.utils.book_new();
-  const sheetName = prog.replace(/[\\/?*[\]:]/g, '').slice(0, 31) || 'Sakit';
-  XLSX.utils.book_append_sheet(wb, ws, sheetName);
-  const safeProg = prog.replace(/[^a-zA-Z0-9]+/g, '-');
-  XLSX.writeFile(wb, `sakit-${safeProg}-${tgl}.xlsx`);
-}
-
-function handleImportSakitFile(e){
-  const file = e.target.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = (evt) => {
-    try{
-      const wb = XLSX.read(evt.target.result, { type: 'binary' });
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
-      const tgl = document.getElementById('sakit-tanggal').value || todayStr();
-      let matched = 0, unmatched = 0, locked = 0;
-      rows.forEach(r => {
-        const id = String(r.ID || r.id || '').trim();
-        const statusRaw = String(r.Status || r.status || '').trim().toLowerCase();
-        const sakit = statusRaw.startsWith('s'); // "Sakit" -> true, lainnya/kosong -> false
-        const santri = id ? state.santri.find(s => s.id === id) : null;
-        if(!santri){ unmatched++; return; }
-        const key = santriKey(santri);
-        if(getActiveIzin(key, tgl)){ locked++; return; } // status terkunci karena pulang, tidak diubah dari import
-        if(sakit) draftSakit[key] = true; else delete draftSakit[key];
-        matched++;
-      });
-      renderSakitList();
-      let msg = `${matched} santri diperbarui dari file.`;
       if(locked) msg += ` ${locked} terkunci (pulang), dilewati.`;
       if(unmatched) msg += ` ${unmatched} baris tidak cocok.`;
-      showToast(msg + ' Tekan Simpan Absen Sakit untuk menyimpan.');
+      showToast(msg + ' Tekan Simpan Absen untuk menyimpan.');
     }catch(err){
       console.error(err);
       showToast('Gagal membaca file. Pastikan formatnya benar.');
@@ -1688,7 +1513,6 @@ function initIzinHandlers(){
     state.izin.push(izinBaru);
     renderIzinList();
     renderAlfaList();
-    renderSakitList();
     btn.disabled = true;
     btn.textContent = 'Menyimpan…';
     try{
@@ -1701,7 +1525,6 @@ function initIzinHandlers(){
       state.izin.pop();
       renderIzinList();
       renderAlfaList();
-      renderSakitList();
     }finally{
       btn.disabled = false;
       btn.textContent = '+ Tambah Pulang';
@@ -1716,7 +1539,6 @@ function deleteIzin(idx){
   saveIzinToFirestore();
   renderIzinList();
   renderAlfaList();
-  renderSakitList();
 }
 
 function renderIzinList(){
@@ -1771,6 +1593,7 @@ function exportAllDataJson(){
     izin: state.izin,
     alfaByProgram: state.alfaByProgram,
     sakitByProgram: state.sakitByProgram,
+    izinHarianByProgram: state.izinHarianByProgram,
   };
   const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -1802,7 +1625,8 @@ function handleImportAllFile(e){
       state.izin = Array.isArray(data.izin) ? data.izin : [];
       state.alfaByProgram = (data.alfaByProgram && typeof data.alfaByProgram === 'object') ? data.alfaByProgram : {};
       state.sakitByProgram = (data.sakitByProgram && typeof data.sakitByProgram === 'object') ? data.sakitByProgram : {};
-      await santriDocRef().set({ santri: state.santri, izin: state.izin, alfaByProgram: state.alfaByProgram, sakitByProgram: state.sakitByProgram, absenFormat: 'alfa' }, { merge: true });
+      state.izinHarianByProgram = (data.izinHarianByProgram && typeof data.izinHarianByProgram === 'object') ? data.izinHarianByProgram : {};
+      await santriDocRef().set({ santri: state.santri, izin: state.izin, alfaByProgram: state.alfaByProgram, sakitByProgram: state.sakitByProgram, izinHarianByProgram: state.izinHarianByProgram, absenFormat: 'alfa' }, { merge: true });
       renderAll();
       showToast('Semua data berhasil diimport.');
     }catch(err){
@@ -1824,7 +1648,8 @@ async function resetAllData(){
     state.izin = [];
     state.alfaByProgram = {};
     state.sakitByProgram = {};
-    await santriDocRef().set({ santri: [], izin: [], alfaByProgram: {}, sakitByProgram: {}, absenFormat: 'alfa' });
+    state.izinHarianByProgram = {};
+    await santriDocRef().set({ santri: [], izin: [], alfaByProgram: {}, sakitByProgram: {}, izinHarianByProgram: {}, absenFormat: 'alfa' });
     renderAll();
     showToast('Semua data aplikasi telah dihapus.');
   }catch(err){
@@ -1888,7 +1713,6 @@ function handleImportIzinFile(e){
       saveIzinToFirestore();
       renderIzinList();
       renderAlfaList();
-      renderSakitList();
       showToast(`${added} izin berhasil diimport.` + (unmatched ? ` ${unmatched} baris tidak cocok.` : ''));
     }catch(err){
       console.error(err);
@@ -1910,10 +1734,6 @@ function renderAll(){
   loadDraftForCurrent();
   renderAlfaList();
   renderRekapAlfa();
-  refreshSakitKelasFilterOptions();
-  refreshSakitKamarFilterOptions();
-  loadDraftSakitForCurrent();
-  renderSakitList();
   refreshIzinFilterOptions();
   refreshIzinSantriOptions();
   renderIzinList();
@@ -1940,8 +1760,6 @@ function initImportExportToggle(headerId, btnId, boxId){
   initImportExportHandlers();
   initAlfaHandlers();
   initAlfaImportExportHandlers();
-  initSakitHandlers();
-  initSakitImportExportHandlers();
   initIzinHandlers();
   initIzinImportExportHandlers();
   initBackupRestoreHandlers();
