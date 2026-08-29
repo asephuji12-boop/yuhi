@@ -317,6 +317,10 @@
       <section class="tab-panel" id="panel-izin">
         <section class="block glass">
           <h2>Tambah Izin</h2>
+          <div class="form-grid">
+            <div><label class="flabel">Pilih Kelas</label><select class="field" id="izin-kelas-filter"><option value="">— Pilih Kelas —</option></select></div>
+            <div><label class="flabel">Pilih Kamar</label><select class="field" id="izin-kamar-filter"><option value="">— Pilih Kamar —</option></select></div>
+          </div>
           <label class="flabel">Santri</label>
           <select class="field" id="izin-santri"></select>
           <div class="form-grid">
@@ -330,11 +334,6 @@
 
         <section class="block glass">
           <h2>Daftar Perizinan</h2>
-          <div class="search-box"><input class="field" id="cari-izin" placeholder="Cari nama / ID…"></div>
-          <div class="form-grid" style="margin-bottom:9px;">
-            <select class="field" id="izin-kelas-filter" style="margin-bottom:0;"><option value="">— Pilih Kelas —</option></select>
-            <select class="field" id="izin-kamar-filter" style="margin-bottom:0;"><option value="">— Pilih Kamar —</option></select>
-          </div>
           <div id="list-izin"></div>
           <div class="empty hidden" id="list-izin-empty">Belum ada data izin.</div>
         </section>
@@ -1084,16 +1083,16 @@ function initAlfaHandlers(){
 /* Isi ulang pilihan dropdown filter Kelas berdasarkan kelas yang benar-benar
    dipakai oleh santri wajib program yang sedang dipilih. Kelas bebas teks
    (bukan daftar tetap), jadi opsinya diambil dari data santri itu sendiri.
-   Pilihan yang sedang aktif dipertahankan kalau masih tersedia di daftar baru. */
+   Default ke "— Pilih Kelas —" (tidak otomatis memilih kelas pertama);
+   pilihan yang sedang aktif dipertahankan kalau masih tersedia di daftar baru. */
 function refreshAlfaKelasFilterOptions(){
   const prog = document.getElementById('alfa-program').value;
   const select = document.getElementById('alfa-kelas-filter');
   const current = select.value;
   const wajibList = state.santri.filter(s => isWajib(s, prog));
   const kelasList = [...new Set(wajibList.map(s => (s.kelas || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
-  select.innerHTML = kelasList.map(k => `<option value="${escapeHtml(k)}">${escapeHtml(k)}</option>`).join('');
-  if(kelasList.includes(current)) select.value = current;
-  else if(kelasList.length) select.value = kelasList[0];
+  select.innerHTML = `<option value="">— Pilih Kelas —</option>` + kelasList.map(k => `<option value="${escapeHtml(k)}">${escapeHtml(k)}</option>`).join('');
+  select.value = kelasList.includes(current) ? current : '';
 }
 
 /* Sama seperti refreshAlfaKelasFilterOptions, tapi untuk filter Kamar.
@@ -1271,19 +1270,24 @@ function handleImportAlfaFile(e){
 /* ======================================================================
    6) PERIZINAN (IZIN) — status terkunci
    ====================================================================== */
+/* Santri yang muncul di dropdown "Santri" pada Tambah Izin disaring
+   berdasarkan Pilih Kelas / Pilih Kamar di atasnya (kosong = semua santri). */
 function refreshIzinSantriOptions(){
   const sel = document.getElementById('izin-santri');
   const current = sel.value;
+  const kelasFilter = document.getElementById('izin-kelas-filter').value;
+  const kamarFilter = document.getElementById('izin-kamar-filter').value;
   sel.innerHTML = [...state.santri]
+    .filter(s => (!kelasFilter || s.kelas === kelasFilter) && (!kamarFilter || s.kamar === kamarFilter))
     .sort((a,b) => a.nama.localeCompare(b.nama))
     .map(s => `<option value="${escapeHtml(santriKey(s))}">${escapeHtml(s.nama)}${s.kelas ? ' · ' + escapeHtml(s.kelas) : ''}</option>`)
     .join('');
-  if(current) sel.value = current;
+  if(current && [...sel.options].some(o => o.value === current)) sel.value = current;
 }
 
 /* Sama seperti refreshSantriFilterOptions: opsi diambil dari data santri
-   itu sendiri (bukan daftar tetap), lalu dipakai untuk menyaring
-   Daftar Perizinan berdasarkan Kelas/Kamar santri yang bersangkutan. */
+   itu sendiri (bukan daftar tetap), lalu dipakai untuk menyaring pilihan
+   Santri di form Tambah Izin. */
 function refreshIzinFilterOptions(){
   const kelasSet = new Set(), kamarSet = new Set();
   state.santri.forEach(s => {
@@ -1302,10 +1306,10 @@ function refreshIzinFilterOptions(){
 }
 
 function initIzinHandlers(){
-  refreshIzinSantriOptions();
   refreshIzinFilterOptions();
-  document.getElementById('izin-kelas-filter').addEventListener('change', renderIzinList);
-  document.getElementById('izin-kamar-filter').addEventListener('change', renderIzinList);
+  refreshIzinSantriOptions();
+  document.getElementById('izin-kelas-filter').addEventListener('change', refreshIzinSantriOptions);
+  document.getElementById('izin-kamar-filter').addEventListener('change', refreshIzinSantriOptions);
 
   document.getElementById('btn-tambah-izin').addEventListener('click', async () => {
     if(!state.isAdmin){ showToast('Hanya admin yang bisa mengelola izin.'); return; }
@@ -1344,8 +1348,6 @@ function initIzinHandlers(){
       btn.textContent = '+ Tambah Izin';
     }
   });
-
-  document.getElementById('cari-izin').addEventListener('input', renderIzinList);
 }
 
 function deleteIzin(idx){
@@ -1358,22 +1360,13 @@ function deleteIzin(idx){
 }
 
 function renderIzinList(){
-  const q = document.getElementById('cari-izin').value.trim().toLowerCase();
-  const kelasFilter = document.getElementById('izin-kelas-filter').value;
-  const kamarFilter = document.getElementById('izin-kamar-filter').value;
   const container = document.getElementById('list-izin');
   const bySantriKey = key => state.santri.find(s => santriKey(s) === key) || {};
   const indexed = state.izin.map((iz, i) => ({ iz, i }));
-  const list = indexed.filter(({iz}) => {
-    const s = bySantriKey(iz.santriKey);
-    return (!q || iz.nama.toLowerCase().includes(q) || (iz.santriKey||'').toLowerCase().includes(q)) &&
-      (!kelasFilter || s.kelas === kelasFilter) &&
-      (!kamarFilter || s.kamar === kamarFilter);
-  });
-  list.sort((a,b) => b.iz.mulai.localeCompare(a.iz.mulai));
+  indexed.sort((a,b) => b.iz.mulai.localeCompare(a.iz.mulai));
   container.innerHTML = '';
   document.getElementById('list-izin-empty').classList.toggle('hidden', state.izin.length > 0);
-  list.forEach(({iz, i}) => {
+  indexed.forEach(({iz, i}) => {
     const periode = iz.selesai && iz.selesai !== iz.mulai ? `${iz.mulai} s/d ${iz.selesai}` : iz.mulai;
     const s = bySantriKey(iz.santriKey);
     const row = document.createElement('div');
@@ -1553,8 +1546,8 @@ function renderAll(){
   loadDraftForCurrent();
   renderAlfaList();
   renderRekapAlfa();
-  refreshIzinSantriOptions();
   refreshIzinFilterOptions();
+  refreshIzinSantriOptions();
   renderIzinList();
 }
 
