@@ -150,7 +150,7 @@
   }
   .count-label{font-size:11.5px; color:var(--cream-dim); margin-bottom:10px; font-family:'IBM Plex Mono',monospace;}
   #loading-screen{flex:1; display:flex; align-items:center; justify-content:center; font-size:13px; color:var(--cream-dim); font-family:'IBM Plex Mono',monospace; letter-spacing:0.04em; gap:10px; position:relative; z-index:1;}
-  #file-import,#file-import-alfa,#file-import-izin{display:none;}
+  #file-import,#file-import-alfa,#file-import-izin,#file-import-sakit{display:none;}
 
   .chk-grid{display:grid; grid-template-columns:1fr 1fr; gap:7px 10px; margin:2px 0 12px;}
   .chk-item{display:flex; align-items:center; gap:7px; font-size:12.5px; color:var(--cream-dim);}
@@ -304,6 +304,39 @@
         </section>
       </section>
 
+      <section class="tab-panel" id="panel-sakit">
+        <section class="block glass" style="padding:12px 16px;">
+          <h2 style="margin:0 0 10px;">Absen Sakit (Manual)</h2>
+          <div class="form-grid">
+            <div>
+              <label class="flabel">Program</label>
+              <select class="field" id="sakit-program" style="padding:10px 11px; font-size:13px;"></select>
+            </div>
+            <div>
+              <label class="flabel">Tanggal</label>
+              <input class="field" type="date" id="sakit-tanggal" style="padding:10px 11px; font-size:13px;">
+            </div>
+          </div>
+          <p style="font-size:12px; color:var(--cream-dim); margin:0 0 8px;">Centang = <b>Sakit</b> (tidak hadir karena sakit, tidak dihitung Alfa). Kosongkan centang untuk santri yang <b>Hadir</b>, lalu tekan Simpan.</p>
+        </section>
+
+        <section class="block glass">
+          <h2>Roster Sakit</h2>
+          <div class="form-grid" style="margin-bottom:9px;">
+            <select class="field" id="sakit-kelas-filter" style="margin-bottom:0;"></select>
+            <select class="field" id="sakit-kamar-filter" style="margin-bottom:0;"><option value="">— Pilih Kamar —</option></select>
+          </div>
+          <div class="btn-row">
+            <button class="btn-ghost" id="btn-centang-semua-sakit">Tandai Semua Sakit</button>
+            <button class="btn-ghost" id="btn-kosongkan-semua-sakit">Hadir Semua (Kosongkan)</button>
+          </div>
+          <div id="list-sakit"></div>
+          <div class="empty hidden" id="list-sakit-empty">Belum ada data santri. Tambahkan dulu di menu Santri.</div>
+          <div class="empty" id="list-sakit-hint">Pilih Kelas atau Kamar untuk menampilkan roster sakit.</div>
+          <button class="btn-block" id="btn-simpan-sakit">Simpan Absen Sakit</button>
+        </section>
+      </section>
+
       <section class="tab-panel" id="panel-rekap">
         <section class="block glass" id="block-rekap-alfa">
           <h2>Rekap Semua Petugas</h2>
@@ -316,7 +349,7 @@
 
       <section class="tab-panel" id="panel-izin">
         <section class="block glass">
-          <h2>Tambah Izin</h2>
+          <h2>Tambah Pulang</h2>
           <div class="form-grid">
             <div><label class="flabel">Pilih Kelas</label><select class="field" id="izin-kelas-filter"><option value="">— Pilih Kelas —</option></select></div>
             <div><label class="flabel">Pilih Kamar</label><select class="field" id="izin-kamar-filter"><option value="">— Pilih Kamar —</option></select></div>
@@ -327,15 +360,15 @@
             <div><label class="flabel">Tanggal Mulai</label><input class="field" type="date" id="izin-mulai"></div>
             <div><label class="flabel">Tanggal Selesai</label><input class="field" type="date" id="izin-selesai"></div>
           </div>
-          <p style="font-size:11px; color:var(--cream-dim); margin:-4px 0 8px;">Kosongkan Tanggal Selesai untuk izin satu hari saja.</p>
-          <label class="flabel">Keterangan</label><input class="field" id="izin-keterangan" placeholder="Sakit, pulang, dll.">
-          <button class="btn-block" id="btn-tambah-izin">+ Tambah Izin</button>
+          <p style="font-size:11px; color:var(--cream-dim); margin:-4px 0 8px;">Kosongkan Tanggal Selesai untuk pulang satu hari saja.</p>
+          <label class="flabel">Keterangan</label><input class="field" id="izin-keterangan" placeholder="Pulang, keperluan keluarga, dll.">
+          <button class="btn-block" id="btn-tambah-izin">+ Tambah Pulang</button>
         </section>
 
         <section class="block glass">
-          <h2>Daftar Perizinan</h2>
+          <h2>Daftar Pulang</h2>
           <div id="list-izin"></div>
-          <div class="empty hidden" id="list-izin-empty">Belum ada data izin.</div>
+          <div class="empty hidden" id="list-izin-empty">Belum ada data pulang.</div>
         </section>
       </section>
 
@@ -361,7 +394,17 @@
         </section>
 
         <section class="block glass" style="padding:12px 16px;">
-          <h2 style="margin:0 0 10px;">Import / Export Izin</h2>
+          <h2 style="margin:0 0 10px;">Import / Export Sakit</h2>
+          <div class="btn-row">
+            <button class="btn-ghost" id="btn-import-sakit"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 19V5M6 11l6-6 6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Import Excel</button>
+            <button class="btn-ghost" id="btn-export-sakit"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M6 13l6 6 6-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Export Excel</button>
+          </div>
+          <input type="file" id="file-import-sakit" accept=".xlsx,.xls,.csv">
+          <p style="font-size:11px; color:var(--cream-dim); margin:6px 0 0;">Berlaku untuk Program &amp; Tanggal yang dipilih di tab Sakit. Kolom Excel: No, ID, Nama, Kelas, Status (isi "Hadir" atau "Sakit"). <b>Pencocokan baris memakai kolom ID</b> — baris tanpa ID tidak akan cocok dengan santri manapun. Setelah import, buka tab Sakit lalu tekan <b>Simpan Absen Sakit</b> untuk menyimpan ke server.</p>
+        </section>
+
+        <section class="block glass" style="padding:12px 16px;">
+          <h2 style="margin:0 0 10px;">Import / Export Pulang</h2>
           <div class="btn-row">
             <button class="btn-ghost" id="btn-import-izin"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 19V5M6 11l6-6 6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Import Excel</button>
             <button class="btn-ghost" id="btn-export-izin"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M6 13l6 6 6-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Export Excel</button>
@@ -399,9 +442,13 @@
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="4" width="14" height="17" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M9 3.5h6v2H9z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8.5 12.5 10.5 14.5 15.5 10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span class="dot"></span>Alfa
       </button>
+      <button class="tab-btn" data-tab="sakit">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="4" width="14" height="17" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M9 3.5h6v2H9z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 10v6M9 13h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <span class="dot"></span>Sakit
+      </button>
       <button class="tab-btn" data-tab="izin">
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="10.5" width="14" height="9.5" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="15" r="1.3" fill="currentColor"/></svg>
-        <span class="dot"></span>Izin
+        <span class="dot"></span>Pulang
       </button>
       <button class="tab-btn" data-tab="data">
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3v13M12 16l-4-4M12 16l4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -485,7 +532,7 @@ function syncAbsenToSheet(prog, tgl, bersih){
     .sort((a, b) => a.nama.localeCompare(b.nama))
     .map(s => {
       const key = santriKey(s);
-      const status = getActiveIzin(key, tgl) ? 'Izin' : (bersih[key] ? 'Alfa' : 'Hadir');
+      const status = getActiveIzin(key, tgl) ? 'Pulang' : (getActiveSakit(key, prog, tgl) ? 'Sakit' : (bersih[key] ? 'Alfa' : 'Hadir'));
       return { id: s.id || '', nama: s.nama || '', kelas: s.kelas || '', alamat: s.alamat || '', kamar: s.kamar || '', status };
     });
   // mode:'no-cors' = kirim "tembak-lupakan": kita tidak bisa membaca
@@ -498,10 +545,11 @@ function syncAbsenToSheet(prog, tgl, bersih){
     body: JSON.stringify({ token: SHEET_SYNC_TOKEN, program: prog, tanggal: tgl, rows }),
   }).catch(err => console.error('Gagal sinkron ke Sheets:', err));
 }
-const state = { uid: null, isAdmin: false, santri: [], izin: [], alfaByProgram: {} };
+const state = { uid: null, isAdmin: false, santri: [], izin: [], alfaByProgram: {}, sakitByProgram: {} };
 // santri: [{id, nama, alamat, kelas, kamar, programWajib:[...] }] — programWajib undefined/kosong-field = wajib SEMUA program (kompatibilitas data lama)
-// izin: [{id, santriKey, nama, mulai, selesai, keterangan}] — selesai boleh sama dengan mulai (izin satu hari)
+// izin: [{id, santriKey, nama, mulai, selesai, keterangan}] — ini data "Pulang", selesai boleh sama dengan mulai (satu hari)
 // alfaByProgram[program][tanggal] = { santriId: true(ALFA) } — tidak ada entri = Hadir
+// sakitByProgram[program][tanggal] = { santriId: true(SAKIT) } — tidak ada entri = Hadir (sama seperti alfaByProgram)
 
 /* Data SANTRI + IZIN + ALFA: satu dokumen BERSAMA untuk semua petugas.
    Semua yang login (admin maupun bukan) membaca & menulis dokumen yang sama,
@@ -521,9 +569,15 @@ function isWajib(s, program){
   return s.programWajib.includes(program);
 }
 
-/* Cari izin yang aktif untuk santri pada tanggal tertentu (mulai <= tanggal <= selesai) */
+/* Cari izin (Pulang) yang aktif untuk santri pada tanggal tertentu (mulai <= tanggal <= selesai) */
 function getActiveIzin(key, tanggal){
   return state.izin.find(iz => iz.santriKey === key && iz.mulai <= tanggal && (iz.selesai || iz.mulai) >= tanggal) || null;
+}
+
+/* Cek apakah santri ditandai Sakit pada Program + Tanggal tertentu (sama pola dengan alfaByProgram) */
+function getActiveSakit(key, program, tanggal){
+  const byTanggal = state.sakitByProgram[program];
+  return !!(byTanggal && byTanggal[tanggal] && byTanggal[tanggal][key]);
 }
 
 /* ======================================================================
@@ -538,12 +592,14 @@ async function loadFromFirestore(){
       state.santri = data.santri || [];
       state.izin = data.izin || [];
       state.alfaByProgram = data.alfaByProgram || {};
+      state.sakitByProgram = data.sakitByProgram || {};
       await migrateAlfaFormatIfNeeded(data);
     } else {
       state.santri = [];
       state.izin = [];
       state.alfaByProgram = {};
-      await santriDocRef().set({ santri: [], izin: [], alfaByProgram: {}, absenFormat: 'alfa' });
+      state.sakitByProgram = {};
+      await santriDocRef().set({ santri: [], izin: [], alfaByProgram: {}, sakitByProgram: {}, absenFormat: 'alfa' });
     }
   }catch(e){
     console.error(e);
@@ -624,6 +680,19 @@ function saveAlfaToFirestore(){
     }catch(e){
       console.error(e);
       showToast('Gagal menyimpan absen. Cek koneksi internet.');
+    }
+  }, 300);
+}
+
+let saveSakitTimer = null;
+function saveSakitToFirestore(){
+  clearTimeout(saveSakitTimer);
+  saveSakitTimer = setTimeout(async () => {
+    try{
+      await santriDocRef().set({ sakitByProgram: state.sakitByProgram }, { merge: true });
+    }catch(e){
+      console.error(e);
+      showToast('Gagal menyimpan absen sakit. Cek koneksi internet.');
     }
   }, 300);
 }
@@ -1127,7 +1196,7 @@ function initAlfaHandlers(){
     if(!kelasFilter && !kamarFilter){ showToast('Pilih Kelas atau Kamar terlebih dahulu.'); return; }
     state.santri.filter(s => isWajib(s, prog) && (!kelasFilter || (s.kelas||'').trim() === kelasFilter) && (!kamarFilter || (s.kamar||'').trim() === kamarFilter)).forEach(s => {
       const key = santriKey(s);
-      if(!getActiveIzin(key, tgl)) draftAlfa[key] = true;
+      if(!getActiveIzin(key, tgl) && !getActiveSakit(key, prog, tgl)) draftAlfa[key] = true;
     });
     renderAlfaList();
   });
@@ -1143,9 +1212,9 @@ function initAlfaHandlers(){
   document.getElementById('btn-simpan-alfa').addEventListener('click', () => {
     const prog = progSelect.value;
     const tgl = tglInput.value || todayStr();
-    // Buang entri santri yang sedang terkunci (izin) supaya tidak ikut tersimpan sebagai hadir/alfa
+    // Buang entri santri yang sedang terkunci (pulang/sakit) supaya tidak ikut tersimpan sebagai hadir/alfa
     const bersih = {};
-    Object.keys(draftAlfa).forEach(key => { if(!getActiveIzin(key, tgl)) bersih[key] = draftAlfa[key]; });
+    Object.keys(draftAlfa).forEach(key => { if(!getActiveIzin(key, tgl) && !getActiveSakit(key, prog, tgl)) bersih[key] = draftAlfa[key]; });
     if(!state.alfaByProgram[prog]) state.alfaByProgram[prog] = {};
     state.alfaByProgram[prog][tgl] = bersih;
     saveAlfaToFirestore();
@@ -1221,18 +1290,21 @@ function renderAlfaList(){
     const key = santriKey(s);
     const alfa = !!draftAlfa[key];
     const izin = getActiveIzin(key, tgl);
+    const sakit = !izin && getActiveSakit(key, prog, tgl);
+    const terkunci = izin || sakit;
     const row = document.createElement('label');
-    row.className = 'list-row' + (izin ? ' locked' : '');
-    row.style.cursor = izin ? 'default' : 'pointer';
+    row.className = 'list-row' + (terkunci ? ' locked' : '');
+    row.style.cursor = terkunci ? 'default' : 'pointer';
     const periode = izin ? (izin.selesai && izin.selesai !== izin.mulai ? `${izin.mulai} s/d ${izin.selesai}` : izin.mulai) : '';
     row.innerHTML = `
       <div style="flex:1;">
         <div class="name" style="display:flex; flex-wrap:wrap; gap:6px; align-items:baseline;">${escapeHtml(s.nama)}<span style="font-weight:700;">${escapeHtml(s.alamat || '-')}</span></div>
         <div class="key-line">Kelas ${escapeHtml(s.kelas || '-')}</div>
         <div class="meta">ID: ${escapeHtml(s.id || '-')}</div>
-        ${izin ? `<div class="badge-lock" style="margin-top:4px;"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="10.5" width="14" height="9.5" rx="2" stroke="currentColor" stroke-width="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" stroke="currentColor" stroke-width="2"/></svg>Izin ${escapeHtml(periode)}${izin.keterangan ? ' · ' + escapeHtml(izin.keterangan) : ''}</div>` : ''}
+        ${izin ? `<div class="badge-lock" style="margin-top:4px;"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="10.5" width="14" height="9.5" rx="2" stroke="currentColor" stroke-width="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" stroke="currentColor" stroke-width="2"/></svg>Pulang ${escapeHtml(periode)}${izin.keterangan ? ' · ' + escapeHtml(izin.keterangan) : ''}</div>` : ''}
+        ${sakit ? `<div class="badge-lock" style="margin-top:4px;"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="4" width="14" height="17" rx="2" stroke="currentColor" stroke-width="2"/><path d="M12 10v6M9 13h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Sakit</div>` : ''}
       </div>
-      ${izin ? '' : `<input type="checkbox" data-check="${escapeHtml(key)}" ${alfa ? 'checked' : ''} style="width:20px; height:20px; accent-color:var(--bloom);">`}`;
+      ${terkunci ? '' : `<input type="checkbox" data-check="${escapeHtml(key)}" ${alfa ? 'checked' : ''} style="width:20px; height:20px; accent-color:var(--bloom);">`}`;
     container.appendChild(row);
   });
   container.querySelectorAll('[data-check]').forEach(cb => {
@@ -1256,14 +1328,15 @@ function renderRekapAlfa(){
     Object.keys(byTanggal).forEach(tgl => {
       const wajibList = state.santri.filter(s => isWajib(s, prog));
       const saved = byTanggal[tgl] || {};
-      let hadir = 0, izin = 0, alfa = 0;
+      let hadir = 0, izin = 0, sakit = 0, alfa = 0;
       wajibList.forEach(s => {
         const key = santriKey(s);
         if(getActiveIzin(key, tgl)) izin++;
+        else if(getActiveSakit(key, prog, tgl)) sakit++;
         else if(saved[key]) alfa++;
         else hadir++;
       });
-      rows.push({ prog, tgl, hadir, izin, alfa, total: wajibList.length });
+      rows.push({ prog, tgl, hadir, izin, sakit, alfa, total: wajibList.length });
     });
   });
   rows.sort((a,b) => b.tgl.localeCompare(a.tgl) || a.prog.localeCompare(b.prog));
@@ -1281,7 +1354,8 @@ function renderRekapAlfa(){
       <div style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:11px; line-height:1.6;">
         <div style="color:var(--mint);">Hadir ${r.hadir}</div>
         <div style="color:var(--bloom-soft);">Alfa ${r.alfa}</div>
-        <div style="color:var(--cream-dim);">Izin ${r.izin}</div>
+        <div style="color:var(--amber-soft);">Sakit ${r.sakit}</div>
+        <div style="color:var(--cream-dim);">Pulang ${r.izin}</div>
       </div>`;
     container.appendChild(row);
   });
@@ -1304,7 +1378,7 @@ function exportAlfaExcel(){
     .sort((a, b) => a.nama.localeCompare(b.nama))
     .map((s, i) => {
       const key = santriKey(s);
-      const status = getActiveIzin(key, tgl) ? 'Izin' : (draftAlfa[key] ? 'Alfa' : 'Hadir');
+      const status = getActiveIzin(key, tgl) ? 'Pulang' : (getActiveSakit(key, prog, tgl) ? 'Sakit' : (draftAlfa[key] ? 'Alfa' : 'Hadir'));
       return { No: i + 1, ID: s.id || '', Nama: s.nama || '', Kelas: s.kelas || '', Status: status };
     });
   if(rows.length === 0){ showToast('Belum ada santri wajib di program ini untuk diexport.'); return; }
@@ -1327,22 +1401,23 @@ function handleImportAlfaFile(e){
       const ws = wb.Sheets[wb.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
       const tgl = document.getElementById('alfa-tanggal').value || todayStr();
+      const prog = document.getElementById('alfa-program').value;
       let matched = 0, unmatched = 0, locked = 0;
       rows.forEach(r => {
         const id = String(r.ID || r.id || '').trim();
         const statusRaw = String(r.Status || r.status || '').trim().toLowerCase();
-        const alfa = statusRaw.startsWith('a'); // "Alfa" -> true, "Hadir"/"Izin"/lainnya/kosong -> false
+        const alfa = statusRaw.startsWith('a') && !statusRaw.startsWith('ai'); // "Alfa" -> true (hindari salah baca "Alfa" vs kata lain)
         // Pencocokan HANYA berdasarkan ID -> baris tanpa ID tidak akan pernah cocok.
         const santri = id ? state.santri.find(s => s.id === id) : null;
         if(!santri){ unmatched++; return; }
         const key = santriKey(santri);
-        if(getActiveIzin(key, tgl)){ locked++; return; } // status terkunci karena izin, tidak diubah dari import
+        if(getActiveIzin(key, tgl) || getActiveSakit(key, prog, tgl)){ locked++; return; } // status terkunci karena pulang/sakit, tidak diubah dari import
         if(alfa) draftAlfa[key] = true; else delete draftAlfa[key];
         matched++;
       });
       renderAlfaList();
       let msg = `${matched} santri diperbarui dari file.`;
-      if(locked) msg += ` ${locked} terkunci (izin), dilewati.`;
+      if(locked) msg += ` ${locked} terkunci (pulang/sakit), dilewati.`;
       if(unmatched) msg += ` ${unmatched} baris tidak cocok.`;
       showToast(msg + ' Tekan Simpan Absen untuk menyimpan.');
     }catch(err){
@@ -1355,7 +1430,202 @@ function handleImportAlfaFile(e){
 }
 
 /* ======================================================================
-   6) PERIZINAN (IZIN) — status terkunci
+   5c) ABSEN SAKIT (per program, manual) — pola sama persis dengan Absen Alfa,
+   bedanya: dicentang = Sakit (tidak dihitung Alfa), bukan Alfa.
+   ====================================================================== */
+let draftSakit = {};
+
+function initSakitHandlers(){
+  const progSelect = document.getElementById('sakit-program');
+  const tglInput = document.getElementById('sakit-tanggal');
+  tglInput.value = todayStr();
+  progSelect.innerHTML = PROGRAMS.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
+
+  progSelect.addEventListener('change', () => { refreshSakitKelasFilterOptions(); refreshSakitKamarFilterOptions(); loadDraftSakitForCurrent(); renderSakitList(); });
+  tglInput.addEventListener('change', () => { loadDraftSakitForCurrent(); renderSakitList(); });
+  document.getElementById('sakit-kelas-filter').addEventListener('change', renderSakitList);
+  document.getElementById('sakit-kamar-filter').addEventListener('change', renderSakitList);
+
+  document.getElementById('btn-centang-semua-sakit').addEventListener('click', () => {
+    const prog = progSelect.value;
+    const tgl = tglInput.value || todayStr();
+    const kelasFilter = document.getElementById('sakit-kelas-filter').value;
+    const kamarFilter = document.getElementById('sakit-kamar-filter').value;
+    if(!kelasFilter && !kamarFilter){ showToast('Pilih Kelas atau Kamar terlebih dahulu.'); return; }
+    state.santri.filter(s => isWajib(s, prog) && (!kelasFilter || (s.kelas||'').trim() === kelasFilter) && (!kamarFilter || (s.kamar||'').trim() === kamarFilter)).forEach(s => {
+      const key = santriKey(s);
+      if(!getActiveIzin(key, tgl)) draftSakit[key] = true;
+    });
+    renderSakitList();
+  });
+  document.getElementById('btn-kosongkan-semua-sakit').addEventListener('click', () => {
+    const prog = progSelect.value;
+    const kelasFilter = document.getElementById('sakit-kelas-filter').value;
+    const kamarFilter = document.getElementById('sakit-kamar-filter').value;
+    if(!kelasFilter && !kamarFilter){ showToast('Pilih Kelas atau Kamar terlebih dahulu.'); return; }
+    state.santri.filter(s => isWajib(s, prog) && (!kelasFilter || (s.kelas||'').trim() === kelasFilter) && (!kamarFilter || (s.kamar||'').trim() === kamarFilter)).forEach(s => delete draftSakit[santriKey(s)]);
+    renderSakitList();
+  });
+
+  document.getElementById('btn-simpan-sakit').addEventListener('click', () => {
+    const prog = progSelect.value;
+    const tgl = tglInput.value || todayStr();
+    // Buang entri santri yang sedang terkunci (pulang) supaya tidak ikut tersimpan
+    const bersih = {};
+    Object.keys(draftSakit).forEach(key => { if(!getActiveIzin(key, tgl)) bersih[key] = draftSakit[key]; });
+    if(!state.sakitByProgram[prog]) state.sakitByProgram[prog] = {};
+    state.sakitByProgram[prog][tgl] = bersih;
+    saveSakitToFirestore();
+    renderAlfaList();
+    renderRekapAlfa();
+    showToast('Absen Sakit ' + prog + ' tanggal ' + tgl + ' disimpan.');
+  });
+
+  refreshSakitKelasFilterOptions();
+  refreshSakitKamarFilterOptions();
+  loadDraftSakitForCurrent();
+}
+
+function refreshSakitKelasFilterOptions(){
+  const prog = document.getElementById('sakit-program').value;
+  const select = document.getElementById('sakit-kelas-filter');
+  const current = select.value;
+  const wajibList = state.santri.filter(s => isWajib(s, prog));
+  const kelasList = [...new Set(wajibList.map(s => (s.kelas || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+  select.innerHTML = `<option value="">— Pilih Kelas —</option>` + kelasList.map(k => `<option value="${escapeHtml(k)}">${escapeHtml(k)}</option>`).join('');
+  select.value = kelasList.includes(current) ? current : '';
+}
+
+function refreshSakitKamarFilterOptions(){
+  const prog = document.getElementById('sakit-program').value;
+  const select = document.getElementById('sakit-kamar-filter');
+  const current = select.value;
+  const wajibList = state.santri.filter(s => isWajib(s, prog));
+  const kamarList = [...new Set(wajibList.map(s => (s.kamar || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+  select.innerHTML = `<option value="">— Pilih Kamar —</option>` + kamarList.map(k => `<option value="${escapeHtml(k)}">${escapeHtml(k)}</option>`).join('');
+  select.value = kamarList.includes(current) ? current : '';
+}
+
+function loadDraftSakitForCurrent(){
+  const prog = document.getElementById('sakit-program').value;
+  const tgl = document.getElementById('sakit-tanggal').value || todayStr();
+  const saved = (state.sakitByProgram[prog] && state.sakitByProgram[prog][tgl]) || {};
+  draftSakit = { ...saved };
+}
+
+function renderSakitList(){
+  const kelasFilter = document.getElementById('sakit-kelas-filter').value;
+  const kamarFilter = document.getElementById('sakit-kamar-filter').value;
+  const prog = document.getElementById('sakit-program').value;
+  const tgl = document.getElementById('sakit-tanggal').value || todayStr();
+  const container = document.getElementById('list-sakit');
+  const aktif = !!(kelasFilter || kamarFilter);
+  document.getElementById('list-sakit-hint').classList.toggle('hidden', aktif);
+  if(!aktif){
+    container.innerHTML = '';
+    document.getElementById('list-sakit-empty').classList.add('hidden');
+    return;
+  }
+  const wajibList = state.santri.filter(s => isWajib(s, prog));
+  const list = wajibList.filter(s =>
+    (!kelasFilter || (s.kelas||'').trim() === kelasFilter) &&
+    (!kamarFilter || (s.kamar||'').trim() === kamarFilter)
+  );
+  container.innerHTML = '';
+  document.getElementById('list-sakit-empty').classList.toggle('hidden', wajibList.length > 0);
+  list.sort((a,b) => a.nama.localeCompare(b.nama)).forEach(s => {
+    const key = santriKey(s);
+    const sakit = !!draftSakit[key];
+    const izin = getActiveIzin(key, tgl);
+    const row = document.createElement('label');
+    row.className = 'list-row' + (izin ? ' locked' : '');
+    row.style.cursor = izin ? 'default' : 'pointer';
+    const periode = izin ? (izin.selesai && izin.selesai !== izin.mulai ? `${izin.mulai} s/d ${izin.selesai}` : izin.mulai) : '';
+    row.innerHTML = `
+      <div style="flex:1;">
+        <div class="name" style="display:flex; flex-wrap:wrap; gap:6px; align-items:baseline;">${escapeHtml(s.nama)}<span style="font-weight:700;">${escapeHtml(s.alamat || '-')}</span></div>
+        <div class="key-line">Kelas ${escapeHtml(s.kelas || '-')}</div>
+        <div class="meta">ID: ${escapeHtml(s.id || '-')}</div>
+        ${izin ? `<div class="badge-lock" style="margin-top:4px;"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="10.5" width="14" height="9.5" rx="2" stroke="currentColor" stroke-width="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" stroke="currentColor" stroke-width="2"/></svg>Pulang ${escapeHtml(periode)}${izin.keterangan ? ' · ' + escapeHtml(izin.keterangan) : ''}</div>` : ''}
+      </div>
+      ${izin ? '' : `<input type="checkbox" data-check="${escapeHtml(key)}" ${sakit ? 'checked' : ''} style="width:20px; height:20px; accent-color:var(--amber);">`}`;
+    container.appendChild(row);
+  });
+  container.querySelectorAll('[data-check]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      if(cb.checked) draftSakit[cb.dataset.check] = true;
+      else delete draftSakit[cb.dataset.check];
+    });
+  });
+}
+
+/* ======================================================================
+   5d) IMPORT / EXPORT EXCEL - ABSEN SAKIT
+   ====================================================================== */
+function initSakitImportExportHandlers(){
+  document.getElementById('btn-export-sakit').addEventListener('click', exportSakitExcel);
+  document.getElementById('btn-import-sakit').addEventListener('click', () => document.getElementById('file-import-sakit').click());
+  document.getElementById('file-import-sakit').addEventListener('change', handleImportSakitFile);
+}
+
+function exportSakitExcel(){
+  const prog = document.getElementById('sakit-program').value;
+  const tgl = document.getElementById('sakit-tanggal').value || todayStr();
+  const rows = state.santri
+    .filter(s => isWajib(s, prog))
+    .sort((a, b) => a.nama.localeCompare(b.nama))
+    .map((s, i) => {
+      const key = santriKey(s);
+      const status = getActiveIzin(key, tgl) ? 'Pulang' : (draftSakit[key] ? 'Sakit' : 'Hadir');
+      return { No: i + 1, ID: s.id || '', Nama: s.nama || '', Kelas: s.kelas || '', Status: status };
+    });
+  if(rows.length === 0){ showToast('Belum ada santri wajib di program ini untuk diexport.'); return; }
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  const sheetName = prog.replace(/[\\/?*[\]:]/g, '').slice(0, 31) || 'Sakit';
+  XLSX.utils.book_append_sheet(wb, ws, sheetName);
+  const safeProg = prog.replace(/[^a-zA-Z0-9]+/g, '-');
+  XLSX.writeFile(wb, `sakit-${safeProg}-${tgl}.xlsx`);
+}
+
+function handleImportSakitFile(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (evt) => {
+    try{
+      const wb = XLSX.read(evt.target.result, { type: 'binary' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+      const tgl = document.getElementById('sakit-tanggal').value || todayStr();
+      let matched = 0, unmatched = 0, locked = 0;
+      rows.forEach(r => {
+        const id = String(r.ID || r.id || '').trim();
+        const statusRaw = String(r.Status || r.status || '').trim().toLowerCase();
+        const sakit = statusRaw.startsWith('s'); // "Sakit" -> true, lainnya/kosong -> false
+        const santri = id ? state.santri.find(s => s.id === id) : null;
+        if(!santri){ unmatched++; return; }
+        const key = santriKey(santri);
+        if(getActiveIzin(key, tgl)){ locked++; return; } // status terkunci karena pulang, tidak diubah dari import
+        if(sakit) draftSakit[key] = true; else delete draftSakit[key];
+        matched++;
+      });
+      renderSakitList();
+      let msg = `${matched} santri diperbarui dari file.`;
+      if(locked) msg += ` ${locked} terkunci (pulang), dilewati.`;
+      if(unmatched) msg += ` ${unmatched} baris tidak cocok.`;
+      showToast(msg + ' Tekan Simpan Absen Sakit untuk menyimpan.');
+    }catch(err){
+      console.error(err);
+      showToast('Gagal membaca file. Pastikan formatnya benar.');
+    }
+    e.target.value = '';
+  };
+  reader.readAsBinaryString(file);
+}
+
+/* ======================================================================
+   6) PERIZINAN / PULANG (IZIN) — status terkunci
    ====================================================================== */
 /* Santri yang muncul di dropdown "Santri" pada Tambah Izin disaring
    berdasarkan Pilih Kelas / Pilih Kamar di atasnya (kosong = semua santri). */
@@ -1418,6 +1688,7 @@ function initIzinHandlers(){
     state.izin.push(izinBaru);
     renderIzinList();
     renderAlfaList();
+    renderSakitList();
     btn.disabled = true;
     btn.textContent = 'Menyimpan…';
     try{
@@ -1425,25 +1696,27 @@ function initIzinHandlers(){
       document.getElementById('izin-mulai').value = '';
       document.getElementById('izin-selesai').value = '';
       document.getElementById('izin-keterangan').value = '';
-      showToast('Izin ditambahkan.');
+      showToast('Pulang ditambahkan.');
     }catch(e){
       state.izin.pop();
       renderIzinList();
       renderAlfaList();
+      renderSakitList();
     }finally{
       btn.disabled = false;
-      btn.textContent = '+ Tambah Izin';
+      btn.textContent = '+ Tambah Pulang';
     }
   });
 }
 
 function deleteIzin(idx){
   if(!state.isAdmin){ showToast('Hanya admin yang bisa mengelola izin.'); return; }
-  if(!confirm('Hapus data izin ini?')) return;
+  if(!confirm('Hapus data pulang ini?')) return;
   state.izin.splice(idx, 1);
   saveIzinToFirestore();
   renderIzinList();
   renderAlfaList();
+  renderSakitList();
 }
 
 function renderIzinList(){
@@ -1497,6 +1770,7 @@ function exportAllDataJson(){
     santri: state.santri,
     izin: state.izin,
     alfaByProgram: state.alfaByProgram,
+    sakitByProgram: state.sakitByProgram,
   };
   const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -1527,7 +1801,8 @@ function handleImportAllFile(e){
       state.santri = Array.isArray(data.santri) ? data.santri : [];
       state.izin = Array.isArray(data.izin) ? data.izin : [];
       state.alfaByProgram = (data.alfaByProgram && typeof data.alfaByProgram === 'object') ? data.alfaByProgram : {};
-      await santriDocRef().set({ santri: state.santri, izin: state.izin, alfaByProgram: state.alfaByProgram, absenFormat: 'alfa' }, { merge: true });
+      state.sakitByProgram = (data.sakitByProgram && typeof data.sakitByProgram === 'object') ? data.sakitByProgram : {};
+      await santriDocRef().set({ santri: state.santri, izin: state.izin, alfaByProgram: state.alfaByProgram, sakitByProgram: state.sakitByProgram, absenFormat: 'alfa' }, { merge: true });
       renderAll();
       showToast('Semua data berhasil diimport.');
     }catch(err){
@@ -1548,7 +1823,8 @@ async function resetAllData(){
     state.santri = [];
     state.izin = [];
     state.alfaByProgram = {};
-    await santriDocRef().set({ santri: [], izin: [], alfaByProgram: {}, absenFormat: 'alfa' });
+    state.sakitByProgram = {};
+    await santriDocRef().set({ santri: [], izin: [], alfaByProgram: {}, sakitByProgram: {}, absenFormat: 'alfa' });
     renderAll();
     showToast('Semua data aplikasi telah dihapus.');
   }catch(err){
@@ -1612,6 +1888,7 @@ function handleImportIzinFile(e){
       saveIzinToFirestore();
       renderIzinList();
       renderAlfaList();
+      renderSakitList();
       showToast(`${added} izin berhasil diimport.` + (unmatched ? ` ${unmatched} baris tidak cocok.` : ''));
     }catch(err){
       console.error(err);
@@ -1633,6 +1910,10 @@ function renderAll(){
   loadDraftForCurrent();
   renderAlfaList();
   renderRekapAlfa();
+  refreshSakitKelasFilterOptions();
+  refreshSakitKamarFilterOptions();
+  loadDraftSakitForCurrent();
+  renderSakitList();
   refreshIzinFilterOptions();
   refreshIzinSantriOptions();
   renderIzinList();
@@ -1659,6 +1940,8 @@ function initImportExportToggle(headerId, btnId, boxId){
   initImportExportHandlers();
   initAlfaHandlers();
   initAlfaImportExportHandlers();
+  initSakitHandlers();
+  initSakitImportExportHandlers();
   initIzinHandlers();
   initIzinImportExportHandlers();
   initBackupRestoreHandlers();
