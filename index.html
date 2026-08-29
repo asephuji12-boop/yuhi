@@ -439,7 +439,8 @@ const auth = firebase.auth();
    ====================================================================== */
 const ALLOWED_PHONES = [
   '+6285356168487',
-  '+6287715994470',// contoh — ganti dengan nomor HP petugas sebenarnya
+  '+6287715994470',
+  '+6285231329762',// contoh — ganti dengan nomor HP petugas sebenarnya
 ];
 
 /* ======================================================================
@@ -448,7 +449,7 @@ const ALLOWED_PHONES = [
    Nomor lain di ALLOWED_PHONES tetap bisa login & pakai tab Absen, tapi read-only di tab Santri.
    ====================================================================== */
 const ADMIN_PHONES = [
-  '+6285356168487', // contoh — ganti dengan nomor HP admin sebenarnya
+  '+6285356168487',// contoh — ganti dengan nomor HP admin sebenarnya
 ];
 
 /* Nomor WhatsApp admin yang dituju saat petugas menekan "Kirim Kode OTP".
@@ -470,8 +471,32 @@ function normalizeToE164(raw){
    diblokir popup-blocker browser. */
 function bukaWhatsAppMintaOtp(e164){
   const pesan = `Saya user ${e164} memerlukan kode OTP, berikan kode OTP untuk saya`;
-  const url = 'https://wa.me/' + ADMIN_WA_NUMBER + '?text=' + encodeURIComponent(pesan);
-  window.open(url, '_blank');
+  const teks = encodeURIComponent(pesan);
+
+  // Deep link langsung ke APLIKASI WhatsApp (Android & iOS), bukan WhatsApp Web.
+  // Skema whatsapp:// ini yang dipakai WhatsApp untuk membuka app-nya langsung.
+  const urlApp = 'whatsapp://send?phone=' + ADMIN_WA_NUMBER + '&text=' + teks;
+
+  // Fallback kalau app WhatsApp tidak terpasang di device (mis. desktop tanpa app):
+  // dipakai wa.me yang akan mengarahkan ke WhatsApp Web / App Store / Play Store.
+  const urlFallback = 'https://wa.me/' + ADMIN_WA_NUMBER + '?text=' + teks;
+
+  let sudahPindah = false;
+  const tandaiPindah = () => { sudahPindah = true; };
+  document.addEventListener('visibilitychange', tandaiPindah, { once: true });
+  window.addEventListener('blur', tandaiPindah, { once: true });
+
+  // Coba buka app-nya dulu.
+  window.location.href = urlApp;
+
+  // Kalau setelah beberapa saat halaman masih di sini (berarti device tidak
+  // berhasil memicu app WhatsApp, biasanya karena app tidak terpasang),
+  // baru buka fallback di tab baru supaya user tidak macet.
+  setTimeout(() => {
+    if(!sudahPindah){
+      window.open(urlFallback, '_blank');
+    }
+  }, 1200);
 }
 
 const PROGRAMS = ['Diniyyah Pagi','Diniyyah Siang','Pos Pagi','Pos Siang','Ngaji Sore',"Muthola'ah","Penunggu Muthola'ah",'Keaktifan Musyawaroh Harian','Keaktifan Musyawaroh Instansi','Ruqmannaum Malam','Absen Hadiri'];
@@ -683,8 +708,8 @@ function showOtpStep(kode){
   document.getElementById('otp-step-hp').classList.toggle('hidden', kode);
   document.getElementById('otp-step-kode').classList.toggle('hidden', !kode);
   document.getElementById('gate-desc').textContent = kode
-    ? 'Masukkan kode OTP yang diberikan admin lewat WhatsApp.'
-    : 'Masuk dengan nomor HP petugas. Tekan tombol untuk minta kode OTP lewat WhatsApp ke admin.';
+    ? 'Masukkan kode OTP yang dikirim lewat SMS.'
+    : 'Masuk dengan nomor HP petugas. Kode OTP akan dikirim lewat SMS.';
 }
 
 function initGateHandlers(){
@@ -700,21 +725,23 @@ function initGateHandlers(){
     // Dipanggil sinkron (sebelum promise Firebase) supaya tidak diblokir popup-blocker.
     bukaWhatsAppMintaOtp(e164);
 
-    // Langsung tampilkan form kode OTP, tidak menunggu Firebase — untuk nomor
-    // yang belum terdaftar sebagai testing number, panggilan Firebase di bawah
-    // ini akan gagal/lama, tapi petugas tetap bisa langsung menunggu balasan
-    // admin di WhatsApp lalu mengetik kodenya begitu diterima.
+    // Form OTP langsung ditampilkan begitu tombol diklik (optimistic UI),
+    // supaya user tidak merasa "macet" di WhatsApp menunggu Firebase.
+    // Kalau ternyata pengiriman OTP gagal, form ini akan ditutup lagi
+    // di blok .catch() di bawah dengan pesan errornya.
     showOtpStep(true);
-    confirmationResult = null;
-    showToast('Permintaan terkirim ke WhatsApp admin. Tunggu balasan kode dari admin.');
+    showToast('Membuka WhatsApp & mengirim kode OTP...');
 
     auth.signInWithPhoneNumber(e164, getRecaptcha()).then(result => {
       confirmationResult = result;
+      showToast('Kode terkirim. Cek balasan admin di WhatsApp.');
     }).catch(e => {
       console.error(e);
-      // Nomor belum terdaftar sebagai testing number — tidak apa-apa, petugas
-      // tetap menunggu di form kode OTP; percobaan ulang otomatis dilakukan
-      // saat menekan "Verifikasi & Masuk".
+      let pesan = 'Gagal mengirim kode OTP.';
+      if(e.code === 'auth/invalid-phone-number') pesan = 'Format nomor HP tidak valid.';
+      else if(e.code === 'auth/too-many-requests') pesan = 'Terlalu banyak percobaan. Coba lagi nanti.';
+      showToast(pesan);
+      showOtpStep(false); // gagal kirim -> kembali ke form nomor HP
       if(recaptchaVerifier){ recaptchaVerifier.render().then(id => grecaptcha.reset(id)); }
     });
   });
@@ -725,35 +752,15 @@ function initGateHandlers(){
       showToast('Masukkan kode OTP.');
       return;
     }
-    const btn = document.getElementById('btn-otp-verify');
-    const lanjutkanVerifikasi = () => {
-      confirmationResult.confirm(kode).catch(e => {
-        console.error(e);
-        let pesan = 'Kode OTP salah atau kedaluwarsa.';
-        if(e.code === 'auth/code-expired') pesan = 'Kode OTP kedaluwarsa, kirim ulang.';
-        showToast(pesan);
-      });
-    };
-    if(confirmationResult){
-      lanjutkanVerifikasi();
+    if(!confirmationResult){
+      showToast('Kode OTP masih dalam proses pengiriman, tunggu sebentar lalu coba lagi.');
       return;
     }
-    // confirmationResult belum siap (percobaan awal gagal karena nomor belum
-    // terdaftar sebagai testing number) — coba lagi sekarang, siapa tahu admin
-    // sudah menambahkannya di Firebase setelah menerima pesan WhatsApp.
-    const e164 = normalizeToE164(document.getElementById('in-login-hp').value.trim());
-    btn.disabled = true;
-    btn.textContent = 'Memeriksa…';
-    auth.signInWithPhoneNumber(e164, getRecaptcha()).then(result => {
-      confirmationResult = result;
-      lanjutkanVerifikasi();
-    }).catch(e => {
+    confirmationResult.confirm(kode).catch(e => {
       console.error(e);
-      showToast('Nomor belum terdaftar admin. Tunggu balasan WhatsApp lalu coba lagi.');
-      if(recaptchaVerifier){ recaptchaVerifier.render().then(id => grecaptcha.reset(id)); }
-    }).finally(() => {
-      btn.disabled = false;
-      btn.textContent = 'Verifikasi & Masuk';
+      let pesan = 'Kode OTP salah atau kedaluwarsa.';
+      if(e.code === 'auth/code-expired') pesan = 'Kode OTP kedaluwarsa, kirim ulang.';
+      showToast(pesan);
     });
   });
 
