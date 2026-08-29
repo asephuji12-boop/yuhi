@@ -289,7 +289,6 @@
 
         <section class="block glass">
           <h2>Roster Absen</h2>
-          <div class="search-box"><input class="field" id="cari-alfa" placeholder="Cari nama / ID…"></div>
           <div class="form-grid" style="margin-bottom:9px;">
             <select class="field" id="alfa-kelas-filter" style="margin-bottom:0;"></select>
             <select class="field" id="alfa-kamar-filter" style="margin-bottom:0;"><option value="">— Pilih Kamar —</option></select>
@@ -300,6 +299,7 @@
           </div>
           <div id="list-alfa"></div>
           <div class="empty hidden" id="list-alfa-empty">Belum ada data santri. Tambahkan dulu di menu Santri.</div>
+          <div class="empty" id="list-alfa-hint">Pilih Kelas atau Kamar untuk menampilkan roster absen.</div>
           <button class="btn-block" id="btn-simpan-alfa">Simpan Absen</button>
         </section>
       </section>
@@ -1035,7 +1035,6 @@ function initAlfaHandlers(){
 
   progSelect.addEventListener('change', () => { refreshAlfaKelasFilterOptions(); refreshAlfaKamarFilterOptions(); loadDraftForCurrent(); renderAlfaList(); });
   tglInput.addEventListener('change', () => { loadDraftForCurrent(); renderAlfaList(); });
-  document.getElementById('cari-alfa').addEventListener('input', renderAlfaList);
   document.getElementById('alfa-kelas-filter').addEventListener('change', renderAlfaList);
   document.getElementById('alfa-kamar-filter').addEventListener('change', renderAlfaList);
 
@@ -1044,6 +1043,7 @@ function initAlfaHandlers(){
     const tgl = tglInput.value || todayStr();
     const kelasFilter = document.getElementById('alfa-kelas-filter').value;
     const kamarFilter = document.getElementById('alfa-kamar-filter').value;
+    if(!kelasFilter && !kamarFilter){ showToast('Pilih Kelas atau Kamar terlebih dahulu.'); return; }
     state.santri.filter(s => isWajib(s, prog) && (!kelasFilter || (s.kelas||'').trim() === kelasFilter) && (!kamarFilter || (s.kamar||'').trim() === kamarFilter)).forEach(s => {
       const key = santriKey(s);
       if(!getActiveIzin(key, tgl)) draftAlfa[key] = true;
@@ -1054,6 +1054,7 @@ function initAlfaHandlers(){
     const prog = progSelect.value;
     const kelasFilter = document.getElementById('alfa-kelas-filter').value;
     const kamarFilter = document.getElementById('alfa-kamar-filter').value;
+    if(!kelasFilter && !kamarFilter){ showToast('Pilih Kelas atau Kamar terlebih dahulu.'); return; }
     state.santri.filter(s => isWajib(s, prog) && (!kelasFilter || (s.kelas||'').trim() === kelasFilter) && (!kamarFilter || (s.kamar||'').trim() === kamarFilter)).forEach(s => delete draftAlfa[santriKey(s)]);
     renderAlfaList();
   });
@@ -1116,15 +1117,20 @@ function loadDraftForCurrent(){
 }
 
 function renderAlfaList(){
-  const q = document.getElementById('cari-alfa').value.trim().toLowerCase();
   const kelasFilter = document.getElementById('alfa-kelas-filter').value;
   const kamarFilter = document.getElementById('alfa-kamar-filter').value;
   const prog = document.getElementById('alfa-program').value;
   const tgl = document.getElementById('alfa-tanggal').value || todayStr();
   const container = document.getElementById('list-alfa');
+  const aktif = !!(kelasFilter || kamarFilter);
+  document.getElementById('list-alfa-hint').classList.toggle('hidden', aktif);
+  if(!aktif){
+    container.innerHTML = '';
+    document.getElementById('list-alfa-empty').classList.add('hidden');
+    return;
+  }
   const wajibList = state.santri.filter(s => isWajib(s, prog));
   const list = wajibList.filter(s =>
-    (!q || s.nama.toLowerCase().includes(q) || (s.id||'').toLowerCase().includes(q)) &&
     (!kelasFilter || (s.kelas||'').trim() === kelasFilter) &&
     (!kamarFilter || (s.kamar||'').trim() === kamarFilter)
   );
