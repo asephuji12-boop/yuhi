@@ -446,7 +446,9 @@ const ALLOWED_PHONES = [
 
 /* ======================================================================
    DAFTAR ADMIN — subset dari ALLOWED_PHONES di atas.
-   Hanya nomor HP di bawah ini yang boleh Tambah/Edit/Hapus Santri dan buka tab Izin.
+   Hanya nomor HP di bawah ini yang boleh Tambah/Edit/Hapus Santri, buka tab Data,
+   dan buka tab Rekap. Tab Pulang (Izin) sekarang bisa diakses penuh oleh semua
+   petugas (bukan hanya admin) — lihat applyAdminUiRestrictions().
    Nomor lain di ALLOWED_PHONES tetap bisa login & pakai tab Absen, tapi read-only di tab Santri.
    ====================================================================== */
 const ADMIN_PHONES = [
@@ -683,7 +685,8 @@ function showToast(msg){
 /* ======================================================================
    2b) BATASAN AKSES ADMIN
    Non-admin: tidak lihat form Tambah/Edit Santri, tidak lihat tombol Edit/Hapus
-   santri, dan tab Izin disembunyikan total.
+   santri, dan tab Data/Rekap disembunyikan total. Tab Pulang (Izin) TIDAK
+   dibatasi lagi — petugas non-admin bisa buka, tambah, dan hapus data Pulang.
    Catatan: ini pembatasan tampilan (front-end). Karena data disimpan di
    Firestore dengan dokumen bersama, keamanan sepenuhnya juga sebaiknya
    diatur lewat Firestore Security Rules di console Firebase.
@@ -691,14 +694,12 @@ function showToast(msg){
 function applyAdminUiRestrictions(){
   const isAdmin = state.isAdmin;
   document.getElementById('form-santri-title').closest('section.block').classList.toggle('hidden', !isAdmin);
-  document.querySelector('.tab-btn[data-tab="izin"]').classList.toggle('hidden', !isAdmin);
-  document.getElementById('panel-izin').classList.toggle('hidden', !isAdmin);
   document.querySelector('.tab-btn[data-tab="data"]').classList.toggle('hidden', !isAdmin);
   document.getElementById('panel-data').classList.toggle('hidden', !isAdmin);
   document.querySelector('.tab-btn[data-tab="rekap"]').classList.toggle('hidden', !isAdmin);
   document.getElementById('panel-rekap').classList.toggle('hidden', !isAdmin);
-  // Kalau akun non-admin sedang berada di tab Izin/Data/Rekap (mustahil, tapi jaga-jaga), pindah ke tab Santri.
-  if(!isAdmin && (document.getElementById('panel-izin').classList.contains('active') || document.getElementById('panel-data').classList.contains('active') || document.getElementById('panel-rekap').classList.contains('active'))){
+  // Kalau akun non-admin sedang berada di tab Data/Rekap (mustahil, tapi jaga-jaga), pindah ke tab Santri.
+  if(!isAdmin && (document.getElementById('panel-data').classList.contains('active') || document.getElementById('panel-rekap').classList.contains('active'))){
     document.querySelector('.tab-btn[data-tab="santri"]').click();
   }
 }
@@ -1494,7 +1495,6 @@ function initIzinHandlers(){
   document.getElementById('izin-kamar-filter').addEventListener('change', refreshIzinSantriOptions);
 
   document.getElementById('btn-tambah-izin').addEventListener('click', async () => {
-    if(!state.isAdmin){ showToast('Hanya admin yang bisa mengelola izin.'); return; }
     const btn = document.getElementById('btn-tambah-izin');
     const key = document.getElementById('izin-santri').value;
     const santri = state.santri.find(s => santriKey(s) === key);
@@ -1533,7 +1533,6 @@ function initIzinHandlers(){
 }
 
 function deleteIzin(idx){
-  if(!state.isAdmin){ showToast('Hanya admin yang bisa mengelola izin.'); return; }
   if(!confirm('Hapus data pulang ini?')) return;
   state.izin.splice(idx, 1);
   saveIzinToFirestore();
