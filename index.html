@@ -201,6 +201,9 @@
       <button class="btn-primary" id="btn-otp-send" style="width:100%; justify-content:center; margin-top:6px;">
         Kirim Kode OTP
       </button>
+      <button class="btn-ghost" id="btn-otp-punya" style="width:100%; justify-content:center; margin-top:8px;">
+        Sudah Punya Kode OTP
+      </button>
     </div>
 
     <div id="otp-step-kode" class="hidden" style="width:100%; max-width:300px; text-align:left;">
@@ -734,6 +737,14 @@ function initGateHandlers(){
 
     auth.signInWithPhoneNumber(e164, getRecaptcha()).then(result => {
       confirmationResult = result;
+      // Simpan verificationId + nomor HP supaya kalau tab ini sempat
+      // reload/dibuang (mis. karena pindah ke app WhatsApp lalu balik),
+      // user tetap bisa lanjut verifikasi lewat tombol "Sudah Punya Kode OTP"
+      // tanpa perlu klik "Kirim Kode OTP" lagi.
+      try{
+        sessionStorage.setItem('otpVerificationId', result.verificationId);
+        sessionStorage.setItem('otpHp', e164);
+      }catch(_e){ /* sessionStorage tidak tersedia, abaikan */ }
       showToast('Kode terkirim. Cek balasan admin di WhatsApp.');
     }).catch(e => {
       console.error(e);
@@ -746,17 +757,58 @@ function initGateHandlers(){
     });
   });
 
+  // Tombol untuk user yang sebelumnya sudah minta OTP (tab sempat
+  // reload/dibuang saat pindah ke WhatsApp, atau sekadar lupa sudah minta)
+  // -> langsung ke form kode tanpa membuka WhatsApp/kirim ulang lagi.
+  document.getElementById('btn-otp-punya').addEventListener('click', () => {
+    let hpTersimpan = null;
+    try{ hpTersimpan = sessionStorage.getItem('otpVerificationId') ? sessionStorage.getItem('otpHp') : null; }
+    catch(_e){ /* sessionStorage tidak tersedia */ }
+
+    if(!confirmationResult && !hpTersimpan){
+      showToast('Belum ada kode OTP yang diminta. Tekan "Kirim Kode OTP" dulu.');
+      return;
+    }
+    showOtpStep(true);
+    if(hpTersimpan) showToast('Masukkan kode OTP yang sudah kamu terima.');
+  });
+
   document.getElementById('btn-otp-verify').addEventListener('click', () => {
     const kode = document.getElementById('in-login-otp').value.trim();
     if(!kode){
       showToast('Masukkan kode OTP.');
       return;
     }
-    if(!confirmationResult){
+
+    // Kasus normal: confirmationResult masih ada di memori (belum reload).
+    if(confirmationResult){
+      confirmationResult.confirm(kode).catch(e => {
+        console.error(e);
+        let pesan = 'Kode OTP salah atau kedaluwarsa.';
+        if(e.code === 'auth/code-expired') pesan = 'Kode OTP kedaluwarsa, kirim ulang.';
+        showToast(pesan);
+      });
+      return;
+    }
+
+    // Fallback: confirmationResult sudah hilang (tab sempat reload),
+    // tapi verificationId masih tersimpan dari permintaan OTP sebelumnya.
+    let verificationId = null;
+    try{ verificationId = sessionStorage.getItem('otpVerificationId'); }
+    catch(_e){ /* sessionStorage tidak tersedia */ }
+
+    if(!verificationId){
       showToast('Kode OTP masih dalam proses pengiriman, tunggu sebentar lalu coba lagi.');
       return;
     }
-    confirmationResult.confirm(kode).catch(e => {
+
+    const credential = firebase.auth.PhoneAuthProvider.credential(verificationId, kode);
+    auth.signInWithCredential(credential).then(() => {
+      try{
+        sessionStorage.removeItem('otpVerificationId');
+        sessionStorage.removeItem('otpHp');
+      }catch(_e){ /* abaikan */ }
+    }).catch(e => {
       console.error(e);
       let pesan = 'Kode OTP salah atau kedaluwarsa.';
       if(e.code === 'auth/code-expired') pesan = 'Kode OTP kedaluwarsa, kirim ulang.';
@@ -767,6 +819,10 @@ function initGateHandlers(){
   document.getElementById('btn-otp-ganti-nomor').addEventListener('click', () => {
     confirmationResult = null;
     document.getElementById('in-login-otp').value = '';
+    try{
+      sessionStorage.removeItem('otpVerificationId');
+      sessionStorage.removeItem('otpHp');
+    }catch(_e){ /* abaikan */ }
     showOtpStep(false);
   });
 
