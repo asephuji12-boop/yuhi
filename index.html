@@ -760,17 +760,11 @@ function initGateHandlers(){
   // Tombol untuk user yang sebelumnya sudah minta OTP (tab sempat
   // reload/dibuang saat pindah ke WhatsApp, atau sekadar lupa sudah minta)
   // -> langsung ke form kode tanpa membuka WhatsApp/kirim ulang lagi.
+  // Tidak ada syarat apa pun: selalu membuka form kode. Kalau ternyata
+  // belum ada OTP yang valid, errornya akan muncul saat user menekan
+  // "Verifikasi & Masuk" (ditangani di handler btn-otp-verify).
   document.getElementById('btn-otp-punya').addEventListener('click', () => {
-    let hpTersimpan = null;
-    try{ hpTersimpan = sessionStorage.getItem('otpVerificationId') ? sessionStorage.getItem('otpHp') : null; }
-    catch(_e){ /* sessionStorage tidak tersedia */ }
-
-    if(!confirmationResult && !hpTersimpan){
-      showToast('Belum ada kode OTP yang diminta. Tekan "Kirim Kode OTP" dulu.');
-      return;
-    }
     showOtpStep(true);
-    if(hpTersimpan) showToast('Masukkan kode OTP yang sudah kamu terima.');
   });
 
   document.getElementById('btn-otp-verify').addEventListener('click', () => {
