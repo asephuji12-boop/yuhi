@@ -699,6 +699,7 @@ function applyAdminUiRestrictions(){
    ====================================================================== */
 let confirmationResult = null;
 let recaptchaVerifier = null;
+let otpRequestPromise = null; // promise permintaan OTP yang sedang berjalan (kalau ada)
 
 function getRecaptcha(){
   if(!recaptchaVerifier){
@@ -707,11 +708,37 @@ function getRecaptcha(){
   return recaptchaVerifier;
 }
 
+// Minta kode OTP ke Firebase (tanpa buka WhatsApp). Dipakai bersama oleh
+// tombol "Kirim Kode OTP" (yang tambahan buka WA) maupun tombol
+// "Sudah Punya Kode OTP" (diam-diam, supaya verificationId tetap ada
+// walau petugas tidak pernah klik "Kirim").
+function mintaOtpFirebase(e164){
+  const p = auth.signInWithPhoneNumber(e164, getRecaptcha()).then(result => {
+    confirmationResult = result;
+    try{
+      sessionStorage.setItem('otpVerificationId', result.verificationId);
+      sessionStorage.setItem('otpHp', e164);
+    }catch(_e){ /* sessionStorage tidak tersedia, abaikan */ }
+    return result;
+  }).catch(e => {
+    console.error(e);
+    let pesan = 'Gagal menyiapkan verifikasi OTP.';
+    if(e.code === 'auth/invalid-phone-number') pesan = 'Format nomor HP tidak valid.';
+    else if(e.code === 'auth/too-many-requests') pesan = 'Terlalu banyak percobaan. Coba lagi nanti.';
+    showToast(pesan);
+    if(recaptchaVerifier){ recaptchaVerifier.render().then(id => grecaptcha.reset(id)); }
+    otpRequestPromise = null;
+    throw e;
+  });
+  otpRequestPromise = p;
+  return p;
+}
+
 function showOtpStep(kode){
   document.getElementById('otp-step-hp').classList.toggle('hidden', kode);
   document.getElementById('otp-step-kode').classList.toggle('hidden', !kode);
   document.getElementById('gate-desc').textContent = kode
-    ? 'Masukkan kode OTP yang dikirim lewat Whatsapp.'
+    ? 'Masukkan kode OTP yang dikirim lewat SMS.'
     : 'Masuk dengan nomor HP petugas. Kode OTP akan dikirim lewat SMS.';
 }
 
@@ -730,41 +757,29 @@ function initGateHandlers(){
 
     // Form OTP langsung ditampilkan begitu tombol diklik (optimistic UI),
     // supaya user tidak merasa "macet" di WhatsApp menunggu Firebase.
-    // Kalau ternyata pengiriman OTP gagal, form ini akan ditutup lagi
-    // di blok .catch() di bawah dengan pesan errornya.
     showOtpStep(true);
     showToast('Membuka WhatsApp & mengirim kode OTP...');
 
-    auth.signInWithPhoneNumber(e164, getRecaptcha()).then(result => {
-      confirmationResult = result;
-      // Simpan verificationId + nomor HP supaya kalau tab ini sempat
-      // reload/dibuang (mis. karena pindah ke app WhatsApp lalu balik),
-      // user tetap bisa lanjut verifikasi lewat tombol "Sudah Punya Kode OTP"
-      // tanpa perlu klik "Kirim Kode OTP" lagi.
-      try{
-        sessionStorage.setItem('otpVerificationId', result.verificationId);
-        sessionStorage.setItem('otpHp', e164);
-      }catch(_e){ /* sessionStorage tidak tersedia, abaikan */ }
+    mintaOtpFirebase(e164).then(() => {
       showToast('Kode terkirim. Cek balasan admin di WhatsApp.');
-    }).catch(e => {
-      console.error(e);
-      let pesan = 'Gagal mengirim kode OTP.';
-      if(e.code === 'auth/invalid-phone-number') pesan = 'Format nomor HP tidak valid.';
-      else if(e.code === 'auth/too-many-requests') pesan = 'Terlalu banyak percobaan. Coba lagi nanti.';
-      showToast(pesan);
-      showOtpStep(false); // gagal kirim -> kembali ke form nomor HP
-      if(recaptchaVerifier){ recaptchaVerifier.render().then(id => grecaptcha.reset(id)); }
+    }).catch(() => {
+      showOtpStep(false); // gagal minta -> kembali ke form nomor HP
     });
   });
 
-  // Tombol untuk user yang sebelumnya sudah minta OTP (tab sempat
-  // reload/dibuang saat pindah ke WhatsApp, atau sekadar lupa sudah minta)
-  // -> langsung ke form kode tanpa membuka WhatsApp/kirim ulang lagi.
-  // Tidak ada syarat apa pun: selalu membuka form kode. Kalau ternyata
-  // belum ada OTP yang valid, errornya akan muncul saat user menekan
-  // "Verifikasi & Masuk" (ditangani di handler btn-otp-verify).
+  // Tombol untuk user yang kodenya sudah ada duluan (mis. dikirim manual
+  // lewat WA oleh admin, atau pakai nomor test Firebase) -> TIDAK membuka
+  // WhatsApp, tapi tetap diam-diam minta verificationId ke Firebase kalau
+  // memang belum ada, supaya kode yang diketik nanti punya sesuatu untuk
+  // dicocokkan (tidak akan pernah "nyangkut" tanpa alasan).
   document.getElementById('btn-otp-punya').addEventListener('click', () => {
     showOtpStep(true);
+    if(!confirmationResult && !otpRequestPromise){
+      const hpRaw = document.getElementById('in-login-hp').value.trim();
+      if(hpRaw){
+        mintaOtpFirebase(normalizeToE164(hpRaw)).catch(() => {});
+      }
+    }
   });
 
   document.getElementById('btn-otp-verify').addEventListener('click', () => {
@@ -774,13 +789,24 @@ function initGateHandlers(){
       return;
     }
 
+    const konfirmasi = (cr) => cr.confirm(kode).catch(e => {
+      console.error(e);
+      let pesan = 'Kode OTP salah atau kedaluwarsa.';
+      if(e.code === 'auth/code-expired') pesan = 'Kode OTP kedaluwarsa, kirim ulang.';
+      showToast(pesan);
+    });
+
     // Kasus normal: confirmationResult masih ada di memori (belum reload).
     if(confirmationResult){
-      confirmationResult.confirm(kode).catch(e => {
-        console.error(e);
-        let pesan = 'Kode OTP salah atau kedaluwarsa.';
-        if(e.code === 'auth/code-expired') pesan = 'Kode OTP kedaluwarsa, kirim ulang.';
-        showToast(pesan);
+      konfirmasi(confirmationResult);
+      return;
+    }
+
+    // Permintaan OTP masih diproses Firebase (baru saja diklik) -> tunggu
+    // sampai selesai baru dicocokkan, tanpa menampilkan pesan blokir apa pun.
+    if(otpRequestPromise){
+      otpRequestPromise.then(cr => konfirmasi(cr)).catch(() => {
+        showToast('Gagal menyiapkan verifikasi. Isi ulang nomor HP lalu coba lagi.');
       });
       return;
     }
@@ -791,27 +817,35 @@ function initGateHandlers(){
     try{ verificationId = sessionStorage.getItem('otpVerificationId'); }
     catch(_e){ /* sessionStorage tidak tersedia */ }
 
-    if(!verificationId){
-      showToast('Kode OTP masih dalam proses pengiriman, tunggu sebentar lalu coba lagi.');
+    if(verificationId){
+      const credential = firebase.auth.PhoneAuthProvider.credential(verificationId, kode);
+      auth.signInWithCredential(credential).then(() => {
+        try{
+          sessionStorage.removeItem('otpVerificationId');
+          sessionStorage.removeItem('otpHp');
+        }catch(_e){ /* abaikan */ }
+      }).catch(e => {
+        console.error(e);
+        let pesan = 'Kode OTP salah atau kedaluwarsa.';
+        if(e.code === 'auth/code-expired') pesan = 'Kode OTP kedaluwarsa, kirim ulang.';
+        showToast(pesan);
+      });
       return;
     }
 
-    const credential = firebase.auth.PhoneAuthProvider.credential(verificationId, kode);
-    auth.signInWithCredential(credential).then(() => {
-      try{
-        sessionStorage.removeItem('otpVerificationId');
-        sessionStorage.removeItem('otpHp');
-      }catch(_e){ /* abaikan */ }
-    }).catch(e => {
-      console.error(e);
-      let pesan = 'Kode OTP salah atau kedaluwarsa.';
-      if(e.code === 'auth/code-expired') pesan = 'Kode OTP kedaluwarsa, kirim ulang.';
-      showToast(pesan);
-    });
+    // Betul-betul belum ada apa pun (nomor HP juga belum diisi) -> minta
+    // Firebase sekarang juga sebagai upaya terakhir, baru dicocokkan.
+    const hpRaw = document.getElementById('in-login-hp').value.trim();
+    if(!hpRaw){
+      showToast('Isi nomor HP dahulu di kolom sebelumnya.');
+      return;
+    }
+    mintaOtpFirebase(normalizeToE164(hpRaw)).then(cr => konfirmasi(cr)).catch(() => {});
   });
 
   document.getElementById('btn-otp-ganti-nomor').addEventListener('click', () => {
     confirmationResult = null;
+    otpRequestPromise = null;
     document.getElementById('in-login-otp').value = '';
     try{
       sessionStorage.removeItem('otpVerificationId');
