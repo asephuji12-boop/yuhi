@@ -193,16 +193,13 @@
     </svg>
     <div class="eyebrow">Manajemen Pesantren</div>
     <h1 class="font-display">Data Santri</h1>
-    <p id="gate-desc">Masuk dengan nomor HP petugas. Tekan tombol untuk minta kode OTP lewat WhatsApp ke admin.</p>
+    <p id="gate-desc">Masuk dengan nomor HP petugas, lalu masukkan kode OTP.</p>
 
     <div id="otp-step-hp" style="width:100%; max-width:300px; text-align:left;">
       <label class="flabel">Nomor HP</label>
       <input class="field" type="tel" id="in-login-hp" placeholder="08xxxxxxxxxx" autocomplete="username" inputmode="numeric">
-      <button class="btn-primary" id="btn-otp-send" style="width:100%; justify-content:center; margin-top:6px;">
-        Kirim Kode OTP
-      </button>
-      <button class="btn-ghost" id="btn-otp-punya" style="width:100%; justify-content:center; margin-top:8px;">
-        Sudah Punya Kode OTP
+      <button class="btn-primary" id="btn-otp-punya" style="width:100%; justify-content:center; margin-top:6px;">
+        Masuk dengan Kode OTP
       </button>
     </div>
 
@@ -455,8 +452,9 @@ const ADMIN_PHONES = [
   '+6285356168487',// contoh — ganti dengan nomor HP admin sebenarnya
 ];
 
-/* Nomor WhatsApp admin yang dituju saat petugas menekan "Kirim Kode OTP".
-   Format internasional TANPA tanda + dan tanpa spasi/strip (syarat link wa.me). */
+/* Nomor WA admin ini disisakan untuk keperluan lain (mis. dicantumkan
+   manual di halaman bantuan), tapi tidak lagi dipakai otomatis oleh alur
+   login karena tombol "Kirim Kode OTP" sudah dihapus. */
 const ADMIN_WA_NUMBER = '6285356168487';
 
 /* Menormalkan input nomor HP jadi format E.164 (+62...) untuk dikirim ke Firebase. */
@@ -466,40 +464,6 @@ function normalizeToE164(raw){
   else if(p.startsWith('8')) p = '62' + p; // jaga-jaga kalau user ketik tanpa 0/62 di depan
   else if(p.startsWith('620')) p = '62' + p.slice(3);
   return '+' + p;
-}
-
-/* Membuka WhatsApp (tab baru) ke nomor admin dengan pesan permintaan kode OTP
-   yang sudah terisi otomatis, berisi nomor HP (format E.164) yang minta login.
-   Dipanggil langsung secara sinkron di dalam click handler supaya tidak
-   diblokir popup-blocker browser. */
-function bukaWhatsAppMintaOtp(e164){
-  const pesan = `Saya user ${e164} memerlukan kode OTP, berikan kode OTP untuk saya`;
-  const teks = encodeURIComponent(pesan);
-
-  // Deep link langsung ke APLIKASI WhatsApp (Android & iOS), bukan WhatsApp Web.
-  // Skema whatsapp:// ini yang dipakai WhatsApp untuk membuka app-nya langsung.
-  const urlApp = 'whatsapp://send?phone=' + ADMIN_WA_NUMBER + '&text=' + teks;
-
-  // Fallback kalau app WhatsApp tidak terpasang di device (mis. desktop tanpa app):
-  // dipakai wa.me yang akan mengarahkan ke WhatsApp Web / App Store / Play Store.
-  const urlFallback = 'https://wa.me/' + ADMIN_WA_NUMBER + '?text=' + teks;
-
-  let sudahPindah = false;
-  const tandaiPindah = () => { sudahPindah = true; };
-  document.addEventListener('visibilitychange', tandaiPindah, { once: true });
-  window.addEventListener('blur', tandaiPindah, { once: true });
-
-  // Coba buka app-nya dulu.
-  window.location.href = urlApp;
-
-  // Kalau setelah beberapa saat halaman masih di sini (berarti device tidak
-  // berhasil memicu app WhatsApp, biasanya karena app tidak terpasang),
-  // baru buka fallback di tab baru supaya user tidak macet.
-  setTimeout(() => {
-    if(!sudahPindah){
-      window.open(urlFallback, '_blank');
-    }
-  }, 1200);
 }
 
 const PROGRAMS = ['Diniyyah Pagi','Diniyyah Siang','Pos Pagi','Pos Siang','Ngaji Sore',"Muthola'ah","Penunggu Muthola'ah",'Keaktifan Musyawaroh Harian','Keaktifan Musyawaroh Instansi','Ruqmannaum Malam','Absen Hadiri'];
@@ -743,42 +707,19 @@ function showOtpStep(kode){
 }
 
 function initGateHandlers(){
-  document.getElementById('btn-otp-send').addEventListener('click', () => {
+  // Satu-satunya tombol di form login: minta nomor HP, lalu diam-diam
+  // menyiapkan sesi verifikasi ke Firebase dan langsung membuka form
+  // kode OTP. Kode OTP-nya sendiri didapat user dari luar aplikasi
+  // (mis. dikirim manual oleh admin lewat WhatsApp, atau kode test Firebase).
+  document.getElementById('btn-otp-punya').addEventListener('click', () => {
     const hpRaw = document.getElementById('in-login-hp').value.trim();
     if(!hpRaw){
       showToast('Isi nomor HP terlebih dahulu.');
       return;
     }
-    const e164 = normalizeToE164(hpRaw);
-
-    // Buka WhatsApp ke admin dengan pesan minta kode OTP, terisi otomatis.
-    // Dipanggil sinkron (sebelum promise Firebase) supaya tidak diblokir popup-blocker.
-    bukaWhatsAppMintaOtp(e164);
-
-    // Form OTP langsung ditampilkan begitu tombol diklik (optimistic UI),
-    // supaya user tidak merasa "macet" di WhatsApp menunggu Firebase.
-    showOtpStep(true);
-    showToast('Membuka WhatsApp & mengirim kode OTP...');
-
-    mintaOtpFirebase(e164).then(() => {
-      showToast('Kode terkirim. Cek balasan admin di WhatsApp.');
-    }).catch(() => {
-      showOtpStep(false); // gagal minta -> kembali ke form nomor HP
-    });
-  });
-
-  // Tombol untuk user yang kodenya sudah ada duluan (mis. dikirim manual
-  // lewat WA oleh admin, atau pakai nomor test Firebase) -> TIDAK membuka
-  // WhatsApp, tapi tetap diam-diam minta verificationId ke Firebase kalau
-  // memang belum ada, supaya kode yang diketik nanti punya sesuatu untuk
-  // dicocokkan (tidak akan pernah "nyangkut" tanpa alasan).
-  document.getElementById('btn-otp-punya').addEventListener('click', () => {
     showOtpStep(true);
     if(!confirmationResult && !otpRequestPromise){
-      const hpRaw = document.getElementById('in-login-hp').value.trim();
-      if(hpRaw){
-        mintaOtpFirebase(normalizeToE164(hpRaw)).catch(() => {});
-      }
+      mintaOtpFirebase(normalizeToE164(hpRaw)).catch(() => {});
     }
   });
 
