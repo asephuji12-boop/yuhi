@@ -193,7 +193,7 @@
     </svg>
     <div class="eyebrow">Manajemen Pesantren</div>
     <h1 class="font-display">Data Santri</h1>
-    <p id="gate-desc">Masuk dengan nomor HP petugas. Kode OTP akan dikirim lewat SMS.</p>
+    <p id="gate-desc">Masuk dengan nomor HP petugas. Tekan tombol untuk minta kode OTP lewat WhatsApp ke admin.</p>
 
     <div id="otp-step-hp" style="width:100%; max-width:300px; text-align:left;">
       <label class="flabel">Nomor HP</label>
@@ -451,6 +451,10 @@ const ADMIN_PHONES = [
   '+6285356168487', // contoh — ganti dengan nomor HP admin sebenarnya
 ];
 
+/* Nomor WhatsApp admin yang dituju saat petugas menekan "Kirim Kode OTP".
+   Format internasional TANPA tanda + dan tanpa spasi/strip (syarat link wa.me). */
+const ADMIN_WA_NUMBER = '6285356168487';
+
 /* Menormalkan input nomor HP jadi format E.164 (+62...) untuk dikirim ke Firebase. */
 function normalizeToE164(raw){
   let p = (raw || '').replace(/[^\d]/g, '');
@@ -458,6 +462,16 @@ function normalizeToE164(raw){
   else if(p.startsWith('8')) p = '62' + p; // jaga-jaga kalau user ketik tanpa 0/62 di depan
   else if(p.startsWith('620')) p = '62' + p.slice(3);
   return '+' + p;
+}
+
+/* Membuka WhatsApp (tab baru) ke nomor admin dengan pesan permintaan kode OTP
+   yang sudah terisi otomatis, berisi nomor HP (format E.164) yang minta login.
+   Dipanggil langsung secara sinkron di dalam click handler supaya tidak
+   diblokir popup-blocker browser. */
+function bukaWhatsAppMintaOtp(e164){
+  const pesan = `Saya user ${e164} memerlukan kode OTP, berikan kode OTP untuk saya`;
+  const url = 'https://wa.me/' + ADMIN_WA_NUMBER + '?text=' + encodeURIComponent(pesan);
+  window.open(url, '_blank');
 }
 
 const PROGRAMS = ['Diniyyah Pagi','Diniyyah Siang','Pos Pagi','Pos Siang','Ngaji Sore',"Muthola'ah","Penunggu Muthola'ah",'Keaktifan Musyawaroh Harian','Keaktifan Musyawaroh Instansi','Ruqmannaum Malam','Absen Hadiri'];
@@ -681,10 +695,15 @@ function initGateHandlers(){
       return;
     }
     const e164 = normalizeToE164(hpRaw);
+
+    // Buka WhatsApp ke admin dengan pesan minta kode OTP, terisi otomatis.
+    // Dipanggil sinkron (sebelum promise Firebase) supaya tidak diblokir popup-blocker.
+    bukaWhatsAppMintaOtp(e164);
+
     auth.signInWithPhoneNumber(e164, getRecaptcha()).then(result => {
       confirmationResult = result;
       showOtpStep(true);
-      showToast('Kode OTP terkirim ke ' + e164);
+      showToast('Permintaan kode terkirim. Cek balasan admin di WhatsApp.');
     }).catch(e => {
       console.error(e);
       let pesan = 'Gagal mengirim kode OTP.';
