@@ -290,7 +290,10 @@
         <section class="block glass">
           <h2>Roster Absen</h2>
           <div class="search-box"><input class="field" id="cari-alfa" placeholder="Cari nama / ID…"></div>
-          <select class="field" id="alfa-kelas-filter"></select>
+          <div class="form-grid" style="margin-bottom:9px;">
+            <select class="field" id="alfa-kelas-filter" style="margin-bottom:0;"></select>
+            <select class="field" id="alfa-kamar-filter" style="margin-bottom:0;"><option value="">— Pilih Kamar —</option></select>
+          </div>
           <div class="btn-row">
             <button class="btn-ghost" id="btn-centang-semua">Tandai Semua Alfa</button>
             <button class="btn-ghost" id="btn-kosongkan-semua">Hadir Semua (Kosongkan)</button>
@@ -328,6 +331,10 @@
         <section class="block glass">
           <h2>Daftar Perizinan</h2>
           <div class="search-box"><input class="field" id="cari-izin" placeholder="Cari nama / ID…"></div>
+          <div class="form-grid" style="margin-bottom:9px;">
+            <select class="field" id="izin-kelas-filter" style="margin-bottom:0;"><option value="">— Pilih Kelas —</option></select>
+            <select class="field" id="izin-kamar-filter" style="margin-bottom:0;"><option value="">— Pilih Kamar —</option></select>
+          </div>
           <div id="list-izin"></div>
           <div class="empty hidden" id="list-izin-empty">Belum ada data izin.</div>
         </section>
@@ -1027,16 +1034,18 @@ function initAlfaHandlers(){
   tglInput.value = todayStr();
   progSelect.innerHTML = PROGRAMS.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
 
-  progSelect.addEventListener('change', () => { refreshAlfaKelasFilterOptions(); loadDraftForCurrent(); renderAlfaList(); });
+  progSelect.addEventListener('change', () => { refreshAlfaKelasFilterOptions(); refreshAlfaKamarFilterOptions(); loadDraftForCurrent(); renderAlfaList(); });
   tglInput.addEventListener('change', () => { loadDraftForCurrent(); renderAlfaList(); });
   document.getElementById('cari-alfa').addEventListener('input', renderAlfaList);
   document.getElementById('alfa-kelas-filter').addEventListener('change', renderAlfaList);
+  document.getElementById('alfa-kamar-filter').addEventListener('change', renderAlfaList);
 
   document.getElementById('btn-centang-semua').addEventListener('click', () => {
     const prog = progSelect.value;
     const tgl = tglInput.value || todayStr();
     const kelasFilter = document.getElementById('alfa-kelas-filter').value;
-    state.santri.filter(s => isWajib(s, prog) && (!kelasFilter || (s.kelas||'').trim() === kelasFilter)).forEach(s => {
+    const kamarFilter = document.getElementById('alfa-kamar-filter').value;
+    state.santri.filter(s => isWajib(s, prog) && (!kelasFilter || (s.kelas||'').trim() === kelasFilter) && (!kamarFilter || (s.kamar||'').trim() === kamarFilter)).forEach(s => {
       const key = santriKey(s);
       if(!getActiveIzin(key, tgl)) draftAlfa[key] = true;
     });
@@ -1045,7 +1054,8 @@ function initAlfaHandlers(){
   document.getElementById('btn-kosongkan-semua').addEventListener('click', () => {
     const prog = progSelect.value;
     const kelasFilter = document.getElementById('alfa-kelas-filter').value;
-    state.santri.filter(s => isWajib(s, prog) && (!kelasFilter || (s.kelas||'').trim() === kelasFilter)).forEach(s => delete draftAlfa[santriKey(s)]);
+    const kamarFilter = document.getElementById('alfa-kamar-filter').value;
+    state.santri.filter(s => isWajib(s, prog) && (!kelasFilter || (s.kelas||'').trim() === kelasFilter) && (!kamarFilter || (s.kamar||'').trim() === kamarFilter)).forEach(s => delete draftAlfa[santriKey(s)]);
     renderAlfaList();
   });
 
@@ -1067,6 +1077,7 @@ function initAlfaHandlers(){
   if(cariRekap) cariRekap.addEventListener('input', renderRekapAlfa);
 
   refreshAlfaKelasFilterOptions();
+  refreshAlfaKamarFilterOptions();
   loadDraftForCurrent();
 }
 
@@ -1085,6 +1096,19 @@ function refreshAlfaKelasFilterOptions(){
   else if(kelasList.length) select.value = kelasList[0];
 }
 
+/* Sama seperti refreshAlfaKelasFilterOptions, tapi untuk filter Kamar.
+   Kamar bersifat opsional (boleh dikosongkan) sehingga defaultnya
+   "— Pilih Kamar —" (tidak otomatis memilih kamar pertama). */
+function refreshAlfaKamarFilterOptions(){
+  const prog = document.getElementById('alfa-program').value;
+  const select = document.getElementById('alfa-kamar-filter');
+  const current = select.value;
+  const wajibList = state.santri.filter(s => isWajib(s, prog));
+  const kamarList = [...new Set(wajibList.map(s => (s.kamar || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+  select.innerHTML = `<option value="">— Pilih Kamar —</option>` + kamarList.map(k => `<option value="${escapeHtml(k)}">${escapeHtml(k)}</option>`).join('');
+  select.value = kamarList.includes(current) ? current : '';
+}
+
 function loadDraftForCurrent(){
   const prog = document.getElementById('alfa-program').value;
   const tgl = document.getElementById('alfa-tanggal').value || todayStr();
@@ -1095,13 +1119,15 @@ function loadDraftForCurrent(){
 function renderAlfaList(){
   const q = document.getElementById('cari-alfa').value.trim().toLowerCase();
   const kelasFilter = document.getElementById('alfa-kelas-filter').value;
+  const kamarFilter = document.getElementById('alfa-kamar-filter').value;
   const prog = document.getElementById('alfa-program').value;
   const tgl = document.getElementById('alfa-tanggal').value || todayStr();
   const container = document.getElementById('list-alfa');
   const wajibList = state.santri.filter(s => isWajib(s, prog));
   const list = wajibList.filter(s =>
     (!q || s.nama.toLowerCase().includes(q) || (s.id||'').toLowerCase().includes(q)) &&
-    (!kelasFilter || (s.kelas||'').trim() === kelasFilter)
+    (!kelasFilter || (s.kelas||'').trim() === kelasFilter) &&
+    (!kamarFilter || (s.kamar||'').trim() === kamarFilter)
   );
   container.innerHTML = '';
   document.getElementById('list-alfa-empty').classList.toggle('hidden', wajibList.length > 0);
@@ -1255,8 +1281,31 @@ function refreshIzinSantriOptions(){
   if(current) sel.value = current;
 }
 
+/* Sama seperti refreshSantriFilterOptions: opsi diambil dari data santri
+   itu sendiri (bukan daftar tetap), lalu dipakai untuk menyaring
+   Daftar Perizinan berdasarkan Kelas/Kamar santri yang bersangkutan. */
+function refreshIzinFilterOptions(){
+  const kelasSet = new Set(), kamarSet = new Set();
+  state.santri.forEach(s => {
+    if(s.kelas) kelasSet.add(s.kelas);
+    if(s.kamar) kamarSet.add(s.kamar);
+  });
+  const fillSelect = (id, values, allLabel) => {
+    const el = document.getElementById(id);
+    const current = el.value;
+    el.innerHTML = `<option value="">${allLabel}</option>` +
+      [...values].sort().map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+    el.value = [...values].includes(current) ? current : '';
+  };
+  fillSelect('izin-kelas-filter', kelasSet, '— Pilih Kelas —');
+  fillSelect('izin-kamar-filter', kamarSet, '— Pilih Kamar —');
+}
+
 function initIzinHandlers(){
   refreshIzinSantriOptions();
+  refreshIzinFilterOptions();
+  document.getElementById('izin-kelas-filter').addEventListener('change', renderIzinList);
+  document.getElementById('izin-kamar-filter').addEventListener('change', renderIzinList);
 
   document.getElementById('btn-tambah-izin').addEventListener('click', async () => {
     if(!state.isAdmin){ showToast('Hanya admin yang bisa mengelola izin.'); return; }
@@ -1310,11 +1359,17 @@ function deleteIzin(idx){
 
 function renderIzinList(){
   const q = document.getElementById('cari-izin').value.trim().toLowerCase();
+  const kelasFilter = document.getElementById('izin-kelas-filter').value;
+  const kamarFilter = document.getElementById('izin-kamar-filter').value;
   const container = document.getElementById('list-izin');
   const bySantriKey = key => state.santri.find(s => santriKey(s) === key) || {};
   const indexed = state.izin.map((iz, i) => ({ iz, i }));
-  const list = indexed.filter(({iz}) => !q ||
-    iz.nama.toLowerCase().includes(q) || (iz.santriKey||'').toLowerCase().includes(q));
+  const list = indexed.filter(({iz}) => {
+    const s = bySantriKey(iz.santriKey);
+    return (!q || iz.nama.toLowerCase().includes(q) || (iz.santriKey||'').toLowerCase().includes(q)) &&
+      (!kelasFilter || s.kelas === kelasFilter) &&
+      (!kamarFilter || s.kamar === kamarFilter);
+  });
   list.sort((a,b) => b.iz.mulai.localeCompare(a.iz.mulai));
   container.innerHTML = '';
   document.getElementById('list-izin-empty').classList.toggle('hidden', state.izin.length > 0);
@@ -1494,10 +1549,12 @@ function renderAll(){
   refreshSantriFilterOptions();
   renderSantriList();
   refreshAlfaKelasFilterOptions();
+  refreshAlfaKamarFilterOptions();
   loadDraftForCurrent();
   renderAlfaList();
   renderRekapAlfa();
   refreshIzinSantriOptions();
+  refreshIzinFilterOptions();
   renderIzinList();
 }
 
