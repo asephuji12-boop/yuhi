@@ -242,7 +242,7 @@
           </div>
           <div id="santri-form-body" class="hidden" style="margin-top:10px;">
             <div class="form-grid">
-              <div><label class="flabel">ID</label><input class="field" id="in-id"></div>
+              <div><label class="flabel">ID *</label><input class="field" id="in-id" placeholder="Wajib diisi &amp; unik"></div>
               <div><label class="flabel">Kelas</label><input class="field" id="in-kelas"></div>
             </div>
             <label class="flabel">Nama</label><input class="field" id="in-nama">
@@ -341,7 +341,7 @@
             <button class="btn-ghost" id="btn-export"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M6 13l6 6 6-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Export Excel</button>
           </div>
           <input type="file" id="file-import" accept=".xlsx,.xls,.csv">
-          <p style="font-size:11px; color:var(--cream-dim); margin:6px 0 0;">Kolom Excel: No, ID, Nama, Alamat, Kelas, Kamar.</p>
+          <p style="font-size:11px; color:var(--cream-dim); margin:6px 0 0;">Kolom Excel: No, ID, Nama, Alamat, Kelas, Kamar. <b>ID wajib diisi</b> — baris tanpa ID akan dilewati. Jika ID sudah ada di data, santrinya diperbarui (bukan dobel).</p>
         </section>
 
         <section class="block glass" style="padding:12px 16px;">
@@ -351,7 +351,7 @@
             <button class="btn-ghost" id="btn-export-alfa"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M6 13l6 6 6-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Export Excel</button>
           </div>
           <input type="file" id="file-import-alfa" accept=".xlsx,.xls,.csv">
-          <p style="font-size:11px; color:var(--cream-dim); margin:6px 0 0;">Berlaku untuk Program &amp; Tanggal yang dipilih di tab Alfa. Kolom Excel: No, ID, Nama, Kelas, Status (isi "Hadir" atau "Alfa"). Setelah import, buka tab Alfa lalu tekan <b>Simpan Absen</b> untuk menyimpan ke server.</p>
+          <p style="font-size:11px; color:var(--cream-dim); margin:6px 0 0;">Berlaku untuk Program &amp; Tanggal yang dipilih di tab Alfa. Kolom Excel: No, ID, Nama, Kelas, Status (isi "Hadir" atau "Alfa"). <b>Pencocokan baris memakai kolom ID</b> — baris tanpa ID tidak akan cocok dengan santri manapun. Setelah import, buka tab Alfa lalu tekan <b>Simpan Absen</b> untuk menyimpan ke server.</p>
         </section>
 
         <section class="block glass" style="padding:12px 16px;">
@@ -361,7 +361,7 @@
             <button class="btn-ghost" id="btn-export-izin"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M6 13l6 6 6-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Export Excel</button>
           </div>
           <input type="file" id="file-import-izin" accept=".xlsx,.xls,.csv">
-          <p style="font-size:11px; color:var(--cream-dim); margin:6px 0 0;">Kolom Excel: No, ID, Nama, Kelas, Mulai, Selesai, Keterangan. Tanggal format YYYY-MM-DD.</p>
+          <p style="font-size:11px; color:var(--cream-dim); margin:6px 0 0;">Kolom Excel: No, ID, Nama, Kelas, Mulai, Selesai, Keterangan. Tanggal format YYYY-MM-DD. <b>Pencocokan baris memakai kolom ID</b> — baris tanpa ID tidak akan cocok dengan santri manapun.</p>
         </section>
 
         <section class="block glass" style="padding:12px 16px;">
@@ -495,7 +495,11 @@ const state = { uid: null, isAdmin: false, santri: [], izin: [], alfaByProgram: 
    jadi absen yang diisi siapa pun langsung terlihat oleh admin. */
 function santriDocRef(){ return db.collection('santri_app_shared').doc('data'); }
 
-function santriKey(s){ return s.id || s.nama; }
+/* Kunci acuan SATU-SATUNYA untuk setiap santri adalah field ID (wajib diisi,
+   wajib unik). Tidak ada lagi fallback ke nama — dua santri boleh punya nama
+   sama persis asal ID-nya berbeda, dan santri tanpa ID tidak akan pernah
+   cocok dengan apa pun (absen, izin, import/export). */
+function santriKey(s){ return (s.id || '').trim(); }
 
 /* Santri dianggap wajib ikut sebuah program jika programWajib berisi nama program,
    ATAU jika field programWajib belum pernah diisi sama sekali (data lama / default). */
@@ -813,9 +817,13 @@ function initSantriHandlers(){
     if(!state.isAdmin){ showToast('Hanya admin yang bisa menambah/mengubah santri.'); return; }
     const btn = document.getElementById('btn-tambah-santri');
     const nama = document.getElementById('in-nama').value.trim();
+    const id = document.getElementById('in-id').value.trim();
     if(!nama){ showToast('Nama wajib diisi.'); return; }
+    if(!id){ showToast('ID wajib diisi — ID dipakai sebagai acuan utama data santri.'); return; }
+    const dup = state.santri.some((s, idx) => s.id === id && idx !== editingSantriIdx);
+    if(dup){ showToast('ID "' + id + '" sudah dipakai santri lain. Gunakan ID yang unik.'); return; }
     const santriData = {
-      id: document.getElementById('in-id').value.trim(),
+      id,
       nama,
       alamat: document.getElementById('in-alamat').value.trim(),
       kelas: document.getElementById('in-kelas').value.trim(),
@@ -962,13 +970,16 @@ function handleImportFile(e){
       const wb = XLSX.read(evt.target.result, { type: 'binary' });
       const ws = wb.Sheets[wb.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
-      let added = 0;
+      let added = 0, updated = 0, skipped = 0;
       rows.forEach(r => {
         const nama = String(r.Nama || r.nama || '').trim();
-        if(!nama) return;
+        const id = String(r.ID || r.id || '').trim();
+        // ID adalah acuan wajib -> baris tanpa ID dilewati, tidak lagi diimport
+        // sebagai santri baru tanpa identitas.
+        if(!nama || !id){ skipped++; return; }
         const wajibRaw = r['Program Wajib'] !== undefined ? r['Program Wajib'] : r.ProgramWajib;
         const santriBaru = {
-          id: String(r.ID || r.id || '').trim(),
+          id,
           nama,
           alamat: String(r.Alamat || r.alamat || '').trim(),
           kelas: String(r.Kelas || r.kelas || '').trim(),
@@ -981,12 +992,16 @@ function handleImportFile(e){
             ? String(wajibRaw).split(',').map(p => p.trim()).filter(Boolean)
             : [];
         }
-        state.santri.push(santriBaru);
-        added++;
+        // ID sudah ada -> perbarui data santri yang sama, bukan menambah duplikat.
+        const existingIdx = state.santri.findIndex(s => s.id === id);
+        if(existingIdx > -1){ state.santri[existingIdx] = santriBaru; updated++; }
+        else { state.santri.push(santriBaru); added++; }
       });
       saveSantriToFirestore();
       renderAll();
-      showToast(added + ' santri berhasil diimport.');
+      let msg = `${added} santri ditambahkan, ${updated} diperbarui.`;
+      if(skipped) msg += ` ${skipped} baris dilewati (ID/Nama kosong).`;
+      showToast(msg);
     }catch(err){
       console.error(err);
       showToast('Gagal membaca file. Pastikan formatnya benar.');
@@ -1203,13 +1218,10 @@ function handleImportAlfaFile(e){
       let matched = 0, unmatched = 0, locked = 0;
       rows.forEach(r => {
         const id = String(r.ID || r.id || '').trim();
-        const nama = String(r.Nama || r.nama || '').trim();
         const statusRaw = String(r.Status || r.status || '').trim().toLowerCase();
         const alfa = statusRaw.startsWith('a'); // "Alfa" -> true, "Hadir"/"Izin"/lainnya/kosong -> false
-        const santri = state.santri.find(s =>
-          (id && String(s.id || '').trim() === id) ||
-          (!id && nama && s.nama.trim().toLowerCase() === nama.toLowerCase())
-        );
+        // Pencocokan HANYA berdasarkan ID -> baris tanpa ID tidak akan pernah cocok.
+        const santri = id ? state.santri.find(s => s.id === id) : null;
         if(!santri){ unmatched++; return; }
         const key = santriKey(santri);
         if(getActiveIzin(key, tgl)){ locked++; return; } // status terkunci karena izin, tidak diubah dari import
@@ -1447,13 +1459,10 @@ function handleImportIzinFile(e){
       let added = 0, unmatched = 0;
       rows.forEach(r => {
         const id = String(r.ID || r.id || '').trim();
-        const nama = String(r.Nama || r.nama || '').trim();
         const mulai = String(r.Mulai || r.mulai || '').trim();
         if(!mulai) return;
-        const santri = state.santri.find(s =>
-          (id && String(s.id || '').trim() === id) ||
-          (!id && nama && s.nama.trim().toLowerCase() === nama.toLowerCase())
-        );
+        // Pencocokan HANYA berdasarkan ID -> baris tanpa ID tidak akan pernah cocok.
+        const santri = id ? state.santri.find(s => s.id === id) : null;
         if(!santri){ unmatched++; return; }
         const selesaiRaw = String(r.Selesai || r.selesai || '').trim();
         state.izin.push({
