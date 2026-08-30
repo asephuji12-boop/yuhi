@@ -304,6 +304,17 @@
         </section>
       </section>
 
+      <section class="tab-panel" id="panel-detail">
+        <section class="block glass" style="padding:12px 16px;">
+          <h2 style="margin:0 0 10px;">Detail Alfa per Program</h2>
+          <label class="flabel">Tanggal</label>
+          <input class="field" type="date" id="detail-tanggal" style="padding:10px 11px; font-size:13px;">
+          <p style="font-size:11px; color:var(--cream-dim); margin:6px 0 0;">Menampilkan santri yang <b>Alfa</b> di setiap program pada tanggal yang dipilih. Tekan <b>Salin</b> untuk menyalin daftar (siap tempel ke WhatsApp).</p>
+        </section>
+        <div id="list-detail-alfa"></div>
+        <div class="empty" id="list-detail-alfa-empty">Tidak ada santri yang alfa pada tanggal ini.</div>
+      </section>
+
       <section class="tab-panel" id="panel-rekap">
         <section class="block glass" id="block-rekap-alfa">
           <h2>Rekap Semua Petugas</h2>
@@ -402,6 +413,10 @@
       <button class="tab-btn" data-tab="izin">
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="10.5" width="14" height="9.5" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="15" r="1.3" fill="currentColor"/></svg>
         <span class="dot"></span>Pulang
+      </button>
+      <button class="tab-btn" data-tab="detail">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M8 9h8M8 12.5h8M8 16h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <span class="dot"></span>Detail
       </button>
       <button class="tab-btn" data-tab="data">
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3v13M12 16l-4-4M12 16l4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -1210,6 +1225,7 @@ function initAlfaHandlers(){
     saveIzinHarianToFirestore();
     syncAbsenToSheet(prog, tgl, bersihAlfa);
     renderRekapAlfa();
+    renderDetailAlfa();
     showToast('Absen ' + prog + ' tanggal ' + tgl + ' disimpan.');
   });
 
@@ -1380,6 +1396,101 @@ function renderRekapAlfa(){
       </div>`;
     container.appendChild(row);
   });
+}
+
+/* ======================================================================
+   4b) TAB DETAIL — Daftar santri Alfa di setiap program (per tanggal),
+   dengan tombol Salin agar bisa langsung ditempel ke WhatsApp.
+   ====================================================================== */
+function initDetailHandlers(){
+  const tglInput = document.getElementById('detail-tanggal');
+  if(!tglInput) return;
+  tglInput.value = todayStr();
+  tglInput.addEventListener('input', renderDetailAlfa);
+}
+
+function salinKeClipboard(teks, btn){
+  const selesai = () => {
+    if(!btn) return;
+    const asli = btn.textContent;
+    btn.textContent = 'Tersalin ✓';
+    setTimeout(() => { btn.textContent = asli; }, 1500);
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(teks).then(selesai).catch(() => salinFallback(teks, selesai));
+  } else {
+    salinFallback(teks, selesai);
+  }
+}
+
+function salinFallback(teks, cb){
+  const ta = document.createElement('textarea');
+  ta.value = teks;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); } catch(e){}
+  document.body.removeChild(ta);
+  if(cb) cb();
+}
+
+function renderDetailAlfa(){
+  const container = document.getElementById('list-detail-alfa');
+  if(!container) return;
+  const tgl = document.getElementById('detail-tanggal').value || todayStr();
+  container.innerHTML = '';
+  let adaYangAlfa = false;
+
+  PROGRAMS.forEach(prog => {
+    const saved = (state.alfaByProgram[prog] && state.alfaByProgram[prog][tgl]) || {};
+    const wajibList = state.santri.filter(s => isWajib(s, prog));
+    const alfaList = wajibList
+      .filter(s => {
+        const key = santriKey(s);
+        if(!saved[key]) return false;
+        if(getActiveIzin(key, tgl)) return false; // sedang Pulang, bukan Alfa
+        if(getActiveSakit(key, prog, tgl)) return false;
+        if(getActiveIzinHarian(key, prog, tgl)) return false;
+        return true;
+      })
+      .sort((a, b) => (a.nama || '').localeCompare(b.nama || ''));
+
+    if(alfaList.length === 0) return; // sembunyikan program yang tidak ada alfa
+    adaYangAlfa = true;
+
+    const teksList = alfaList.map((s, i) =>
+      `${i + 1}. ${s.nama || '-'} | ${s.alamat || '-'} | ${s.kelas || '-'} | ${s.kamar || '-'}`
+    ).join('\n');
+    const teksSalin = `*ALFA ${prog}*\n${tgl}\n\nNo. Nama | Alamat | Kelas | Kamar\n${teksList}`;
+
+    const block = document.createElement('section');
+    block.className = 'block glass';
+    block.innerHTML = `
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px;">
+        <h2 style="margin:0;">${escapeHtml(prog)}</h2>
+        <button class="btn-ghost btn-salin" style="flex:0 0 auto; padding:7px 12px; font-size:11.5px;">Salin</button>
+      </div>
+      <div class="count-label">${alfaList.length} santri alfa</div>
+      <div class="detail-alfa-list"></div>`;
+
+    const listEl = block.querySelector('.detail-alfa-list');
+    alfaList.forEach((s, i) => {
+      const row = document.createElement('div');
+      row.className = 'list-row';
+      row.innerHTML = `
+        <div style="flex:1;">
+          <div class="name">${i + 1}. ${escapeHtml(s.nama || '-')}</div>
+          <div class="meta">${escapeHtml(s.alamat || '-')} · Kelas ${escapeHtml(s.kelas || '-')} · Kamar ${escapeHtml(s.kamar || '-')}</div>
+        </div>`;
+      listEl.appendChild(row);
+    });
+
+    block.querySelector('.btn-salin').addEventListener('click', (e) => salinKeClipboard(teksSalin, e.currentTarget));
+    container.appendChild(block);
+  });
+
+  document.getElementById('list-detail-alfa-empty').classList.toggle('hidden', adaYangAlfa);
 }
 
 /* ======================================================================
@@ -1734,6 +1845,7 @@ function renderAll(){
   loadDraftForCurrent();
   renderAlfaList();
   renderRekapAlfa();
+  renderDetailAlfa();
   refreshIzinFilterOptions();
   refreshIzinSantriOptions();
   renderIzinList();
@@ -1759,6 +1871,7 @@ function initImportExportToggle(headerId, btnId, boxId){
   initSantriHandlers();
   initImportExportHandlers();
   initAlfaHandlers();
+  initDetailHandlers();
   initAlfaImportExportHandlers();
   initIzinHandlers();
   initIzinImportExportHandlers();
