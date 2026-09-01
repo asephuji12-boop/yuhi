@@ -4,7 +4,10 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
 <title>Data Santri</title>
-<link rel="icon" href="data:,">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#15130F">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -1880,6 +1883,14 @@ function initImportExportToggle(headerId, btnId, boxId){
   initBackupRestoreHandlers();
   // onAuthStateChanged (di initGateHandlers) yang menentukan tampilan gate/app/loading
 })();
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch((err) => {
+      console.warn('Service worker gagal didaftarkan:', err);
+    });
+  });
+}
 </script>
 </body>
 </html>
