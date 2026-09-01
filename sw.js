@@ -1,8 +1,12 @@
-// Service worker minimal — cache "app shell" (HTML/CSS/JS lokal) supaya
-// aplikasi tetap bisa terbuka walau koneksi lambat/terputus sesaat.
-// Data dari Firestore tetap butuh koneksi internet untuk sinkron real-time.
+// Service worker — strategi NETWORK-FIRST.
+// Selalu coba ambil versi terbaru dari internet dulu. Kalau berhasil,
+// simpan salinannya ke cache (buat cadangan offline) dan tampilkan.
+// Kalau gagal (offline/koneksi putus), baru pakai salinan cache terakhir.
+//
+// Dengan ini, tiap kali kamu update index.html di GitHub, versi terbaru
+// akan langsung tampil saat HP online — tidak perlu bikin ulang APK.
 
-const CACHE_NAME = 'data-santri-v1';
+const CACHE_NAME = 'data-santri-v2'; // dinaikkan supaya cache lama v1 dibuang
 const APP_SHELL = [
   './',
   './index.html',
@@ -30,27 +34,20 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Hanya tangani request GET untuk file lokal (app shell).
-  // Request ke Firestore/Google API dibiarkan lewat jaringan langsung.
   const url = new URL(event.request.url);
   const isSameOrigin = url.origin === self.location.origin;
 
   if (event.request.method !== 'GET' || !isSameOrigin) {
-    return;
+    return; // biarkan request ke Firestore/Google API lewat jaringan langsung
   }
 
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      return (
-        cached ||
-        fetch(event.request)
-          .then((response) => {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-            return response;
-          })
-          .catch(() => cached)
-      );
-    })
+    fetch(event.request)
+      .then((response) => {
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        return response;
+      })
+      .catch(() => caches.match(event.request)) // offline fallback
   );
 });
