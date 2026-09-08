@@ -257,6 +257,12 @@
               <option value="boyong">Boyong</option>
               <option value="pindah">Pindah</option>
             </select>
+            <div class="form-grid">
+              <div><label class="flabel">Tanggal Masuk</label><input class="field" type="date" id="in-tgl-masuk"></div>
+              <div><label class="flabel">Tanggal Keluar</label><input class="field" type="date" id="in-tgl-keluar"></div>
+            </div>
+            <label class="flabel">Catatan</label>
+            <textarea class="field" id="in-catatan" rows="2" placeholder="Catatan (opsional)"></textarea>
             <label class="flabel">Wajib Ikut Program (centang yang wajib)</label>
             <div class="chk-grid" id="chk-wajib-grid"></div>
             <div class="btn-row-2">
@@ -375,7 +381,7 @@
             <button class="btn-ghost" id="btn-export"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M6 13l6 6 6-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Export Excel</button>
           </div>
           <input type="file" id="file-import" accept=".xlsx,.xls,.csv">
-          <p style="font-size:11px; color:var(--cream-dim); margin:6px 0 0;">Kolom Excel: No, ID, Nama, Alamat, Kelas, Kamar, Status (isi "Aktif", "Boyong", atau "Pindah"). <b>ID wajib diisi</b> — baris tanpa ID akan dilewati. Jika ID sudah ada di data, santrinya diperbarui (bukan dobel).</p>
+          <p style="font-size:11px; color:var(--cream-dim); margin:6px 0 0;">Kolom Excel: No, ID, Nama, Alamat, Kelas, Kamar, Status (isi "Aktif", "Boyong", atau "Pindah"), Tanggal Masuk, Tanggal Keluar (format YYYY-MM-DD), Catatan. <b>ID wajib diisi</b> — baris tanpa ID akan dilewati. Jika ID sudah ada di data, santrinya diperbarui (bukan dobel).</p>
         </section>
 
         <section class="block glass" style="padding:12px 16px;">
@@ -556,11 +562,18 @@ function santriDocRef(){ return db.collection('santri_app_shared').doc('data'); 
 function santriKey(s){ return (s.id || '').trim(); }
 
 /* Santri dianggap wajib ikut sebuah program jika programWajib berisi nama program,
-   ATAU jika field programWajib belum pernah diisi sama sekali (data lama / default). */
+   ATAU jika field programWajib belum pernah diisi sama sekali (data lama / default).
+   Santri yang sudah Boyong/Pindah dianggap tidak wajib ikut program apapun (tidak
+   muncul di roster Absen / Detail Alfa). */
 function isWajib(s, program){
+  const status = s.status || 'aktif';
+  if(status !== 'aktif') return false;
   if(!Array.isArray(s.programWajib)) return true;
   return s.programWajib.includes(program);
 }
+
+/* Santri dianggap aktif jika belum punya field status (data lama) atau statusnya 'aktif'. */
+function isSantriAktif(s){ return (s.status || 'aktif') === 'aktif'; }
 
 /* Cari izin (Pulang) yang aktif untuk santri pada tanggal tertentu (mulai <= tanggal <= selesai) */
 function getActiveIzin(key, tanggal){
@@ -950,12 +963,26 @@ function setSantriFormOpen(open){
 
 function resetSantriForm(collapse){
   editingSantriIdx = null;
-  ['in-id','in-nama','in-alamat','in-kelas','in-kamar'].forEach(id => document.getElementById(id).value = '');
+  ['in-id','in-nama','in-alamat','in-kelas','in-kamar','in-tgl-masuk','in-tgl-keluar','in-catatan'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('in-status').value = 'aktif';
   renderWajibChecklist(undefined);
   document.getElementById('form-santri-title').textContent = 'Tambah Santri';
   document.getElementById('btn-tambah-santri').textContent = '+ Tambah Santri';
   if(collapse) setSantriFormOpen(false);
+}
+
+/* Saat status diganti: isi otomatis Tanggal Masuk (jika status Aktif & kolom masih
+   kosong) atau Tanggal Keluar (jika status Boyong/Pindah & kolom masih kosong).
+   Tidak menimpa tanggal yang sudah diisi manual. */
+function autoFillTanggalStatus(){
+  const status = document.getElementById('in-status').value;
+  const masukEl = document.getElementById('in-tgl-masuk');
+  const keluarEl = document.getElementById('in-tgl-keluar');
+  if(status === 'aktif'){
+    if(!masukEl.value) masukEl.value = todayStr();
+  } else {
+    if(!keluarEl.value) keluarEl.value = todayStr();
+  }
 }
 
 function startEditSantri(idx){
@@ -969,6 +996,9 @@ function startEditSantri(idx){
   document.getElementById('in-kelas').value = s.kelas || '';
   document.getElementById('in-kamar').value = s.kamar || '';
   document.getElementById('in-status').value = s.status || 'aktif';
+  document.getElementById('in-tgl-masuk').value = s.tglMasuk || '';
+  document.getElementById('in-tgl-keluar').value = s.tglKeluar || '';
+  document.getElementById('in-catatan').value = s.catatan || '';
   renderWajibChecklist(s.programWajib);
   document.getElementById('form-santri-title').textContent = 'Edit Santri';
   document.getElementById('btn-tambah-santri').textContent = 'Simpan Perubahan';
@@ -978,10 +1008,11 @@ function startEditSantri(idx){
 
 function initSantriHandlers(){
   renderWajibChecklist(undefined);
+  document.getElementById('in-status').addEventListener('change', autoFillTanggalStatus);
 
   document.getElementById('btn-toggle-santri-form').addEventListener('click', () => {
     const isOpen = !document.getElementById('santri-form-body').classList.contains('hidden');
-    if(isOpen){ resetSantriForm(true); } else { resetSantriForm(false); setSantriFormOpen(true); }
+    if(isOpen){ resetSantriForm(true); } else { resetSantriForm(false); autoFillTanggalStatus(); setSantriFormOpen(true); }
   });
 
   document.getElementById('btn-tambah-santri').addEventListener('click', async () => {
@@ -1000,6 +1031,9 @@ function initSantriHandlers(){
       kelas: document.getElementById('in-kelas').value.trim(),
       kamar: document.getElementById('in-kamar').value.trim(),
       status: document.getElementById('in-status').value || 'aktif',
+      tglMasuk: document.getElementById('in-tgl-masuk').value || '',
+      tglKeluar: document.getElementById('in-tgl-keluar').value || '',
+      catatan: document.getElementById('in-catatan').value.trim(),
       programWajib: getCheckedWajib(),
     };
 
@@ -1087,6 +1121,7 @@ function renderSantriList(){
     const statusVal = s.status || 'aktif';
     const statusLabel = { aktif: 'Aktif', boyong: 'Boyong', pindah: 'Pindah' }[statusVal] || statusVal;
     const statusColor = { aktif: 'var(--mint)', boyong: 'var(--amber)', pindah: 'var(--bloom)' }[statusVal] || 'var(--cream-dim)';
+    const tglText = [s.tglMasuk ? 'Masuk ' + s.tglMasuk : '', s.tglKeluar ? 'Keluar ' + s.tglKeluar : ''].filter(Boolean).join(' · ');
     const aksi = state.isAdmin
       ? `<div style="display:flex; flex-direction:column; gap:4px;">
           <button class="btn-danger" data-edit="${i}" style="color:var(--mint);">Edit</button>
@@ -1100,6 +1135,8 @@ function renderSantriList(){
         <div class="key-line">Kelas ${escapeHtml(s.kelas || '-')}</div>
         <div class="meta">Kamar ${escapeHtml(s.kamar || '-')}</div>
         <div class="wajib-tags">${escapeHtml(wajibText)}</div>
+        ${tglText ? `<div class="meta">${escapeHtml(tglText)}</div>` : ''}
+        ${s.catatan ? `<div class="meta" style="font-style:italic;">Catatan: ${escapeHtml(s.catatan)}</div>` : ''}
       </div>
       ${aksi}`;
     container.appendChild(row);
@@ -1130,6 +1167,9 @@ function exportExcel(){
     Alamat: s.alamat || '',
     Kamar: s.kamar || '',
     Status: s.status || 'aktif',
+    'Tanggal Masuk': s.tglMasuk || '',
+    'Tanggal Keluar': s.tglKeluar || '',
+    Catatan: s.catatan || '',
     'Program Wajib': (Array.isArray(s.programWajib) ? s.programWajib : PROGRAMS).join(', '),
   }));
   const ws = XLSX.utils.json_to_sheet(rows);
@@ -1165,6 +1205,9 @@ function handleImportFile(e){
           kelas: String(r.Kelas || r.kelas || '').trim(),
           kamar: String(r.Kamar || r.kamar || '').trim(),
           status: ['aktif','boyong','pindah'].includes(statusRaw) ? statusRaw : 'aktif',
+          tglMasuk: String(r['Tanggal Masuk'] || r.TanggalMasuk || '').trim(),
+          tglKeluar: String(r['Tanggal Keluar'] || r.TanggalKeluar || '').trim(),
+          catatan: String(r.Catatan || r.catatan || '').trim(),
         };
         // Kolom "Program Wajib" tidak ada di sheet -> wajib semua program (default lama).
         // Kolom ada tapi kosong -> sengaja diisi "tidak wajib apapun".
@@ -1606,7 +1649,7 @@ function refreshIzinSantriOptions(){
   const kelasFilter = document.getElementById('izin-kelas-filter').value;
   const kamarFilter = document.getElementById('izin-kamar-filter').value;
   sel.innerHTML = [...state.santri]
-    .filter(s => (!kelasFilter || s.kelas === kelasFilter) && (!kamarFilter || s.kamar === kamarFilter))
+    .filter(s => isSantriAktif(s) && (!kelasFilter || s.kelas === kelasFilter) && (!kamarFilter || s.kamar === kamarFilter))
     .sort((a,b) => a.nama.localeCompare(b.nama))
     .map(s => `<option value="${escapeHtml(santriKey(s))}">${escapeHtml(s.nama)}${s.kelas ? ' · ' + escapeHtml(s.kelas) : ''}</option>`)
     .join('');
