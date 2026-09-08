@@ -1427,7 +1427,9 @@ function renderAlfaList(){
 }
 
 /* Rekap gabungan (khusus admin): menjumlah Hadir/Alfa/Izin per Program+Tanggal
-   dari state.alfaByProgram, tanpa peduli akun mana yang menyimpannya. */
+   dari state.alfaByProgram, tanpa peduli akun mana yang menyimpannya.
+   Ditampilkan dikelompokkan per Tanggal (bukan list datar) supaya tidak berserak —
+   tiap tanggal jadi satu grup dengan header, program-programnya berbaris di bawahnya. */
 function renderRekapAlfa(){
   if(!state.isAdmin) return;
   const searchEl = document.getElementById('cari-rekap-alfa');
@@ -1451,26 +1453,54 @@ function renderRekapAlfa(){
       rows.push({ prog, tgl, hadir, pulang, sakit, izinH, alfa, total: wajibList.length });
     });
   });
-  rows.sort((a,b) => b.tgl.localeCompare(a.tgl) || a.prog.localeCompare(b.prog));
   const filtered = rows.filter(r => !q || r.prog.toLowerCase().includes(q) || r.tgl.includes(q));
+
+  // Kelompokkan baris per tanggal, urut tanggal terbaru dulu; di dalam tiap
+  // grup, program diurutkan sesuai urutan PROGRAMS.
+  const byTgl = {};
+  filtered.forEach(r => { (byTgl[r.tgl] = byTgl[r.tgl] || []).push(r); });
+  const tanggalList = Object.keys(byTgl).sort((a,b) => b.localeCompare(a));
+
   container.innerHTML = '';
   document.getElementById('rekap-alfa-empty').classList.toggle('hidden', rows.length > 0);
-  filtered.forEach(r => {
-    const row = document.createElement('div');
-    row.className = 'list-row';
-    row.innerHTML = `
-      <div style="flex:1;">
-        <div class="name">${escapeHtml(r.prog)}</div>
-        <div class="meta">${escapeHtml(r.tgl)} · dari ${r.total} wajib</div>
+
+  tanggalList.forEach(tgl => {
+    const groupRows = byTgl[tgl].sort((a,b) => PROGRAMS.indexOf(a.prog) - PROGRAMS.indexOf(b.prog));
+    const groupTotal = groupRows.reduce((acc, r) => ({
+      hadir: acc.hadir + r.hadir, alfa: acc.alfa + r.alfa, sakit: acc.sakit + r.sakit,
+      izinH: acc.izinH + r.izinH, pulang: acc.pulang + r.pulang,
+    }), { hadir:0, alfa:0, sakit:0, izinH:0, pulang:0 });
+
+    const groupEl = document.createElement('div');
+    groupEl.className = 'block glass';
+    groupEl.style.cssText = 'padding:10px 12px; margin-bottom:10px;';
+    groupEl.innerHTML = `
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin-bottom:6px;">
+        <h3 style="margin:0; font-size:14px;">${escapeHtml(tgl)}</h3>
+        <div style="font-size:10.5px; color:var(--cream-dim); font-family:'IBM Plex Mono',monospace;">
+          Hadir ${groupTotal.hadir} · Alfa ${groupTotal.alfa} · Sakit ${groupTotal.sakit} · Izin ${groupTotal.izinH} · Pulang ${groupTotal.pulang}
+        </div>
       </div>
-      <div style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:11px; line-height:1.6;">
-        <div style="color:var(--mint);">Hadir ${r.hadir}</div>
-        <div style="color:var(--bloom-soft);">Alfa ${r.alfa}</div>
-        <div style="color:var(--amber-soft);">Sakit ${r.sakit}</div>
-        <div style="color:var(--mint);">Izin ${r.izinH}</div>
-        <div style="color:var(--cream-dim);">Pulang ${r.pulang}</div>
-      </div>`;
-    container.appendChild(row);
+      <div class="rekap-group-rows"></div>`;
+    const rowsHost = groupEl.querySelector('.rekap-group-rows');
+    groupRows.forEach(r => {
+      const row = document.createElement('div');
+      row.className = 'list-row';
+      row.innerHTML = `
+        <div style="flex:1;">
+          <div class="name">${escapeHtml(r.prog)}</div>
+          <div class="meta">dari ${r.total} wajib</div>
+        </div>
+        <div style="text-align:right; font-family:'IBM Plex Mono',monospace; font-size:11px; line-height:1.6;">
+          <div style="color:var(--mint);">Hadir ${r.hadir}</div>
+          <div style="color:var(--bloom-soft);">Alfa ${r.alfa}</div>
+          <div style="color:var(--amber-soft);">Sakit ${r.sakit}</div>
+          <div style="color:var(--mint);">Izin ${r.izinH}</div>
+          <div style="color:var(--cream-dim);">Pulang ${r.pulang}</div>
+        </div>`;
+      rowsHost.appendChild(row);
+    });
+    container.appendChild(groupEl);
   });
 }
 
