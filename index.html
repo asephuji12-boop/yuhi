@@ -1489,9 +1489,6 @@ function renderRekapAlfa(){
           <h3 style="margin:0; font-size:14px;">${escapeHtml(prog)}</h3>
           <span style="font-size:10.5px; color:var(--cream-dim);">(${groupRows.length} tanggal)</span>
         </div>
-        <div style="font-size:10.5px; color:var(--cream-dim); font-family:'IBM Plex Mono',monospace; white-space:nowrap;">
-          Hadir ${groupTotal.hadir} · Alfa ${groupTotal.alfa} · Sakit ${groupTotal.sakit} · Izin ${groupTotal.izinH} · Pulang ${groupTotal.pulang}
-        </div>
       </div>
       <div class="rekap-group-rows${isOpen ? '' : ' hidden'}" id="${groupId}" style="padding:0 13px 10px;"></div>`;
     const rowsHost = groupEl.querySelector('.rekap-group-rows');
