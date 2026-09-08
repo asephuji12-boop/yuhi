@@ -251,6 +251,12 @@
             <label class="flabel">Nama</label><input class="field" id="in-nama">
             <label class="flabel">Alamat</label><input class="field" id="in-alamat">
             <label class="flabel">Kamar</label><input class="field" id="in-kamar">
+            <label class="flabel">Status</label>
+            <select class="field" id="in-status">
+              <option value="aktif">Aktif</option>
+              <option value="boyong">Boyong</option>
+              <option value="pindah">Pindah</option>
+            </select>
             <label class="flabel">Wajib Ikut Program (centang yang wajib)</label>
             <div class="chk-grid" id="chk-wajib-grid"></div>
             <div class="btn-row-2">
@@ -266,6 +272,14 @@
           <div class="form-grid" style="margin-bottom:9px;">
             <select class="field" id="santri-kelas-filter" style="margin-bottom:0;"><option value="">— Pilih Kelas —</option></select>
             <select class="field" id="santri-kamar-filter" style="margin-bottom:0;"><option value="">— Pilih Kamar —</option></select>
+          </div>
+          <div class="form-grid" style="margin-bottom:9px;">
+            <select class="field" id="santri-status-filter" style="margin-bottom:0;">
+              <option value="">— Semua Status —</option>
+              <option value="aktif">Aktif</option>
+              <option value="boyong">Boyong</option>
+              <option value="pindah">Pindah</option>
+            </select>
           </div>
           <div class="count-label" id="count-label"></div>
           <div id="list-santri"></div>
@@ -361,7 +375,7 @@
             <button class="btn-ghost" id="btn-export"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M6 13l6 6 6-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Export Excel</button>
           </div>
           <input type="file" id="file-import" accept=".xlsx,.xls,.csv">
-          <p style="font-size:11px; color:var(--cream-dim); margin:6px 0 0;">Kolom Excel: No, ID, Nama, Alamat, Kelas, Kamar. <b>ID wajib diisi</b> — baris tanpa ID akan dilewati. Jika ID sudah ada di data, santrinya diperbarui (bukan dobel).</p>
+          <p style="font-size:11px; color:var(--cream-dim); margin:6px 0 0;">Kolom Excel: No, ID, Nama, Alamat, Kelas, Kamar, Status (isi "Aktif", "Boyong", atau "Pindah"). <b>ID wajib diisi</b> — baris tanpa ID akan dilewati. Jika ID sudah ada di data, santrinya diperbarui (bukan dobel).</p>
         </section>
 
         <section class="block glass" style="padding:12px 16px;">
@@ -937,6 +951,7 @@ function setSantriFormOpen(open){
 function resetSantriForm(collapse){
   editingSantriIdx = null;
   ['in-id','in-nama','in-alamat','in-kelas','in-kamar'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('in-status').value = 'aktif';
   renderWajibChecklist(undefined);
   document.getElementById('form-santri-title').textContent = 'Tambah Santri';
   document.getElementById('btn-tambah-santri').textContent = '+ Tambah Santri';
@@ -953,6 +968,7 @@ function startEditSantri(idx){
   document.getElementById('in-alamat').value = s.alamat || '';
   document.getElementById('in-kelas').value = s.kelas || '';
   document.getElementById('in-kamar').value = s.kamar || '';
+  document.getElementById('in-status').value = s.status || 'aktif';
   renderWajibChecklist(s.programWajib);
   document.getElementById('form-santri-title').textContent = 'Edit Santri';
   document.getElementById('btn-tambah-santri').textContent = 'Simpan Perubahan';
@@ -983,6 +999,7 @@ function initSantriHandlers(){
       alamat: document.getElementById('in-alamat').value.trim(),
       kelas: document.getElementById('in-kelas').value.trim(),
       kamar: document.getElementById('in-kamar').value.trim(),
+      status: document.getElementById('in-status').value || 'aktif',
       programWajib: getCheckedWajib(),
     };
 
@@ -1010,6 +1027,7 @@ function initSantriHandlers(){
   document.getElementById('cari-santri').addEventListener('input', renderSantriList);
   document.getElementById('santri-kelas-filter').addEventListener('change', renderSantriList);
   document.getElementById('santri-kamar-filter').addEventListener('change', renderSantriList);
+  document.getElementById('santri-status-filter').addEventListener('change', renderSantriList);
 }
 
 function deleteSantri(idx){
@@ -1042,8 +1060,9 @@ function renderSantriList(){
   const q = document.getElementById('cari-santri').value.trim().toLowerCase();
   const kelasFilter = document.getElementById('santri-kelas-filter').value;
   const kamarFilter = document.getElementById('santri-kamar-filter').value;
+  const statusFilter = document.getElementById('santri-status-filter').value;
   const container = document.getElementById('list-santri');
-  const aktif = !!(q || kelasFilter || kamarFilter);
+  const aktif = !!(q || kelasFilter || kamarFilter || statusFilter);
   document.getElementById('list-santri-hint').classList.toggle('hidden', aktif);
   document.getElementById('count-label').classList.toggle('hidden', !aktif);
   if(!aktif){
@@ -1055,7 +1074,8 @@ function renderSantriList(){
   const list = indexed.filter(({s}) =>
     (!q || s.nama.toLowerCase().includes(q) || (s.id||'').toLowerCase().includes(q)) &&
     (!kelasFilter || s.kelas === kelasFilter) &&
-    (!kamarFilter || s.kamar === kamarFilter));
+    (!kamarFilter || s.kamar === kamarFilter) &&
+    (!statusFilter || (s.status || 'aktif') === statusFilter));
   container.innerHTML = '';
   document.getElementById('list-santri-empty').classList.toggle('hidden', list.length > 0);
   document.getElementById('count-label').textContent = list.length + ' dari ' + state.santri.length + ' santri';
@@ -1064,6 +1084,9 @@ function renderSantriList(){
     row.className = 'list-row';
     const wajibList = Array.isArray(s.programWajib) ? s.programWajib : PROGRAMS;
     const wajibText = wajibList.length === PROGRAMS.length ? 'Wajib: semua program' : (wajibList.length ? 'Wajib: ' + wajibList.join(', ') : 'Wajib: tidak ada');
+    const statusVal = s.status || 'aktif';
+    const statusLabel = { aktif: 'Aktif', boyong: 'Boyong', pindah: 'Pindah' }[statusVal] || statusVal;
+    const statusColor = { aktif: 'var(--mint)', boyong: 'var(--amber)', pindah: 'var(--bloom)' }[statusVal] || 'var(--cream-dim)';
     const aksi = state.isAdmin
       ? `<div style="display:flex; flex-direction:column; gap:4px;">
           <button class="btn-danger" data-edit="${i}" style="color:var(--mint);">Edit</button>
@@ -1073,7 +1096,7 @@ function renderSantriList(){
     row.innerHTML = `
       <div class="no">${displayIdx + 1}</div>
       <div style="flex:1;">
-        <div class="name" style="display:flex; flex-wrap:wrap; gap:6px; align-items:baseline;">${escapeHtml(s.nama)}<span style="font-weight:700;">${escapeHtml(s.alamat || '-')}</span></div>
+        <div class="name" style="display:flex; flex-wrap:wrap; gap:6px; align-items:baseline;">${escapeHtml(s.nama)}<span style="font-weight:700;">${escapeHtml(s.alamat || '-')}</span><span style="font-size:10.5px; font-weight:700; padding:2px 7px; border-radius:999px; border:1px solid ${statusColor}; color:${statusColor};">${escapeHtml(statusLabel)}</span></div>
         <div class="key-line">Kelas ${escapeHtml(s.kelas || '-')}</div>
         <div class="meta">Kamar ${escapeHtml(s.kamar || '-')}</div>
         <div class="wajib-tags">${escapeHtml(wajibText)}</div>
@@ -1106,6 +1129,7 @@ function exportExcel(){
     Kelas: s.kelas || '',
     Alamat: s.alamat || '',
     Kamar: s.kamar || '',
+    Status: s.status || 'aktif',
     'Program Wajib': (Array.isArray(s.programWajib) ? s.programWajib : PROGRAMS).join(', '),
   }));
   const ws = XLSX.utils.json_to_sheet(rows);
@@ -1133,12 +1157,14 @@ function handleImportFile(e){
         // sebagai santri baru tanpa identitas.
         if(!nama || !id){ skipped++; return; }
         const wajibRaw = r['Program Wajib'] !== undefined ? r['Program Wajib'] : r.ProgramWajib;
+        const statusRaw = String(r.Status || r.status || '').trim().toLowerCase();
         const santriBaru = {
           id,
           nama,
           alamat: String(r.Alamat || r.alamat || '').trim(),
           kelas: String(r.Kelas || r.kelas || '').trim(),
           kamar: String(r.Kamar || r.kamar || '').trim(),
+          status: ['aktif','boyong','pindah'].includes(statusRaw) ? statusRaw : 'aktif',
         };
         // Kolom "Program Wajib" tidak ada di sheet -> wajib semua program (default lama).
         // Kolom ada tapi kosong -> sengaja diisi "tidak wajib apapun".
