@@ -13,6 +13,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <style>
@@ -196,28 +197,17 @@
     </svg>
     <div class="eyebrow">Manajemen Pesantren</div>
     <h1 class="font-display">Data Santri</h1>
-    <p id="gate-desc">Masuk dengan nomor HP petugas, lalu masukkan kode OTP.</p>
+    <p id="gate-desc">Masuk dengan nomor HP dan PIN petugas.</p>
 
-    <div id="otp-step-hp" style="width:100%; max-width:300px; text-align:left;">
+    <div id="pin-login-step" style="width:100%; max-width:300px; text-align:left;">
       <label class="flabel">Nomor HP</label>
       <input class="field" type="tel" id="in-login-hp" placeholder="08xxxxxxxxxx" autocomplete="username" inputmode="numeric">
-      <button class="btn-primary" id="btn-otp-punya" style="width:100%; justify-content:center; margin-top:6px;">
-        Masuk dengan Kode OTP
+      <label class="flabel" style="margin-top:6px;">PIN</label>
+      <input class="field" type="password" id="in-login-pin" placeholder="Min. 8 karakter" inputmode="text" autocomplete="current-password" maxlength="16">
+      <button class="btn-primary" id="btn-pin-login" style="width:100%; justify-content:center; margin-top:6px;">
+        Masuk
       </button>
     </div>
-
-    <div id="otp-step-kode" class="hidden" style="width:100%; max-width:300px; text-align:left;">
-      <label class="flabel">Kode OTP</label>
-      <input class="field" type="text" id="in-login-otp" placeholder="6 digit kode" inputmode="numeric" autocomplete="one-time-code" maxlength="6">
-      <button class="btn-primary" id="btn-otp-verify" style="width:100%; justify-content:center; margin-top:6px;">
-        Verifikasi &amp; Masuk
-      </button>
-      <button class="btn-ghost" id="btn-otp-ganti-nomor" style="width:100%; justify-content:center; margin-top:8px;">
-        Ganti nomor HP
-      </button>
-    </div>
-
-    <div id="recaptcha-container"></div>
   </div>
 
   <div id="app-screen" class="hidden">
@@ -467,45 +457,31 @@ const firebaseConfig = {
   appId: "1:540843053814:web:e5128f2f8fe55e2461d2d7"
 };
 firebase.initializeApp(firebaseConfig);
+
+/* ======================================================================
+   FIREBASE APP CHECK — memastikan hanya request dari aplikasi ini (domain
+   GitHub Pages-mu) yang dilayani Firestore, bukan dari script luar yang
+   menyalin firebaseConfig di atas.
+
+   WAJIB DIISI: ganti 'GANTI_DENGAN_RECAPTCHA_V3_SITE_KEY' di bawah dengan
+   Site Key asli dari https://www.google.com/recaptcha/admin (daftar situs
+   baru, pilih reCAPTCHA v3, isi domain GitHub Pages kamu, mis.
+   namamu.github.io). Site Key itu BOLEH publik/terlihat di kode (memang
+   didesain begitu), yang harus dirahasiakan cuma Secret Key-nya (tidak
+   dipakai di kode ini).
+
+   Selama Site Key belum diganti, App Check TIDAK AKAN aktif dengan benar
+   (Firestore akan menolak/di-console muncul error App Check) — jadi
+   pastikan ganti dulu sebelum publish, atau nonaktifkan App Check
+   Enforcement di Firebase Console kalau belum sempat setup ini.
+   ====================================================================== */
+firebase.appCheck().activate(
+  '6Ld5DLAtAAAAAIhIQoPux3I9XZ9BTzgpJyMV9FnM',
+  true // auto-refresh token
+);
+
 const db = firebase.firestore();
 const auth = firebase.auth();
-
-/* ======================================================================
-   DAFTAR PUTIH PETUGAS — hanya nomor HP di bawah ini yang boleh login.
-   Format WAJIB E.164 (diawali +62, tanpa spasi/strip), sesuai format yang
-   dikembalikan Firebase Phone Auth. Contoh: 081234567890 -> '+6281234567890'.
-   ====================================================================== */
-const ALLOWED_PHONES = [
-  '+6285356168487',
-  '+6287715994470',
-  '+6285231329762',
-  '+6287770575255',
-  '+6282334294549',
-  '+6285142494701',
-  '+6287818082862',
-  '+6281212397963',
-  '+6281234330522',
-  '+6285168678816',
-  '+6281217009307',// contoh — ganti dengan nomor HP petugas sebenarnya
-];
-
-/* ======================================================================
-   DAFTAR ADMIN — subset dari ALLOWED_PHONES di atas.
-   Hanya nomor HP di bawah ini yang boleh Tambah/Edit/Hapus Santri, buka tab Data,
-   dan buka tab Rekap. Tab Pulang (Izin) sekarang bisa diakses penuh oleh semua
-   petugas (bukan hanya admin) — lihat applyAdminUiRestrictions().
-   Nomor lain di ALLOWED_PHONES tetap bisa login & pakai tab Absen, tapi read-only di tab Santri.
-   ====================================================================== */
-const ADMIN_PHONES = [
-  '+6285356168487',
-  '+6285231329762',
-  '+6287818082862',// contoh — ganti dengan nomor HP admin sebenarnya
-];
-
-/* Nomor WA admin ini disisakan untuk keperluan lain (mis. dicantumkan
-   manual di halaman bantuan), tapi tidak lagi dipakai otomatis oleh alur
-   login karena tombol "Kirim Kode OTP" sudah dihapus. */
-const ADMIN_WA_NUMBER = '6285356168487';
 
 /* Menormalkan input nomor HP jadi format E.164 (+62...) untuk dikirim ke Firebase. */
 function normalizeToE164(raw){
@@ -759,168 +735,112 @@ function applyAdminUiRestrictions(){
 }
 
 /* ======================================================================
-   3) LOGIN NOMOR HP + KODE OTP (Firebase Phone Auth)
+   3) LOGIN NOMOR HP + PIN (Firebase Anonymous Auth + Firestore koleksi
+      "petugas"). Menggantikan Phone Auth OTP karena jumlah petugas (30+)
+      sudah melebihi batas 10 nomor test Firebase, dan SMS asli butuh
+      paket berbayar (Blaze). Anonymous Auth gratis tanpa batas jumlah user.
+
+      Struktur dokumen Firestore: koleksi "petugas", ID dokumen = nomor HP
+      format E.164 (mis. "+6281234567890"), berisi:
+        { nama: "Nama Petugas", pinHash: "<sha256 hex dari PIN>", isAdmin: true/false }
    ====================================================================== */
-let confirmationResult = null;
-let recaptchaVerifier = null;
-let otpRequestPromise = null; // promise permintaan OTP yang sedang berjalan (kalau ada)
 
-function getRecaptcha(){
-  if(!recaptchaVerifier){
-    recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', { size: 'invisible' });
-  }
-  return recaptchaVerifier;
+// Hash PIN dengan SHA-256 (bawaan browser, tanpa library tambahan) supaya
+// PIN asli tidak pernah disimpan/dibandingkan dalam bentuk teks polos.
+async function sha256Hex(text){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-// Minta kode OTP ke Firebase (tanpa buka WhatsApp). Dipakai bersama oleh
-// tombol "Kirim Kode OTP" (yang tambahan buka WA) maupun tombol
-// "Sudah Punya Kode OTP" (diam-diam, supaya verificationId tetap ada
-// walau petugas tidak pernah klik "Kirim").
-function mintaOtpFirebase(e164){
-  const p = auth.signInWithPhoneNumber(e164, getRecaptcha()).then(result => {
-    confirmationResult = result;
-    try{
-      sessionStorage.setItem('otpVerificationId', result.verificationId);
-      sessionStorage.setItem('otpHp', e164);
-    }catch(_e){ /* sessionStorage tidak tersedia, abaikan */ }
-    return result;
-  }).catch(e => {
-    console.error(e);
-    let pesan = 'Gagal menyiapkan verifikasi OTP.';
-    if(e.code === 'auth/invalid-phone-number') pesan = 'Format nomor HP tidak valid.';
-    else if(e.code === 'auth/too-many-requests') pesan = 'Terlalu banyak percobaan. Coba lagi nanti.';
-    showToast(pesan);
-    if(recaptchaVerifier){ recaptchaVerifier.render().then(id => grecaptcha.reset(id)); }
-    otpRequestPromise = null;
-    throw e;
-  });
-  otpRequestPromise = p;
-  return p;
-}
-
-function showOtpStep(kode){
-  document.getElementById('otp-step-hp').classList.toggle('hidden', kode);
-  document.getElementById('otp-step-kode').classList.toggle('hidden', !kode);
-  document.getElementById('gate-desc').textContent = kode
-    ? 'Masukkan kode OTP yang dikirim lewat SMS.'
-    : 'Masuk dengan nomor HP petugas. Kode OTP akan dikirim lewat SMS.';
+// Dipanggil setelah nomor HP + PIN terverifikasi cocok dengan Firestore.
+async function handleLoginSuccess(phone, data){
+  state.uid = auth.currentUser.uid;
+  state.isAdmin = !!data.isAdmin;
+  applyAdminUiRestrictions();
+  document.getElementById('gate-screen').classList.add('hidden');
+  document.getElementById('loading-screen').classList.remove('hidden');
+  await loadFromFirestore();
+  document.getElementById('loading-screen').classList.add('hidden');
+  document.getElementById('app-screen').classList.remove('hidden');
+  document.getElementById('kode-label').textContent = data.nama ? (data.nama + ' · ' + phone) : phone;
+  renderAll();
 }
 
 function initGateHandlers(){
-  // Satu-satunya tombol di form login: minta nomor HP, lalu diam-diam
-  // menyiapkan sesi verifikasi ke Firebase dan langsung membuka form
-  // kode OTP. Kode OTP-nya sendiri didapat user dari luar aplikasi
-  // (mis. dikirim manual oleh admin lewat WhatsApp, atau kode test Firebase).
-  document.getElementById('btn-otp-punya').addEventListener('click', () => {
+  document.getElementById('btn-pin-login').addEventListener('click', async () => {
     const hpRaw = document.getElementById('in-login-hp').value.trim();
+    const pin = document.getElementById('in-login-pin').value.trim();
     if(!hpRaw){
       showToast('Isi nomor HP terlebih dahulu.');
       return;
     }
-    showOtpStep(true);
-    if(!confirmationResult && !otpRequestPromise){
-      mintaOtpFirebase(normalizeToE164(hpRaw)).catch(() => {});
-    }
-  });
-
-  document.getElementById('btn-otp-verify').addEventListener('click', () => {
-    const kode = document.getElementById('in-login-otp').value.trim();
-    if(!kode){
-      showToast('Masukkan kode OTP.');
+    if(!pin || pin.length < 8){
+      showToast('PIN minimal 8 karakter.');
       return;
     }
-
-    const konfirmasi = (cr) => cr.confirm(kode).catch(e => {
-      console.error(e);
-      let pesan = 'Kode OTP salah atau kedaluwarsa.';
-      if(e.code === 'auth/code-expired') pesan = 'Kode OTP kedaluwarsa, kirim ulang.';
-      showToast(pesan);
-    });
-
-    // Kasus normal: confirmationResult masih ada di memori (belum reload).
-    if(confirmationResult){
-      konfirmasi(confirmationResult);
-      return;
-    }
-
-    // Permintaan OTP masih diproses Firebase (baru saja diklik) -> tunggu
-    // sampai selesai baru dicocokkan, tanpa menampilkan pesan blokir apa pun.
-    if(otpRequestPromise){
-      otpRequestPromise.then(cr => konfirmasi(cr)).catch(() => {
-        showToast('Gagal menyiapkan verifikasi. Isi ulang nomor HP lalu coba lagi.');
-      });
-      return;
-    }
-
-    // Fallback: confirmationResult sudah hilang (tab sempat reload),
-    // tapi verificationId masih tersimpan dari permintaan OTP sebelumnya.
-    let verificationId = null;
-    try{ verificationId = sessionStorage.getItem('otpVerificationId'); }
-    catch(_e){ /* sessionStorage tidak tersedia */ }
-
-    if(verificationId){
-      const credential = firebase.auth.PhoneAuthProvider.credential(verificationId, kode);
-      auth.signInWithCredential(credential).then(() => {
-        try{
-          sessionStorage.removeItem('otpVerificationId');
-          sessionStorage.removeItem('otpHp');
-        }catch(_e){ /* abaikan */ }
-      }).catch(e => {
-        console.error(e);
-        let pesan = 'Kode OTP salah atau kedaluwarsa.';
-        if(e.code === 'auth/code-expired') pesan = 'Kode OTP kedaluwarsa, kirim ulang.';
-        showToast(pesan);
-      });
-      return;
-    }
-
-    // Betul-betul belum ada apa pun (nomor HP juga belum diisi) -> minta
-    // Firebase sekarang juga sebagai upaya terakhir, baru dicocokkan.
-    const hpRaw = document.getElementById('in-login-hp').value.trim();
-    if(!hpRaw){
-      showToast('Isi nomor HP dahulu di kolom sebelumnya.');
-      return;
-    }
-    mintaOtpFirebase(normalizeToE164(hpRaw)).then(cr => konfirmasi(cr)).catch(() => {});
-  });
-
-  document.getElementById('btn-otp-ganti-nomor').addEventListener('click', () => {
-    confirmationResult = null;
-    otpRequestPromise = null;
-    document.getElementById('in-login-otp').value = '';
+    const phone = normalizeToE164(hpRaw);
+    const btn = document.getElementById('btn-pin-login');
+    btn.disabled = true;
     try{
-      sessionStorage.removeItem('otpVerificationId');
-      sessionStorage.removeItem('otpHp');
-    }catch(_e){ /* abaikan */ }
-    showOtpStep(false);
-  });
-
-  document.getElementById('btn-logout').addEventListener('click', () => auth.signOut());
-
-  auth.onAuthStateChanged(async (user) => {
-    if(user){
-      const phone = user.phoneNumber || '';
-      if(!ALLOWED_PHONES.includes(phone)){
-        showToast('Nomor ' + phone + ' belum diizinkan sebagai petugas.');
-        await auth.signOut();
+      // Butuh sesi auth (walau anonim) supaya Firestore Security Rules
+      // mengizinkan baca koleksi "petugas".
+      if(!auth.currentUser){
+        await auth.signInAnonymously();
+      }
+      const snap = await db.collection('petugas').doc(phone).get();
+      if(!snap.exists){
+        showToast('Nomor HP belum terdaftar sebagai petugas.');
         return;
       }
-      state.uid = user.uid;
-      state.isAdmin = ADMIN_PHONES.includes(phone);
-      applyAdminUiRestrictions();
+      const data = snap.data();
+      const pinHash = await sha256Hex(pin);
+      if(pinHash !== data.pinHash){
+        showToast('PIN salah.');
+        return;
+      }
+      try{ localStorage.setItem('loggedPhone', phone); }catch(_e){ /* abaikan */ }
+      await handleLoginSuccess(phone, data);
+    }catch(e){
+      console.error(e);
+      showToast('Gagal login. Coba lagi.');
+    }finally{
+      btn.disabled = false;
+    }
+  });
+
+  document.getElementById('btn-logout').addEventListener('click', async () => {
+    try{ localStorage.removeItem('loggedPhone'); }catch(_e){ /* abaikan */ }
+    await auth.signOut();
+  });
+
+  auth.onAuthStateChanged(async (user) => {
+    let loggedPhone = null;
+    try{ loggedPhone = localStorage.getItem('loggedPhone'); }catch(_e){ /* abaikan */ }
+
+    if(user && loggedPhone){
       document.getElementById('gate-screen').classList.add('hidden');
       document.getElementById('loading-screen').classList.remove('hidden');
-      await loadFromFirestore();
-      document.getElementById('loading-screen').classList.add('hidden');
-      document.getElementById('app-screen').classList.remove('hidden');
-      document.getElementById('kode-label').textContent = phone;
-      renderAll();
+      try{
+        const snap = await db.collection('petugas').doc(loggedPhone).get();
+        if(!snap.exists){
+          showToast('Akses petugas untuk nomor ini sudah dicabut.');
+          try{ localStorage.removeItem('loggedPhone'); }catch(_e){ /* abaikan */ }
+          await auth.signOut();
+          return;
+        }
+        await handleLoginSuccess(loggedPhone, snap.data());
+      }catch(e){
+        console.error(e);
+        showToast('Gagal memuat data petugas.');
+        document.getElementById('loading-screen').classList.add('hidden');
+        document.getElementById('gate-screen').classList.remove('hidden');
+      }
     } else {
+      // Anonim tapi belum login PIN (mis. baru buka app), atau memang
+      // belum ada sesi sama sekali -> tetap tampilkan gate.
       state.uid = null;
-      confirmationResult = null;
       document.getElementById('in-login-hp').value = '';
-      document.getElementById('in-login-otp').value = '';
-      showOtpStep(false);
+      document.getElementById('in-login-pin').value = '';
       document.getElementById('app-screen').classList.add('hidden');
       document.getElementById('loading-screen').classList.add('hidden');
       document.getElementById('gate-screen').classList.remove('hidden');
