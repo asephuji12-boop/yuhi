@@ -1171,18 +1171,29 @@ function todayStr(){
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
 
+let alfaHandlersBound = false;
 function initAlfaHandlers(){
   const progSelect = document.getElementById('alfa-program');
   const tglInput = document.getElementById('alfa-tanggal');
-  tglInput.value = todayStr();
-  progSelect.innerHTML = PROGRAMS.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
 
-  progSelect.addEventListener('change', () => { refreshAlfaKelasFilterOptions(); refreshAlfaKamarFilterOptions(); loadDraftForCurrent(); renderAlfaList(); });
-  tglInput.addEventListener('change', () => { loadDraftForCurrent(); renderAlfaList(); });
-  document.getElementById('alfa-kelas-filter').addEventListener('change', renderAlfaList);
-  document.getElementById('alfa-kamar-filter').addEventListener('change', renderAlfaList);
+  // Bagian di bawah ini (reset tanggal, isi ulang opsi Program, pasang
+  // event listener) HANYA boleh dijalankan sekali. initAlfaHandlers() ini
+  // dipanggil ulang setiap kali renderAll() jalan (mis. setelah tambah/edit
+  // santri di tab lain) — kalau tidak dijaga, tiap renderAll() akan
+  // mereset tanggal ke hari ini, mengembalikan dropdown Program ke pilihan
+  // pertama (persis seperti "balik ke default"), dan menumpuk event
+  // listener baru di atas yang lama (bikin Simpan Absen bisa terpicu
+  // berkali-kali sekaligus).
+  if(!alfaHandlersBound){
+    tglInput.value = todayStr();
+    progSelect.innerHTML = PROGRAMS.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
 
-  document.getElementById('btn-centang-semua').addEventListener('click', () => {
+    progSelect.addEventListener('change', () => { refreshAlfaKelasFilterOptions(); refreshAlfaKamarFilterOptions(); loadDraftForCurrent(); renderAlfaList(); });
+    tglInput.addEventListener('change', () => { loadDraftForCurrent(); renderAlfaList(); });
+    document.getElementById('alfa-kelas-filter').addEventListener('change', renderAlfaList);
+    document.getElementById('alfa-kamar-filter').addEventListener('change', renderAlfaList);
+
+    document.getElementById('btn-centang-semua').addEventListener('click', () => {
     const prog = progSelect.value;
     const tgl = tglInput.value || todayStr();
     const kelasFilter = document.getElementById('alfa-kelas-filter').value;
@@ -1226,12 +1237,25 @@ function initAlfaHandlers(){
     syncAbsenToSheet(prog, tgl, bersihAlfa);
     renderRekapAlfa();
     renderDetailAlfa();
+    // Refresh roster: kosongkan filter Kelas & Kamar supaya siap dipakai
+    // lagi untuk kelas/kamar berikutnya. Program & Tanggal SENGAJA tidak
+    // diubah (biasanya masih absen di program/tanggal yang sama).
+    document.getElementById('alfa-kelas-filter').value = '';
+    document.getElementById('alfa-kamar-filter').value = '';
+    renderAlfaList();
     showToast('Absen ' + prog + ' tanggal ' + tgl + ' disimpan.');
   });
 
   const cariRekap = document.getElementById('cari-rekap-alfa');
   if(cariRekap) cariRekap.addEventListener('input', renderRekapAlfa);
 
+    alfaHandlersBound = true;
+  }
+
+  // Bagian ini AMAN dijalankan berulang kali — hanya menyegarkan opsi
+  // filter Kelas/Kamar berdasarkan data santri terbaru, dan memuat ulang
+  // draft absen untuk Program+Tanggal yang SEDANG dipilih (tidak mengubah
+  // pilihan Program/Tanggal/filter yang sudah ada).
   refreshAlfaKelasFilterOptions();
   refreshAlfaKamarFilterOptions();
   loadDraftForCurrent();
