@@ -556,7 +556,7 @@
         </button>
         <button class="data-card glass" id="btn-open-online" type="button" aria-haspopup="dialog">
           <span class="dc-ic"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="8" r="3.2" stroke="currentColor" stroke-width="1.6"/><path d="M3.5 19c.6-3 2.8-4.6 5.5-4.6s4.9 1.6 5.5 4.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="18" cy="7" r="2" fill="currentColor"/></svg></span>
-          <span class="dc-tx"><b>Ustadz Online</b><small>Petugas yang sedang membuka aplikasi</small></span>
+          <span class="dc-tx"><b>Login Ustadz</b><small>Siapa saja yang login hari ini &amp; jam berapa</small></span>
           <svg class="dc-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
         </button>
 
@@ -571,11 +571,12 @@
         </div>
         <div id="online-body" class="hidden">
         <section class="block glass" id="block-online">
-          <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;"><h2 style="margin:0;">Ustadz Online</h2><button class="btn-ghost" id="btn-online-refresh" type="button" style="flex:0 0 auto; padding:8px 12px;">Segarkan</button></div>
-          <p class="hint">Petugas yang sedang membuka aplikasi (aktif dalam 3 menit terakhir).</p>
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;"><h2 style="margin:0;">Login Ustadz</h2><button class="btn-ghost" id="btn-online-refresh" type="button" style="flex:0 0 auto; padding:8px 12px;">Segarkan</button></div>
+          <p class="hint">Daftar petugas yang login pada tanggal dipilih, urut dari yang paling awal. Angka besar = jam login pertama, &ldquo;terakhir&rdquo; = terakhir kali aplikasi dibuka.</p>
+          <input class="field" type="date" id="online-tanggal" style="padding:10px 11px; font-size:13px; margin-bottom:8px;">
           <div class="count-label" id="online-count"></div>
           <div id="list-online"></div>
-          <div class="empty hidden" id="online-empty">Tidak ada ustadz yang online.</div>
+          <div class="empty hidden" id="online-empty">Belum ada ustadz yang login pada tanggal ini.</div>
           <div class="empty hidden" id="online-error"></div>
         </section>
         </div>
@@ -1070,7 +1071,7 @@ async function handleLoginSuccess(phone, data){
   document.getElementById('app-screen').classList.remove('hidden');
   document.getElementById('kode-label').textContent = data.nama ? (data.nama + ' · ' + phone) : phone;
   renderAll();
-  startPresence();
+  catatLogin(); // catat jam login untuk pemantauan admin (tidak ditunggu)
 }
 
 function initGateHandlers(){
@@ -1116,7 +1117,6 @@ function initGateHandlers(){
   });
 
   document.getElementById('btn-logout').addEventListener('click', async () => {
-    await stopPresence(true);
     try{ localStorage.removeItem('loggedPhone'); }catch(_e){ /* abaikan */ }
     clearFotoCache();
     await auth.signOut();
@@ -1148,7 +1148,7 @@ function initGateHandlers(){
     } else {
       // Anonim tapi belum login PIN (mis. baru buka app), atau memang
       // belum ada sesi sama sekali -> tetap tampilkan gate.
-      state.uid = null; stopPresence(false);
+      state.uid = null;
       document.getElementById('in-login-hp').value = '';
       document.getElementById('in-login-pin').value = '';
       document.getElementById('app-screen').classList.add('hidden');
@@ -3122,80 +3122,52 @@ function bindDataSheet(btnId, bodyId, title, onOpen){
 bindDataSheet('btn-open-ie', 'data-ie-body', 'Import / Export');
 bindDataSheet('btn-open-kelas', 'kelas-body', 'Daftar Kelas');
 bindDataSheet('btn-open-rekap', 'rekap-body', 'Rekap Semua Petugas', () => { renderRekapAlfa(); });
-bindDataSheet('btn-open-online', 'online-body', 'Ustadz Online', () => { renderOnline(); });
+bindDataSheet('btn-open-online', 'online-body', 'Login Ustadz', () => { const t = document.getElementById('online-tanggal'); if(t) t.value = todayStr(); renderOnline(); });
 
 /* ======================================================================
-   USTADZ ONLINE (presence) — tiap petugas mengirim "detak" tiap 90 detik ke
-   dokumen santri_app_shared/presence (map per nomor HP). Admin melihat yang
-   aktif dalam 3 menit terakhir di tab Rekap.
+   LOGIN USTADZ HARI INI (pemantauan) — tiap kali petugas berhasil login atau
+   membuka aplikasi, dicatat ke dokumen harian santri_app_shared/login_<tanggal>
+   (map per nomor HP): nama, admin, pertama (login pertama hari itu) dan
+   terakhir (terakhir aktif). Hanya 1 tulisan per login (+ paling banyak 1 per
+   30 menit saat aplikasi dibuka kembali), jadi sangat hemat kuota Firestore.
+   Admin melihatnya di tab Rekap -> Login Ustadz, bisa pilih tanggal.
    ====================================================================== */
-const PRESENCE_BEAT_MS = 90000, PRESENCE_ONLINE_MS = 180000;
-const PRESENCE_WRITE_TIMEOUT_MS = 8000, PRESENCE_DENIED_RETRY_MS = 300000;
-function presenceRef(){ return db.collection('santri_app_shared').doc('presence'); }
-let presenceTimer = null, presenceDeniedUntil = 0, presenceInflightAt = 0, presenceLastError = '';
+const LOGLOGIN_ULANG_MS = 30 * 60 * 1000;
+function loginLogRef(tgl){ return db.collection('santri_app_shared').doc('login_' + tgl); }
+let loginLogAt = 0, loginLogError = '';
 
-// Promise set()/get() Firestore TIDAK selesai selama perangkat offline (penulisan hanya
-// diantrikan). Tanpa batas waktu, tombol Keluar dan daftar online bisa menggantung selamanya.
+// Firestore: set()/get() tidak selesai selama offline; beri batas waktu supaya tidak menggantung.
 function withTimeout(promise, ms){
   let t;
   const timeout = new Promise((_, reject) => { t = setTimeout(() => reject(Object.assign(new Error('timeout'), { code: 'timeout' })), ms); });
   return Promise.race([promise, timeout]).finally(() => clearTimeout(t));
 }
 
-// Kirim satu detak. Mengembalikan waktu lokal (ms) saat sukses, 0 kalau dilewati/gagal.
-async function presenceBeat(){
-  if(!state.petugas || !state.petugas.phone || document.visibilityState === 'hidden') return 0;
-  if(Date.now() < presenceDeniedUntil) return 0;
-  if(presenceInflightAt && Date.now() - presenceInflightAt < 120000) return 0; // detak sebelumnya masih menunggu jaringan
-  const mark = Date.now();
-  presenceInflightAt = mark;
+async function catatLogin(){
+  if(!state.petugas || !state.petugas.phone) return;
+  const phone = state.petugas.phone, ref = loginLogRef(todayStr());
+  loginLogAt = Date.now(); // cegah pencatatan ganda berdekatan
   try{
-    const w = presenceRef().set({ [state.petugas.phone]: { nama: state.petugas.nama || '', admin: !!state.isAdmin, lastSeen: firebase.firestore.FieldValue.serverTimestamp() } }, { merge: true });
-    const selesai = () => { if(presenceInflightAt === mark) presenceInflightAt = 0; };
-    w.then(selesai, selesai);
-    await withTimeout(w, PRESENCE_WRITE_TIMEOUT_MS);
-    presenceLastError = '';
-    return Date.now();
+    const snap = await withTimeout(ref.get(), 10000);
+    const cur = snap.exists ? ((snap.data() || {})[phone] || {}) : {};
+    const TS = firebase.firestore.FieldValue.serverTimestamp();
+    await withTimeout(ref.set({ [phone]: { nama: state.petugas.nama || '', admin: !!state.isAdmin, pertama: cur.pertama || TS, terakhir: TS } }, { merge: true }), 10000);
+    loginLogError = '';
   }catch(e){
-    if(presenceInflightAt === mark && !(e && e.code === 'timeout')) presenceInflightAt = 0;
-    presenceLastError = (e && e.code) || 'unknown';
-    // Ditolak rules -> jeda 5 menit lalu coba lagi (bukan berhenti selamanya), supaya
-    // begitu rules diperbaiki, perangkat yang sedang terbuka pulih sendiri tanpa login ulang.
-    if(e && e.code === 'permission-denied') presenceDeniedUntil = Date.now() + PRESENCE_DENIED_RETRY_MS;
-    console.warn('Presence gagal:', e);
-    return 0;
+    loginLogAt = 0; // izinkan coba lagi
+    loginLogError = (e && e.code) || 'unknown';
+    console.warn('Catat login gagal:', e);
   }
 }
-function startPresence(){
-  stopPresence(false);
-  presenceDeniedUntil = 0; presenceLastError = '';
-  presenceBeat();
-  presenceTimer = setInterval(presenceBeat, PRESENCE_BEAT_MS);
-}
-async function stopPresence(hapus){
-  clearInterval(presenceTimer); presenceTimer = null;
-  if(hapus && state.petugas && state.petugas.phone){
-    // Dibatasi 3 detik: kalau offline, Keluar tetap jalan (entri akan kedaluwarsa sendiri dalam 3 menit).
-    try{ await withTimeout(presenceRef().set({ [state.petugas.phone]: firebase.firestore.FieldValue.delete() }, { merge: true }), 3000); }catch(_e){}
-  }
-}
-function sheetOnlineTerbuka(){ return !document.getElementById('online-body').classList.contains('hidden'); }
+// Aplikasi dibuka kembali setelah lama di latar belakang -> perbarui "terakhir aktif".
 document.addEventListener('visibilitychange', () => {
-  if(document.visibilityState === 'visible' && presenceTimer){
-    if(sheetOnlineTerbuka()) renderOnline(); else presenceBeat(); // renderOnline sudah mengirim detak sendiri
-  }
+  if(document.visibilityState === 'visible' && state.petugas && Date.now() - loginLogAt > LOGLOGIN_ULANG_MS) catatLogin();
 });
-window.addEventListener('online', () => { if(presenceTimer) presenceBeat(); });
 
-function fmtLalu(ms){
-  const d = Math.max(0, Math.round(ms / 1000));
-  if(d < 60) return 'baru saja';
-  return Math.floor(d / 60) + ' menit lalu';
-}
-function presenceErrText(code){
-  if(code === 'permission-denied') return 'aturan Firestore perlu mengizinkan dokumen "santri_app_shared/presence"';
-  if(code === 'timeout' || code === 'unavailable') return 'koneksi internet lambat atau terputus';
-  return 'kode: ' + code;
+function jamStr(ts){
+  const d = ts && ts.toDate ? ts.toDate() : null;
+  if(!d) return '-';
+  return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
 }
 let onlineBusy = false;
 async function renderOnline(){
@@ -3203,43 +3175,37 @@ async function renderOnline(){
   if(!list || !state.isAdmin || onlineBusy) return;
   onlineBusy = true;
   const err = document.getElementById('online-error'), empty = document.getElementById('online-empty'), cnt = document.getElementById('online-count');
+  const tglEl = document.getElementById('online-tanggal');
+  const tgl = (tglEl && tglEl.value) || todayStr();
   try{
-    // Detak diri sendiri dulu: admin ikut tampil, dan cap waktu server miliknya jadi patokan
-    // jam server — supaya jam HP yang meleset tidak membuat semua ustadz tampak offline.
-    const beatAt = await presenceBeat();
-    const snap = await withTimeout(presenceRef().get(), 15000);
-    const data = snap.exists ? snap.data() : {};
-    const me = state.petugas && data[state.petugas.phone];
-    const meT = me && me.lastSeen && me.lastSeen.toMillis ? me.lastSeen.toMillis() : 0;
-    const now = Date.now() + ((beatAt && meT) ? meT - beatAt : 0);
-    const online = Object.keys(data).map(phone => {
+    const snap = await withTimeout(loginLogRef(tgl).get(), 15000);
+    const data = snap.exists ? (snap.data() || {}) : {};
+    const rows = Object.keys(data).map(phone => {
       const v = data[phone] || {};
-      const t = v.lastSeen && v.lastSeen.toMillis ? v.lastSeen.toMillis() : 0;
-      return { phone, nama: v.nama || '', admin: !!v.admin, age: now - t, t };
-    }).filter(x => x.t && x.age <= PRESENCE_ONLINE_MS).sort((a, b) => (a.nama || a.phone).localeCompare(b.nama || b.phone));
-    if(presenceLastError){
-      err.textContent = 'Perangkat ini belum bisa mengirim status online (' + presenceErrText(presenceLastError) + '). Daftar di bawah bisa tidak lengkap.';
-      err.classList.remove('hidden');
-    } else err.classList.add('hidden');
-    cnt.textContent = online.length + ' ustadz online';
-    empty.classList.toggle('hidden', online.length > 0);
+      return { phone, nama: v.nama || '', admin: !!v.admin, pertama: v.pertama, terakhir: v.terakhir, t: v.pertama && v.pertama.toMillis ? v.pertama.toMillis() : 0 };
+    }).filter(x => x.t).sort((a, b) => a.t - b.t);
+    err.classList.add('hidden');
+    cnt.textContent = rows.length + ' ustadz login' + (tgl === todayStr() ? ' hari ini' : ' pada ' + tgl);
+    empty.classList.toggle('hidden', rows.length > 0);
     list.innerHTML = '';
-    online.forEach(x => {
+    rows.forEach((x, i) => {
       const row = document.createElement('div');
       row.className = 'list-row';
-      row.innerHTML = `<span aria-hidden="true" style="flex:0 0 10px; width:10px; height:10px; border-radius:50%; background:var(--mint); margin-right:10px; align-self:center; box-shadow:0 0 0 3px rgba(120,200,160,.18);"></span>
-        <div class="grow"><div class="name">${escapeHtml(x.nama || '(tanpa nama)')}${x.admin ? ' <span class="chip aktif">Admin</span>' : ''}</div><div class="meta">${escapeHtml(x.phone)} · ${escapeHtml(fmtLalu(x.age))}</div></div>`;
+      row.innerHTML = `<span class="no">${i + 1}</span>
+        <div class="grow"><div class="name">${escapeHtml(x.nama || '(tanpa nama)')}${x.admin ? ' <span class="chip aktif">Admin</span>' : ''}</div><div class="meta">${escapeHtml(x.phone)}</div></div>
+        <div style="text-align:right; flex:0 0 auto;"><div class="name" style="font-size:14px;">${escapeHtml(jamStr(x.pertama))}</div><div class="meta">terakhir ${escapeHtml(jamStr(x.terakhir))}</div></div>`;
       list.appendChild(row);
     });
   }catch(e){
     console.warn(e);
     list.innerHTML = ''; cnt.textContent = ''; empty.classList.add('hidden');
-    err.textContent = e && e.code === 'permission-denied' ? 'Belum bisa membaca data online: aturan Firestore perlu mengizinkan dokumen "santri_app_shared/presence".' : 'Gagal memuat daftar online. Cek koneksi internet.';
+    err.textContent = e && e.code === 'permission-denied' ? 'Belum bisa membaca data login: aturan Firestore perlu mengizinkan dokumen di koleksi "santri_app_shared".' : 'Gagal memuat daftar login. Cek koneksi internet.';
     err.classList.remove('hidden');
   }finally{ onlineBusy = false; }
 }
 document.getElementById('btn-online-refresh').addEventListener('click', renderOnline);
-setInterval(() => { if(document.visibilityState === 'visible' && state.isAdmin && sheetOnlineTerbuka()) renderOnline(); }, 30000);
+document.getElementById('online-tanggal').addEventListener('input', renderOnline);
+setInterval(() => { if(document.visibilityState === 'visible' && state.isAdmin && !document.getElementById('online-body').classList.contains('hidden')) renderOnline(); }, 60000);
 
 function renderAll(){
   renderKelasOptions();
