@@ -208,6 +208,7 @@
   .av.av-sm{width:38px; height:38px; font-size:13px;}
   .av.av-lg{width:76px; height:76px; font-size:26px; margin-right:0;}
   .av[data-src]:active{transform:scale(.94);}
+  .foto-top{display:flex; justify-content:center; margin:2px 0 12px;} .foto-top .av-lg{width:96px; height:96px; font-size:32px;}
   .photo-field{display:flex; align-items:flex-end; gap:14px; margin-bottom:10px;} .photo-field .grow{flex:1; min-width:0;} .photo-field .field{margin-bottom:0;}
   #foto-ov{opacity:0; transition:opacity .18s ease;} #foto-ov.show{opacity:1;}
   #foto-ov figure{margin:0; max-width:min(92vw,520px); text-align:center; transform:scale(.96); transition:transform .2s ease;} #foto-ov.show figure{transform:none;}
@@ -437,26 +438,24 @@
             <button class="btn-ghost" id="btn-toggle-santri-form" style="flex:0 0 auto; padding:8px 12px;">+ Tambah Santri</button>
           </div>
           <div id="santri-form-body" class="hidden" style="margin-top:10px;">
+            <div class="foto-top"><span class="av av-lg" id="foto-preview" aria-hidden="true">?</span></div>
             <div class="form-grid">
               <div><label class="flabel">NIS *</label><input class="field" id="in-id" placeholder="Wajib diisi &amp; unik"></div>
+              <div><label class="flabel">Nama</label><input class="field" id="in-nama"></div>
+              <div><label class="flabel">Alamat</label><input class="field" id="in-alamat"></div>
               <div><label class="flabel">Kelas</label><select class="field" id="in-kelas"><option value="">— Pilih Kelas —</option></select></div>
-            </div>
-            <label class="flabel">Nama</label><input class="field" id="in-nama">
-            <label class="flabel">Alamat</label><input class="field" id="in-alamat">
-            <label class="flabel">Kamar</label><input class="field" id="in-kamar">
-            <label class="flabel">Status</label>
-            <select class="field" id="in-status">
-              <option value="aktif">Aktif</option>
-              <option value="boyong">Boyong</option>
-              <option value="pindah">Pindah</option>
-            </select>
-            <div class="form-grid">
+              <div><label class="flabel">Kamar</label><input class="field" id="in-kamar"></div>
+              <div><label class="flabel">Status</label>
+                <select class="field" id="in-status">
+                  <option value="aktif">Aktif</option>
+                  <option value="boyong">Boyong</option>
+                  <option value="pindah">Pindah</option>
+                </select>
+              </div>
               <div><label class="flabel">Tanggal Masuk</label><input class="field" type="date" id="in-tgl-masuk"></div>
               <div><label class="flabel">Tanggal Keluar</label><input class="field" type="date" id="in-tgl-keluar"></div>
+              <div style="grid-column:1 / -1;"><label class="flabel">Nama Foto</label><input class="field" id="in-foto" placeholder="mis. ahmad_01.jpg (opsional)"></div>
             </div>
-            <label class="flabel">Catatan</label>
-            <div class="photo-field"><span class="av av-lg" id="foto-preview" aria-hidden="true">?</span><div class="grow"><label class="flabel">Nama Foto</label><input class="field" id="in-foto" placeholder="mis. ahmad_01.jpg (opsional)"></div></div>
-            <textarea class="field" id="in-catatan" rows="2" placeholder="Catatan (opsional)"></textarea>
             <label class="flabel">Wajib Ikut Program (centang yang wajib)</label>
             <div class="chk-grid" id="chk-wajib-grid"></div>
             <div class="btn-row-2">
@@ -1266,7 +1265,7 @@ function setSantriFormOpen(open){
 
 function resetSantriForm(collapse){
   editingSantriIdx = null;
-  ['in-id','in-nama','in-alamat','in-kelas','in-kamar','in-tgl-masuk','in-tgl-keluar','in-catatan','in-foto'].forEach(id => document.getElementById(id).value = '');
+  ['in-id','in-nama','in-alamat','in-kelas','in-kamar','in-tgl-masuk','in-tgl-keluar','in-foto'].forEach(id => document.getElementById(id).value = '');
   updateFotoPreview();
   document.getElementById('in-status').value = 'aktif';
   renderWajibChecklist(undefined);
@@ -1307,7 +1306,6 @@ function startEditSantri(idx){
   document.getElementById('in-status').value = s.status || 'aktif';
   document.getElementById('in-tgl-masuk').value = s.tglMasuk || '';
   document.getElementById('in-tgl-keluar').value = s.tglKeluar || '';
-  document.getElementById('in-catatan').value = s.catatan || '';
   document.getElementById('in-foto').value = s.foto || '';
   updateFotoPreview();
   renderWajibChecklist(s.programWajib);
@@ -1344,10 +1342,10 @@ function initSantriHandlers(){
       status: document.getElementById('in-status').value || 'aktif',
       tglMasuk: document.getElementById('in-tgl-masuk').value || '',
       tglKeluar: document.getElementById('in-tgl-keluar').value || '',
-      catatan: document.getElementById('in-catatan').value.trim(),
       foto: document.getElementById('in-foto').value.trim(),
       programWajib: getCheckedWajib(),
     };
+    if(editingSantriIdx !== null && state.santri[editingSantriIdx] && state.santri[editingSantriIdx].catatan) santriData.catatan = state.santri[editingSantriIdx].catatan; // field catatan sudah dihapus dari form; data lama tidak dibuang
     if(editingSantriIdx !== null && state.santri[editingSantriIdx] && state.santri[editingSantriIdx].riwayatKelas) santriData.riwayatKelas = state.santri[editingSantriIdx].riwayatKelas;
 
     const isEdit = editingSantriIdx !== null;
@@ -3280,3 +3278,4 @@ if ('serviceWorker' in navigator) {
 </script>
 </body>
 </html>
+
