@@ -1489,7 +1489,7 @@ function fotoBlobUrl(name){
       if(!res){
         if(!auth.currentUser) throw new Error('belum login');
         const token = await auth.currentUser.getIdToken();
-        res = await fetch(url, { headers: { Authorization: 'Bearer ' + token } });
+        res = await fetch(url, { headers: { 'X-Firebase-Token': token } });
         if(!res.ok){
           fotoMem.delete(name); // jangan simpan kegagalan, biar bisa dicoba lagi
           let info = ''; try{ const j = await res.clone().json(); info = ' - ' + j.error + (j.detail ? ' ' + JSON.stringify(j.detail) : ''); }catch(_e){}
