@@ -1490,14 +1490,28 @@ function fotoBlobUrl(name){
         if(!auth.currentUser) throw new Error('belum login');
         const token = await auth.currentUser.getIdToken();
         res = await fetch(url, { headers: { Authorization: 'Bearer ' + token } });
-        if(!res.ok) return null; // foto tidak ada -> tetap inisial
+        if(!res.ok){
+          fotoMem.delete(name); // jangan simpan kegagalan, biar bisa dicoba lagi
+          fotoDiag('HTTP ' + res.status + (res.status === 404 ? ' (file tidak ada di server)' : res.status === 401 || res.status === 403 ? ' (token ditolak / header Authorization tidak sampai ke foto.php)' : ''));
+          return null;
+        }
         if(cache) await cache.put(url, res.clone());
       }
       return URL.createObjectURL(await res.blob());
-    }catch(_e){ fotoMem.delete(name); return null; }
+    }catch(e){
+      fotoMem.delete(name);
+      fotoDiag(e.message === 'belum login' ? 'belum login' : 'gagal terhubung ke foto.php (kemungkinan CORS / izin Authorization)');
+      return null;
+    }
   })();
   fotoMem.set(name, p);
   return p;
+}
+let fotoDiagShown = false;
+function fotoDiag(msg){
+  console.warn('[foto]', msg);
+  if(fotoDiagShown) return; fotoDiagShown = true; // tampilkan sekali saja
+  try{ showToast('Foto gagal dimuat: ' + msg); }catch(_e){}
 }
 function clearFotoCache(){
   fotoMem.forEach(p => p.then(u => { if(u) URL.revokeObjectURL(u); }));
