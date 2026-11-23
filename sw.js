@@ -6,7 +6,7 @@
 // Dengan ini, tiap kali kamu update index.html di GitHub, versi terbaru
 // akan langsung tampil saat HP online — tidak perlu bikin ulang APK.
 
-const CACHE_NAME = 'data-santri-v2'; // dinaikkan supaya cache lama v1 dibuang
+const CACHE_NAME = 'data-santri-v3'; // dinaikkan supaya cache lama v1 dibuang
 const APP_SHELL = [
   './',
   './index.html',
@@ -26,7 +26,7 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(
-        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+        keys.filter((key) => key !== CACHE_NAME && !key.startsWith('foto-')).map((key) => caches.delete(key))
       )
     )
   );
