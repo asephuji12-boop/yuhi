@@ -541,7 +541,7 @@
           <h2 style="margin:0 0 10px;">Detail Alfa per Program</h2>
           <label class="flabel">Tanggal</label>
           <input class="field" type="date" id="detail-tanggal" style="padding:10px 11px; font-size:13px;">
-          <p style="font-size:11px; color:var(--cream-dim); margin:6px 0 0;">Menampilkan santri yang <b>Alfa</b> di setiap program pada tanggal yang dipilih. Tekan <b>Salin</b> untuk menyalin daftar (siap tempel ke WhatsApp).</p>
+          <p style="font-size:11px; color:var(--cream-dim); margin:6px 0 0;">Menampilkan jumlah santri yang <b>Alfa</b> di setiap program pada tanggal yang dipilih. Tekan <b>Tampilkan</b> untuk melihat nama santrinya, atau <b>Salin</b> untuk menyalin daftar (siap tempel ke WhatsApp).</p>
         </section>
         <div id="list-detail-alfa"></div>
         <div class="empty" id="list-detail-alfa-empty">Tidak ada santri yang alfa pada tanggal ini.</div>
@@ -2330,8 +2330,10 @@ function initDetailHandlers(){
   const tglInput = document.getElementById('detail-tanggal');
   if(!tglInput) return;
   tglInput.value = todayStr();
-  tglInput.addEventListener('input', renderDetailAlfa);
+  tglInput.addEventListener('input', () => { detailTerbuka.clear(); renderDetailAlfa(); });
 }
+// Program yang daftar namanya sedang dibuka (default: tertutup semua, nama santri tidak langsung tampil).
+const detailTerbuka = new Set();
 
 function salinKeClipboard(teks, btn){
   const selesai = () => {
@@ -2391,33 +2393,54 @@ function renderDetailAlfa(){
     const block = document.createElement('section');
     block.className = 'block glass';
     block.innerHTML = `
-      <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px;">
-        <h2 style="margin:0;">${escapeHtml(prog)}</h2>
-        <button class="btn-ghost btn-salin" style="flex:0 0 auto; padding:7px 12px; font-size:11.5px;">Salin</button>
+      <div class="detail-alfa-head" style="display:flex; align-items:center; justify-content:space-between; gap:8px; cursor:pointer;">
+        <div style="min-width:0;">
+          <h2 style="margin:0;">${escapeHtml(prog)}</h2>
+          <div class="count-label" style="margin:2px 0 0;">${alfaList.length} santri alfa</div>
+        </div>
+        <div style="display:flex; gap:6px; flex:0 0 auto;">
+          <button class="btn-ghost btn-salin" type="button" style="flex:0 0 auto; padding:7px 12px; font-size:11.5px;">Salin</button>
+          <button class="btn-ghost btn-toggle" type="button" aria-expanded="false" style="flex:0 0 auto; padding:7px 12px; font-size:11.5px;">Tampilkan</button>
+        </div>
       </div>
-      <div class="count-label">${alfaList.length} santri alfa</div>
-      <div class="detail-alfa-list"></div>`;
+      <div class="detail-alfa-list hidden" style="margin-top:6px;"></div>`;
 
     const listEl = block.querySelector('.detail-alfa-list');
-    alfaList.forEach((s, i) => {
-      const row = document.createElement('div');
-      row.className = 'list-row';
-      row.tabIndex = 0; row.setAttribute('role','button'); row.setAttribute('aria-label','Lihat detail ' + (s.nama || s.id || ''));
-      row.innerHTML = `
-        ${avatarHtml(s, 'av-sm', true)}
-        <div style="flex:1;">
-          <div class="name">${i + 1}. ${escapeHtml(s.nama || '-')}</div>
-          <div class="meta">${escapeHtml(s.alamat || '-')} · Kelas ${escapeHtml(s.kelas || '-')} · Kamar ${escapeHtml(s.kamar || '-')}</div>
-          <div class="meta">NIS ${escapeHtml(s.id || '-')}</div>
-        </div>`;
-      const bukaDetail = () => { const idx = state.santri.indexOf(s); if(idx >= 0) bukaSantri(idx); };
-      row.addEventListener('click', e => { if(!e.target.closest('button, .av')) bukaDetail(); });
-      row.addEventListener('keydown', e => { if((e.key === 'Enter' || e.key === ' ') && e.target === row){ e.preventDefault(); bukaDetail(); } });
-      listEl.appendChild(row);
-    });
-    hydrateAvatars(listEl);
+    const btnToggle = block.querySelector('.btn-toggle');
+    let terisi = false;
+    const isiDaftar = () => {
+      if(terisi) return;
+      terisi = true; // nama & foto baru dibuat saat dibuka pertama kali
+      alfaList.forEach((s, i) => {
+        const row = document.createElement('div');
+        row.className = 'list-row';
+        row.tabIndex = 0; row.setAttribute('role','button'); row.setAttribute('aria-label','Lihat detail ' + (s.nama || s.id || ''));
+        row.innerHTML = `
+          ${avatarHtml(s, 'av-sm', true)}
+          <div style="flex:1;">
+            <div class="name">${i + 1}. ${escapeHtml(s.nama || '-')}</div>
+            <div class="meta">${escapeHtml(s.alamat || '-')} · Kelas ${escapeHtml(s.kelas || '-')} · Kamar ${escapeHtml(s.kamar || '-')}</div>
+            <div class="meta">NIS ${escapeHtml(s.id || '-')}</div>
+          </div>`;
+        const bukaDetail = () => { const idx = state.santri.indexOf(s); if(idx >= 0) bukaSantri(idx); };
+        row.addEventListener('click', e => { if(!e.target.closest('button, .av')) bukaDetail(); });
+        row.addEventListener('keydown', e => { if((e.key === 'Enter' || e.key === ' ') && e.target === row){ e.preventDefault(); bukaDetail(); } });
+        listEl.appendChild(row);
+      });
+      hydrateAvatars(listEl);
+    };
+    const setBuka = (buka) => {
+      if(buka){ isiDaftar(); detailTerbuka.add(prog); } else detailTerbuka.delete(prog);
+      listEl.classList.toggle('hidden', !buka);
+      btnToggle.textContent = buka ? 'Sembunyikan' : 'Tampilkan';
+      btnToggle.setAttribute('aria-expanded', buka ? 'true' : 'false');
+    };
+    const toggle = () => setBuka(listEl.classList.contains('hidden'));
+    btnToggle.addEventListener('click', (e) => { e.stopPropagation(); toggle(); });
+    block.querySelector('.detail-alfa-head').addEventListener('click', (e) => { if(!e.target.closest('button')) toggle(); });
+    if(detailTerbuka.has(prog)) setBuka(true); // pertahankan yang sedang dibuka saat daftar dirender ulang
 
-    block.querySelector('.btn-salin').addEventListener('click', (e) => salinKeClipboard(teksSalin, e.currentTarget));
+    block.querySelector('.btn-salin').addEventListener('click', (e) => { e.stopPropagation(); salinKeClipboard(teksSalin, e.currentTarget); });
     container.appendChild(block);
   });
 
@@ -3107,37 +3130,72 @@ bindDataSheet('btn-open-online', 'online-body', 'Ustadz Online', () => { renderO
    aktif dalam 3 menit terakhir di tab Rekap.
    ====================================================================== */
 const PRESENCE_BEAT_MS = 90000, PRESENCE_ONLINE_MS = 180000;
+const PRESENCE_WRITE_TIMEOUT_MS = 8000, PRESENCE_DENIED_RETRY_MS = 300000;
 function presenceRef(){ return db.collection('santri_app_shared').doc('presence'); }
-let presenceTimer = null, presenceDenied = false;
+let presenceTimer = null, presenceDeniedUntil = 0, presenceInflightAt = 0, presenceLastError = '';
+
+// Promise set()/get() Firestore TIDAK selesai selama perangkat offline (penulisan hanya
+// diantrikan). Tanpa batas waktu, tombol Keluar dan daftar online bisa menggantung selamanya.
+function withTimeout(promise, ms){
+  let t;
+  const timeout = new Promise((_, reject) => { t = setTimeout(() => reject(Object.assign(new Error('timeout'), { code: 'timeout' })), ms); });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(t));
+}
+
+// Kirim satu detak. Mengembalikan waktu lokal (ms) saat sukses, 0 kalau dilewati/gagal.
 async function presenceBeat(){
-  if(!state.petugas || !state.petugas.phone || document.visibilityState === 'hidden' || presenceDenied) return;
+  if(!state.petugas || !state.petugas.phone || document.visibilityState === 'hidden') return 0;
+  if(Date.now() < presenceDeniedUntil) return 0;
+  if(presenceInflightAt && Date.now() - presenceInflightAt < 120000) return 0; // detak sebelumnya masih menunggu jaringan
+  const mark = Date.now();
+  presenceInflightAt = mark;
   try{
-    await presenceRef().set({ [state.petugas.phone]: { nama: state.petugas.nama || '', admin: !!state.isAdmin, lastSeen: firebase.firestore.FieldValue.serverTimestamp() } }, { merge: true });
+    const w = presenceRef().set({ [state.petugas.phone]: { nama: state.petugas.nama || '', admin: !!state.isAdmin, lastSeen: firebase.firestore.FieldValue.serverTimestamp() } }, { merge: true });
+    const selesai = () => { if(presenceInflightAt === mark) presenceInflightAt = 0; };
+    w.then(selesai, selesai);
+    await withTimeout(w, PRESENCE_WRITE_TIMEOUT_MS);
+    presenceLastError = '';
+    return Date.now();
   }catch(e){
-    if(e && e.code === 'permission-denied') presenceDenied = true; // rules belum mengizinkan -> berhenti mencoba
+    if(presenceInflightAt === mark && !(e && e.code === 'timeout')) presenceInflightAt = 0;
+    presenceLastError = (e && e.code) || 'unknown';
+    // Ditolak rules -> jeda 5 menit lalu coba lagi (bukan berhenti selamanya), supaya
+    // begitu rules diperbaiki, perangkat yang sedang terbuka pulih sendiri tanpa login ulang.
+    if(e && e.code === 'permission-denied') presenceDeniedUntil = Date.now() + PRESENCE_DENIED_RETRY_MS;
     console.warn('Presence gagal:', e);
+    return 0;
   }
 }
 function startPresence(){
   stopPresence(false);
-  presenceDenied = false;
+  presenceDeniedUntil = 0; presenceLastError = '';
   presenceBeat();
   presenceTimer = setInterval(presenceBeat, PRESENCE_BEAT_MS);
 }
 async function stopPresence(hapus){
   clearInterval(presenceTimer); presenceTimer = null;
   if(hapus && state.petugas && state.petugas.phone){
-    try{ await presenceRef().set({ [state.petugas.phone]: firebase.firestore.FieldValue.delete() }, { merge: true }); }catch(_e){}
+    // Dibatasi 3 detik: kalau offline, Keluar tetap jalan (entri akan kedaluwarsa sendiri dalam 3 menit).
+    try{ await withTimeout(presenceRef().set({ [state.petugas.phone]: firebase.firestore.FieldValue.delete() }, { merge: true }), 3000); }catch(_e){}
   }
 }
+function sheetOnlineTerbuka(){ return !document.getElementById('online-body').classList.contains('hidden'); }
 document.addEventListener('visibilitychange', () => {
-  if(document.visibilityState === 'visible' && presenceTimer){ presenceBeat(); if(!document.getElementById('online-body').classList.contains('hidden')) renderOnline(); }
+  if(document.visibilityState === 'visible' && presenceTimer){
+    if(sheetOnlineTerbuka()) renderOnline(); else presenceBeat(); // renderOnline sudah mengirim detak sendiri
+  }
 });
+window.addEventListener('online', () => { if(presenceTimer) presenceBeat(); });
 
 function fmtLalu(ms){
   const d = Math.max(0, Math.round(ms / 1000));
   if(d < 60) return 'baru saja';
   return Math.floor(d / 60) + ' menit lalu';
+}
+function presenceErrText(code){
+  if(code === 'permission-denied') return 'aturan Firestore perlu mengizinkan dokumen "santri_app_shared/presence"';
+  if(code === 'timeout' || code === 'unavailable') return 'koneksi internet lambat atau terputus';
+  return 'kode: ' + code;
 }
 let onlineBusy = false;
 async function renderOnline(){
@@ -3146,15 +3204,23 @@ async function renderOnline(){
   onlineBusy = true;
   const err = document.getElementById('online-error'), empty = document.getElementById('online-empty'), cnt = document.getElementById('online-count');
   try{
-    const snap = await presenceRef().get();
+    // Detak diri sendiri dulu: admin ikut tampil, dan cap waktu server miliknya jadi patokan
+    // jam server — supaya jam HP yang meleset tidak membuat semua ustadz tampak offline.
+    const beatAt = await presenceBeat();
+    const snap = await withTimeout(presenceRef().get(), 15000);
     const data = snap.exists ? snap.data() : {};
-    const now = Date.now();
+    const me = state.petugas && data[state.petugas.phone];
+    const meT = me && me.lastSeen && me.lastSeen.toMillis ? me.lastSeen.toMillis() : 0;
+    const now = Date.now() + ((beatAt && meT) ? meT - beatAt : 0);
     const online = Object.keys(data).map(phone => {
       const v = data[phone] || {};
       const t = v.lastSeen && v.lastSeen.toMillis ? v.lastSeen.toMillis() : 0;
       return { phone, nama: v.nama || '', admin: !!v.admin, age: now - t, t };
     }).filter(x => x.t && x.age <= PRESENCE_ONLINE_MS).sort((a, b) => (a.nama || a.phone).localeCompare(b.nama || b.phone));
-    err.classList.add('hidden');
+    if(presenceLastError){
+      err.textContent = 'Perangkat ini belum bisa mengirim status online (' + presenceErrText(presenceLastError) + '). Daftar di bawah bisa tidak lengkap.';
+      err.classList.remove('hidden');
+    } else err.classList.add('hidden');
     cnt.textContent = online.length + ' ustadz online';
     empty.classList.toggle('hidden', online.length > 0);
     list.innerHTML = '';
@@ -3173,7 +3239,7 @@ async function renderOnline(){
   }finally{ onlineBusy = false; }
 }
 document.getElementById('btn-online-refresh').addEventListener('click', renderOnline);
-setInterval(() => { if(document.visibilityState === 'visible' && state.isAdmin && !document.getElementById('online-body').classList.contains('hidden')) renderOnline(); }, 30000);
+setInterval(() => { if(document.visibilityState === 'visible' && state.isAdmin && sheetOnlineTerbuka()) renderOnline(); }, 30000);
 
 function renderAll(){
   renderKelasOptions();
