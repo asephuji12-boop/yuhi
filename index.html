@@ -438,7 +438,7 @@
           </div>
           <div id="santri-form-body" class="hidden" style="margin-top:10px;">
             <div class="form-grid">
-              <div><label class="flabel">ID *</label><input class="field" id="in-id" placeholder="Wajib diisi &amp; unik"></div>
+              <div><label class="flabel">NIS *</label><input class="field" id="in-id" placeholder="Wajib diisi &amp; unik"></div>
               <div><label class="flabel">Kelas</label><select class="field" id="in-kelas"><option value="">— Pilih Kelas —</option></select></div>
             </div>
             <label class="flabel">Nama</label><input class="field" id="in-nama">
@@ -469,7 +469,7 @@
         <section class="block glass">
           <h2>Daftar Santri</h2>
           <div class="sum-grid" id="santri-summary"></div>
-          <div class="search-box"><input class="field" id="cari-santri" placeholder="Cari nama / ID…"></div>
+          <div class="search-box"><input class="field" id="cari-santri" placeholder="Cari nama / NIS…"></div>
           <div class="form-grid" style="margin-bottom:9px;">
             <select class="field" id="santri-kelas-filter" style="margin-bottom:0;"><option value="">— Pilih Kelas —</option></select>
             <select class="field" id="santri-kamar-filter" style="margin-bottom:0;"><option value="">— Pilih Kamar —</option></select>
@@ -486,7 +486,7 @@
           <div id="list-santri"></div>
           <div class="empty hidden" id="list-santri-empty">Belum ada data santri.</div>
           <div id="list-more"></div>
-          <div class="empty" id="list-santri-hint">Ketik nama/ID atau pilih filter Kelas/Kamar untuk menampilkan daftar santri.<button class="btn-soft" id="btn-tampil-semua">Tampilkan semua santri</button></div>
+          <div class="empty" id="list-santri-hint">Ketik nama/NIS atau pilih filter Kelas/Kamar untuk menampilkan daftar santri.<button class="btn-soft" id="btn-tampil-semua">Tampilkan semua santri</button></div>
         </section>
       </section>
 
@@ -641,7 +641,17 @@
             <button class="btn-ghost" id="btn-export"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M6 13l6 6 6-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Export Excel</button>
           </div>
           <input type="file" id="file-import" accept=".xlsx,.xls,.csv">
-          <p style="font-size:11px; color:var(--cream-dim); margin:6px 0 0;">Kolom Excel: No, ID, Nama, Alamat, Kelas, Kamar, Status (isi "Aktif", "Boyong", atau "Pindah"), Tanggal Masuk, Tanggal Keluar (format YYYY-MM-DD), Catatan. <b>ID wajib diisi</b> — baris tanpa ID akan dilewati. Jika ID sudah ada di data, santrinya diperbarui (bukan dobel).</p>
+          <p style="font-size:11px; color:var(--cream-dim); margin:6px 0 0;">Kolom Excel: No, NIS, Nama, Alamat, Kelas, Kamar, Status (isi "Aktif", "Boyong", atau "Pindah"), Tanggal Masuk, Tanggal Keluar (format YYYY-MM-DD), Catatan. <b>NIS wajib diisi</b> — baris tanpa NIS akan dilewati. Jika NIS sudah ada di data, santrinya diperbarui (bukan dobel).</p>
+        </section>
+
+        <section class="block glass" style="padding:12px 16px;">
+          <h2 style="margin:0 0 10px;">Ganti ID menjadi NIS</h2>
+          <div class="btn-row">
+            <button class="btn-ghost" id="btn-import-nis"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 19V5M6 11l6-6 6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Import NIS Baru</button>
+            <button class="btn-ghost" id="btn-export-nis"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M6 13l6 6 6-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Export Template</button>
+          </div>
+          <input type="file" id="file-import-nis" accept=".xlsx,.xls,.csv">
+          <p style="font-size:11px; color:var(--cream-dim); margin:6px 0 0;">Dipakai untuk mengganti ID lama santri dengan NIS yang benar. 1) <b>Export Template</b>, 2) isi kolom <b>NIS Baru</b> (jangan ubah kolom ID Lama; baris NIS Baru yang kosong dibiarkan), 3) <b>Import NIS Baru</b>. Riwayat izin/pulang dan absen (alfa, sakit, izin) ikut dipindah ke NIS baru, dan file cadangan .json diunduh otomatis sebelum perubahan. Kalau ada satu saja baris bermasalah, tidak ada data yang diubah.</p>
         </section>
 
         <section class="block glass" style="padding:12px 16px;">
@@ -651,7 +661,7 @@
             <button class="btn-ghost" id="btn-export-alfa"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M6 13l6 6 6-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Export Excel</button>
           </div>
           <input type="file" id="file-import-alfa" accept=".xlsx,.xls,.csv">
-          <p style="font-size:11px; color:var(--cream-dim); margin:6px 0 0;">Berlaku untuk Program &amp; Tanggal yang dipilih di tab Alfa. Kolom Excel: No, ID, Nama, Kelas, Status (isi "Hadir", "Alfa", "Sakit", atau "Izin"). <b>Pencocokan baris memakai kolom ID</b> — baris tanpa ID tidak akan cocok dengan santri manapun. Setelah import, buka tab Alfa lalu tekan <b>Simpan Absen</b> untuk menyimpan ke server.</p>
+          <p style="font-size:11px; color:var(--cream-dim); margin:6px 0 0;">Berlaku untuk Program &amp; Tanggal yang dipilih di tab Alfa. Kolom Excel: No, NIS, Nama, Kelas, Status (isi "Hadir", "Alfa", "Sakit", atau "Izin"). <b>Pencocokan baris memakai kolom NIS</b> — baris tanpa NIS tidak akan cocok dengan santri manapun. Setelah import, buka tab Alfa lalu tekan <b>Simpan Absen</b> untuk menyimpan ke server.</p>
         </section>
 
         <section class="block glass" style="padding:12px 16px;">
@@ -661,7 +671,7 @@
             <button class="btn-ghost" id="btn-export-izin"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M6 13l6 6 6-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Export Excel</button>
           </div>
           <input type="file" id="file-import-izin" accept=".xlsx,.xls,.csv">
-          <p style="font-size:11px; color:var(--cream-dim); margin:6px 0 0;">Kolom Excel: No, ID, Nama, Kelas, Mulai, Selesai, Keterangan. Tanggal format YYYY-MM-DD. <b>Pencocokan baris memakai kolom ID</b> — baris tanpa ID tidak akan cocok dengan santri manapun.</p>
+          <p style="font-size:11px; color:var(--cream-dim); margin:6px 0 0;">Kolom Excel: No, NIS, Nama, Kelas, Mulai, Selesai, Keterangan. Tanggal format YYYY-MM-DD. <b>Pencocokan baris memakai kolom NIS</b> — baris tanpa NIS tidak akan cocok dengan santri manapun.</p>
         </section>
 
         <section class="block glass" style="padding:12px 16px;">
@@ -1322,9 +1332,9 @@ function initSantriHandlers(){
     const nama = document.getElementById('in-nama').value.trim();
     const id = document.getElementById('in-id').value.trim();
     if(!nama){ showToast('Nama wajib diisi.'); markInvalid('in-nama'); return; }
-    if(!id){ showToast('ID wajib diisi — ID dipakai sebagai acuan utama data santri.'); markInvalid('in-id'); return; }
+    if(!id){ showToast('NIS wajib diisi — NIS dipakai sebagai acuan utama data santri.'); markInvalid('in-id'); return; }
     const dup = state.santri.some((s, idx) => s.id === id && idx !== editingSantriIdx);
-    if(dup){ showToast('ID "' + id + '" sudah dipakai santri lain. Gunakan ID yang unik.'); return; }
+    if(dup){ showToast('NIS "' + id + '" sudah dipakai santri lain. Gunakan NIS yang unik.'); return; }
     const santriData = {
       id,
       nama,
@@ -1777,7 +1787,7 @@ function initImportExportHandlers(){
 function exportExcel(){
   const rows = state.santri.map((s, i) => ({
     No: i + 1,
-    ID: s.id || '',
+    NIS: s.id || '',
     Nama: s.nama || '',
     Kelas: s.kelas || '',
     Alamat: s.alamat || '',
@@ -1809,7 +1819,7 @@ function handleImportFile(e){
       let added = 0, updated = 0, skipped = 0;
       rows.forEach(r => {
         const nama = String(r.Nama || r.nama || '').trim();
-        const id = String(r.ID || r.id || '').trim();
+        const id = String(r.NIS || r.Nis || r.nis || r.ID || r.id || '').trim();
         // ID adalah acuan wajib -> baris tanpa ID dilewati, tidak lagi diimport
         // sebagai santri baru tanpa identitas.
         if(!nama || !id){ skipped++; return; }
@@ -1842,13 +1852,141 @@ function handleImportFile(e){
       saveSantriToFirestore();
       renderAll();
       let msg = `${added} santri ditambahkan, ${updated} diperbarui.`;
-      if(skipped) msg += ` ${skipped} baris dilewati (ID/Nama kosong).`;
+      if(skipped) msg += ` ${skipped} baris dilewati (NIS/Nama kosong).`;
       showToast(msg);
     }catch(err){
       console.error(err);
       showToast('Gagal membaca file. Pastikan formatnya benar.');
     }
     e.target.value = '';
+  };
+  reader.readAsBinaryString(file);
+}
+
+/* ======================================================================
+   4b) GANTI ID -> NIS (export template + import)
+   ID santri dipakai sebagai kunci di santri, izin (santriKey) dan tiga peta
+   absen (alfa/sakit/izin harian). Mengganti ID lewat import biasa akan membuat
+   santri duplikat dan memutus riwayatnya, jadi di sini semua kunci dipindah
+   sekaligus lalu disimpan dalam SATU tulisan Firestore.
+   ====================================================================== */
+function initGantiNisHandlers(){
+  document.getElementById('btn-export-nis').addEventListener('click', exportTemplateNis);
+  document.getElementById('btn-import-nis').addEventListener('click', () => document.getElementById('file-import-nis').click());
+  document.getElementById('file-import-nis').addEventListener('change', handleImportNisFile);
+}
+
+function exportTemplateNis(){
+  if(!state.santri.length){ showToast('Belum ada data santri.'); return; }
+  const rows = state.santri.map((s, i) => ({
+    No: i + 1,
+    'ID Lama': s.id || '',
+    Nama: s.nama || '',
+    Kelas: s.kelas || '',
+    Kamar: s.kamar || '',
+    Status: s.status || 'aktif',
+    'NIS Baru': '',
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [{ wch: 5 }, { wch: 16 }, { wch: 28 }, { wch: 12 }, { wch: 12 }, { wch: 9 }, { wch: 16 }];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Ganti NIS');
+  XLSX.writeFile(wb, `template-ganti-nis-${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+function remapKeysDeep(byProgram, map){
+  const out = {};
+  Object.keys(byProgram || {}).forEach(prog => {
+    out[prog] = {};
+    Object.keys(byProgram[prog] || {}).forEach(tgl => {
+      const src = byProgram[prog][tgl] || {};
+      const dst = {};
+      Object.keys(src).forEach(k => { dst[Object.prototype.hasOwnProperty.call(map, k) ? map[k] : k] = src[k]; });
+      out[prog][tgl] = dst;
+    });
+  });
+  return out;
+}
+
+function handleImportNisFile(e){
+  const input = e.target;
+  if(!state.isAdmin){ showToast('Hanya admin yang bisa mengganti ID/NIS.'); input.value = ''; return; }
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = async (evt) => {
+    try{
+      const wb = XLSX.read(evt.target.result, { type: 'binary' });
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
+      const pick = (r, names) => { for(const n of names){ if(r[n] !== undefined && String(r[n]).trim() !== '') return String(r[n]).trim(); } return ''; };
+
+      const map = {};            // idLama -> nisBaru
+      const seenNew = new Map(); // nisBaru -> idLama
+      const errors = [];
+      let kosong = 0, sama = 0;
+      rows.forEach((r, i) => {
+        const baris = i + 2; // baris 1 = header
+        const lama = pick(r, ['ID Lama', 'ID', 'id', 'Id Lama']);
+        const baru = pick(r, ['NIS Baru', 'Nis Baru', 'nis baru', 'NIS_Baru']);
+        if(!baru){ kosong++; return; }
+        if(!lama){ errors.push(`Baris ${baris}: ID Lama kosong.`); return; }
+        if(lama === baru){ sama++; return; }
+        if(!state.santri.some(s => s.id === lama)){ errors.push(`Baris ${baris}: ID Lama "${lama}" tidak ditemukan.`); return; }
+        if(Object.prototype.hasOwnProperty.call(map, lama)){ errors.push(`Baris ${baris}: ID Lama "${lama}" muncul lebih dari sekali.`); return; }
+        if(seenNew.has(baru)){ errors.push(`Baris ${baris}: NIS Baru "${baru}" dipakai dua santri (ID ${seenNew.get(baru)} dan ${lama}).`); return; }
+        map[lama] = baru; seenNew.set(baru, lama);
+      });
+
+      // Tabrakan dengan santri lain yang ID-nya TIDAK ikut diganti.
+      Object.keys(map).forEach(lama => {
+        const baru = map[lama];
+        const bentrok = state.santri.find(s => s.id === baru && !Object.prototype.hasOwnProperty.call(map, s.id));
+        if(bentrok) errors.push(`NIS Baru "${baru}" (untuk ID ${lama}) sudah dipakai ${bentrok.nama || 'santri lain'}.`);
+      });
+
+      const total = Object.keys(map).length;
+      if(errors.length){
+        const shown = errors.slice(0, 8).map(x => '• ' + x).join('\n');
+        await confirmDialog(`Import dibatalkan, belum ada data yang diubah.\n\n${shown}` + (errors.length > 8 ? `\n… dan ${errors.length - 8} masalah lain.` : ''), { title: 'Ada baris bermasalah', okText: 'Mengerti', cancelText: 'Tutup' });
+        return;
+      }
+      if(!total){ showToast('Tidak ada NIS baru yang perlu diganti' + (kosong ? ` (${kosong} baris NIS Baru kosong).` : '.')); return; }
+
+      const contoh = Object.keys(map).slice(0, 3).map(k => `${k} → ${map[k]}`).join('\n');
+      const ok = await confirmDialog(`${total} santri akan diganti ID-nya menjadi NIS baru, termasuk riwayat izin dan absennya.\n\n${contoh}${total > 3 ? '\n…' : ''}\n\nFile cadangan .json akan diunduh otomatis. Lanjutkan?`, { title: 'Ganti ID menjadi NIS', okText: 'Ganti sekarang' });
+      if(!ok) return;
+
+      exportAllDataJson(); // cadangan sebelum perubahan
+
+      const before = { santri: state.santri, izin: state.izin, alfa: state.alfaByProgram, sakit: state.sakitByProgram, izinHarian: state.izinHarianByProgram };
+      const has = k => Object.prototype.hasOwnProperty.call(map, k);
+      state.santri = before.santri.map(s => has(s.id) ? { ...s, id: map[s.id] } : s);
+      state.izin = before.izin.map(iz => has(iz.santriKey) ? { ...iz, santriKey: map[iz.santriKey] } : iz);
+      state.alfaByProgram = remapKeysDeep(before.alfa, map);
+      state.sakitByProgram = remapKeysDeep(before.sakit, map);
+      state.izinHarianByProgram = remapKeysDeep(before.izinHarian, map);
+      try{
+        await santriDocRef().set({
+          santri: state.santri, izin: state.izin,
+          alfaByProgram: state.alfaByProgram, sakitByProgram: state.sakitByProgram,
+          izinHarianByProgram: state.izinHarianByProgram, absenFormat: 'alfa',
+        }, { merge: true });
+      }catch(err){
+        console.error(err);
+        state.santri = before.santri; state.izin = before.izin; state.alfaByProgram = before.alfa;
+        state.sakitByProgram = before.sakit; state.izinHarianByProgram = before.izinHarian;
+        showToast('Gagal menyimpan, tidak ada yang berubah: ' + (err && err.message ? err.message : 'cek koneksi/izin Firestore.'));
+        return;
+      }
+      if(detailId !== null && has(detailId)) detailId = map[detailId];
+      renderAll();
+      showToast(`${total} santri berhasil diganti ke NIS baru.` + (kosong ? ` ${kosong} baris NIS Baru kosong dilewati.` : ''));
+    }catch(err){
+      console.error(err);
+      showToast('Gagal membaca file. Pastikan memakai template dari Export Template.');
+    }finally{
+      input.value = '';
+    }
   };
   reader.readAsBinaryString(file);
 }
@@ -2304,7 +2442,7 @@ function exportAlfaExcel(){
     .map((s, i) => {
       const key = santriKey(s);
       const status = getActiveIzin(key, tgl) ? 'Pulang' : (draftSakit[key] ? 'Sakit' : (draftIzinHarian[key] ? 'Izin' : (draftAlfa[key] ? 'Alfa' : 'Hadir')));
-      return { No: i + 1, ID: s.id || '', Nama: s.nama || '', Kelas: s.kelas || '', Status: status };
+      return { No: i + 1, NIS: s.id || '', Nama: s.nama || '', Kelas: s.kelas || '', Status: status };
     });
   if(rows.length === 0){ showToast('Belum ada santri wajib di program ini untuk diexport.'); return; }
   const ws = XLSX.utils.json_to_sheet(rows);
@@ -2328,7 +2466,7 @@ function handleImportAlfaFile(e){
       const tgl = document.getElementById('alfa-tanggal').value || todayStr();
       let matched = 0, unmatched = 0, locked = 0;
       rows.forEach(r => {
-        const id = String(r.ID || r.id || '').trim();
+        const id = String(r.NIS || r.Nis || r.nis || r.ID || r.id || '').trim();
         const statusRaw = String(r.Status || r.status || '').trim().toLowerCase();
         // Pencocokan HANYA berdasarkan ID -> baris tanpa ID tidak akan pernah cocok.
         const santri = id ? state.santri.find(s => s.id === id) : null;
@@ -2654,7 +2792,7 @@ function exportIzinExcel(){
       const s = bySantri(iz.santriKey);
       return {
         No: i + 1,
-        ID: s.id || '',
+        NIS: s.id || '',
         Nama: iz.nama || '',
         Kelas: s.kelas || '',
         Mulai: iz.mulai,
@@ -2682,7 +2820,7 @@ function handleImportIzinFile(e){
       const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
       let added = 0, unmatched = 0;
       rows.forEach(r => {
-        const id = String(r.ID || r.id || '').trim();
+        const id = String(r.NIS || r.Nis || r.nis || r.ID || r.id || '').trim();
         const mulai = String(r.Mulai || r.mulai || '').trim();
         if(!mulai) return;
         // Pencocokan HANYA berdasarkan ID -> baris tanpa ID tidak akan pernah cocok.
@@ -3077,6 +3215,7 @@ function initImportExportToggle(headerId, btnId, boxId){
   initAlfaImportExportHandlers();
   initIzinHandlers();
   initIzinImportExportHandlers();
+  initGantiNisHandlers();
   initBackupRestoreHandlers();
   // onAuthStateChanged (di initGateHandlers) yang menentukan tampilan gate/app/loading
 })();
