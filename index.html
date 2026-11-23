@@ -661,7 +661,7 @@
             <button class="btn-ghost" id="btn-export-alfa"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M6 13l6 6 6-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Export Excel</button>
           </div>
           <input type="file" id="file-import-alfa" accept=".xlsx,.xls,.csv">
-          <p style="font-size:11px; color:var(--cream-dim); margin:6px 0 0;">Berlaku untuk Program &amp; Tanggal yang dipilih di tab Alfa. Kolom Excel: No, NIS, Nama, Kelas, Status (isi "Hadir", "Alfa", "Sakit", atau "Izin"). <b>Pencocokan baris memakai kolom NIS</b> — baris tanpa NIS tidak akan cocok dengan santri manapun. Setelah import, buka tab Alfa lalu tekan <b>Simpan Absen</b> untuk menyimpan ke server.</p>
+          <p style="font-size:11px; color:var(--cream-dim); margin:6px 0 0;">Berlaku untuk Program &amp; Tanggal yang dipilih di tab Alfa. Kolom Excel: No, NIS, Nama, Alamat, Kelas, Status (isi "Hadir", "Alfa", "Sakit", atau "Izin"). <b>Pencocokan baris memakai kolom NIS</b> — baris tanpa NIS tidak akan cocok dengan santri manapun. Setelah import, buka tab Alfa lalu tekan <b>Simpan Absen</b> untuk menyimpan ke server.</p>
         </section>
 
         <section class="block glass" style="padding:12px 16px;">
@@ -671,7 +671,7 @@
             <button class="btn-ghost" id="btn-export-izin"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M6 13l6 6 6-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg> Export Excel</button>
           </div>
           <input type="file" id="file-import-izin" accept=".xlsx,.xls,.csv">
-          <p style="font-size:11px; color:var(--cream-dim); margin:6px 0 0;">Kolom Excel: No, NIS, Nama, Kelas, Mulai, Selesai, Keterangan. Tanggal format YYYY-MM-DD. <b>Pencocokan baris memakai kolom NIS</b> — baris tanpa NIS tidak akan cocok dengan santri manapun.</p>
+          <p style="font-size:11px; color:var(--cream-dim); margin:6px 0 0;">Kolom Excel: No, NIS, Nama, Alamat, Kelas, Mulai, Selesai, Keterangan. Tanggal format YYYY-MM-DD. <b>Pencocokan baris memakai kolom NIS</b> — baris tanpa NIS tidak akan cocok dengan santri manapun.</p>
         </section>
 
         <section class="block glass" style="padding:12px 16px;">
@@ -1632,7 +1632,7 @@ function bukaSantri(idx){
   const rk = rkList.length ? `<div class="sd-sub">Riwayat Kelas</div>` + rkList.map(r => `<div class="sd-prog"><b>${escapeHtml(r.dari || '-')} → ${escapeHtml(r.ke || '-')}</b><div class="meta" style="margin-top:2px;">${escapeHtml([r.tahun, r.tgl ? fmtTgl(r.tgl) : ''].filter(Boolean).join(' · '))}</div></div>`).join('') : '';
   const st = ['aktif','boyong','pindah'].includes(s.status || 'aktif') ? (s.status || 'aktif') : 'aktif';
   const body = ov.querySelector('#sd-body');
-  body.innerHTML = `<div class="sd-head">${avatarHtml(s).replace('class="av"', 'class="av av-sq"')}<div class="grow"><div class="name">${escapeHtml(s.nama)}</div><div class="meta">NIS ${escapeHtml(s.id)} · <span class="chip ${st}">${escapeHtml(statusLabelSantri(s))}</span></div></div></div>
+  body.innerHTML = `<div class="sd-head">${avatarHtml(s).replace('class="av"', 'class="av av-sq"')}<div class="grow"><div class="name">${escapeHtml(s.nama)}${s.alamat ? ' - ' + escapeHtml(s.alamat) : ''}</div><div class="meta">NIS ${escapeHtml(s.id)} · <span class="chip ${st}">${escapeHtml(statusLabelSantri(s))}</span></div></div></div>
     <dl class="sd-grid">${dd('Kelas', s.kelas)}${dd('Kamar', s.kamar)}${dd('Alamat', s.alamat, true)}${dd('Tanggal Masuk', s.tglMasuk ? fmtTgl(s.tglMasuk) : '')}${dd('Tanggal Keluar', s.tglKeluar ? fmtTgl(s.tglKeluar) : '')}${s.catatan ? dd('Catatan', s.catatan, true) : ''}</dl>
     <div class="sd-sub">Keaktifan Program</div>${prog}<div class="sd-sub">Riwayat Pulang</div>${pl}${rk}`;
   hydrateAvatars(body);
@@ -1675,7 +1675,7 @@ async function unduhSantriPdf(btn, mode){
     y = 40; let tx = M;
     if(foto){ try{ doc.addImage(foto, foto.startsWith('data:image/png') ? 'PNG' : 'JPEG', M, y - 4, 30, 30); tx = M + 36; }catch(_e){} }
     doc.setTextColor(30,30,30); doc.setFont('helvetica','bold'); doc.setFontSize(15);
-    const nl = doc.splitTextToSize(pdfSafe(s.nama), W - M - tx); doc.text(nl, tx, y + 3);
+    const nl = doc.splitTextToSize(pdfSafe(s.nama + (s.alamat ? ' - ' + s.alamat : '')), W - M - tx); doc.text(nl, tx, y + 3);
     const iy = y + 3 + nl.length * 6.2;
     doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(90,90,90);
     T('NIS ' + s.id + '  |  ' + statusLabelSantri(s), tx, iy);
@@ -1898,6 +1898,7 @@ function exportTemplateNis(){
     No: i + 1,
     'ID Lama': s.id || '',
     Nama: s.nama || '',
+    Alamat: s.alamat || '',
     Kelas: s.kelas || '',
     Kamar: s.kamar || '',
     Status: s.status || 'aktif',
@@ -1957,7 +1958,7 @@ function handleImportNisFile(e){
       Object.keys(map).forEach(lama => {
         const baru = map[lama];
         const bentrok = state.santri.find(s => s.id === baru && !Object.prototype.hasOwnProperty.call(map, s.id));
-        if(bentrok) errors.push(`NIS Baru "${baru}" (untuk ID ${lama}) sudah dipakai ${bentrok.nama || 'santri lain'}.`);
+        if(bentrok) errors.push(`NIS Baru "${baru}" (untuk ID ${lama}) sudah dipakai ${bentrok.nama ? bentrok.nama + (bentrok.alamat ? ' - ' + bentrok.alamat : '') : 'santri lain'}.`);
       });
 
       const total = Object.keys(map).length;
@@ -2481,7 +2482,7 @@ function exportAlfaExcel(){
     .map((s, i) => {
       const key = santriKey(s);
       const status = getActiveIzin(key, tgl) ? 'Pulang' : (draftSakit[key] ? 'Sakit' : (draftIzinHarian[key] ? 'Izin' : (draftAlfa[key] ? 'Alfa' : 'Hadir')));
-      return { No: i + 1, NIS: s.id || '', Nama: s.nama || '', Kelas: s.kelas || '', Status: status };
+      return { No: i + 1, NIS: s.id || '', Nama: s.nama || '', Alamat: s.alamat || '', Kelas: s.kelas || '', Status: status };
     });
   if(rows.length === 0){ showToast('Belum ada santri wajib di program ini untuk diexport.'); return; }
   const ws = XLSX.utils.json_to_sheet(rows);
@@ -2545,7 +2546,7 @@ function refreshIzinSantriOptions(){
   sel.innerHTML = [...state.santri]
     .filter(s => isSantriAktif(s) && (!kelasFilter || s.kelas === kelasFilter) && (!kamarFilter || s.kamar === kamarFilter))
     .sort((a,b) => a.nama.localeCompare(b.nama))
-    .map(s => `<option value="${escapeHtml(santriKey(s))}">${escapeHtml(s.nama)}${s.kelas ? ' · ' + escapeHtml(s.kelas) : ''}</option>`)
+    .map(s => `<option value="${escapeHtml(santriKey(s))}">${escapeHtml(s.nama)}${s.alamat ? ' - ' + escapeHtml(s.alamat) : ''}${s.kelas ? ' · ' + escapeHtml(s.kelas) : ''}</option>`)
     .join('');
   if(current && [...sel.options].some(o => o.value === current)) sel.value = current;
 }
@@ -2833,6 +2834,7 @@ function exportIzinExcel(){
         No: i + 1,
         NIS: s.id || '',
         Nama: iz.nama || '',
+        Alamat: s.alamat || '',
         Kelas: s.kelas || '',
         Mulai: iz.mulai,
         Selesai: iz.selesai || iz.mulai,
@@ -3011,7 +3013,7 @@ function renderNk(){
     if(!nkPlan[s.id]) nkPlan[s.id] = nkDefault(s);
     const row = document.createElement('div');
     row.className = 'list-row';
-    row.innerHTML = `<div class="grow"><div class="name">${escapeHtml(s.nama)}</div><div class="meta">${escapeHtml((s.kelas || '').trim() || '-')} · NIS ${escapeHtml(s.id)}</div></div>
+    row.innerHTML = `<div class="grow"><div class="name">${escapeHtml(s.nama)}${s.alamat ? ' - ' + escapeHtml(s.alamat) : ''}</div><div class="meta">${escapeHtml((s.kelas || '').trim() || '-')} · NIS ${escapeHtml(s.id)}</div></div>
       <select class="field" data-id="${escapeHtml(s.id)}" style="flex:0 0 150px; margin:0; padding:9px 10px; font-size:12.5px;" aria-label="Aksi ${escapeHtml(s.nama)}">${nkOptions(nkPlan[s.id])}</select>`;
     list.appendChild(row);
   });
