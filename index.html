@@ -1492,7 +1492,8 @@ function fotoBlobUrl(name){
         res = await fetch(url, { headers: { Authorization: 'Bearer ' + token } });
         if(!res.ok){
           fotoMem.delete(name); // jangan simpan kegagalan, biar bisa dicoba lagi
-          fotoDiag('HTTP ' + res.status + (res.status === 404 ? ' (file tidak ada di server)' : res.status === 401 || res.status === 403 ? ' (token ditolak / header Authorization tidak sampai ke foto.php)' : ''));
+          let info = ''; try{ const j = await res.clone().json(); info = ' - ' + j.error + (j.detail ? ' ' + JSON.stringify(j.detail) : ''); }catch(_e){}
+          fotoDiag('HTTP ' + res.status + info);
           return null;
         }
         if(cache) await cache.put(url, res.clone());
