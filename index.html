@@ -48,6 +48,9 @@
   .font-display{font-family:'Fraunces',serif; letter-spacing:-0.01em;}
   .font-mono{font-family:'IBM Plex Mono',monospace;}
   .hidden{display:none !important;}
+  .list-row.pick{cursor:pointer;}
+  .list-row.pick.sel{background:rgba(198,162,107,.12); border-radius:14px; padding-left:8px; padding-right:8px; border-bottom-color:transparent;}
+  .izin-detail{padding:12px 12px 4px; margin:2px 0 10px; border:1px solid rgba(198,162,107,.45); border-radius:14px; background:rgba(255,255,255,.04);}
   button{font-family:inherit; cursor:pointer; border:none; -webkit-tap-highlight-color:transparent;}
   input,select{font-family:inherit;}
   button:focus-visible, input:focus-visible, select:focus-visible{outline:2px solid var(--amber); outline-offset:2px; border-radius:6px;}
@@ -589,8 +592,12 @@
             <div><label class="flabel">Pilih Kelas</label><select class="field" id="izin-kelas-filter"><option value="">— Pilih Kelas —</option></select></div>
             <div><label class="flabel">Pilih Kamar</label><select class="field" id="izin-kamar-filter"><option value="">— Pilih Kamar —</option></select></div>
           </div>
-          <label class="flabel">Santri</label>
-          <select class="field" id="izin-santri"></select>
+          <label class="flabel">Santri <span style="font-weight:400; color:var(--cream-dim);">— ketuk untuk memilih</span></label>
+          <input class="field" id="izin-cari" type="search" placeholder="Cari nama / alamat…" autocomplete="off">
+          <input type="hidden" id="izin-santri">
+          <div id="izin-santri-list"></div>
+          <div class="empty hidden" id="izin-santri-empty">Tidak ada santri yang cocok.</div>
+          <div id="izin-detail" class="izin-detail hidden">
           <div class="form-grid">
             <div><label class="flabel">Tanggal Mulai</label><input class="field" type="date" id="izin-mulai"></div>
             <div><label class="flabel">Tanggal Selesai</label><input class="field" type="date" id="izin-selesai"></div>
@@ -598,6 +605,7 @@
           <p style="font-size:11px; color:var(--cream-dim); margin:-4px 0 8px;">Kosongkan Tanggal Selesai untuk pulang satu hari saja.</p>
           <label class="flabel">Keterangan</label><input class="field" id="izin-keterangan" placeholder="Pulang, keperluan keluarga, dll.">
           <div class="btn-row-2"><button class="btn-block" id="btn-tambah-izin" type="button">Simpan Pulang</button></div>
+          </div>
           </div>
         </section>
 
@@ -1179,7 +1187,7 @@ function resetTabDefaults(tab){
       loadDraftForCurrent(); renderAlfaList();
     } else if(tab === 'izin'){
       setIzinFormOpen(false); setRiwayatOpen(false);
-      clr('izin-kelas-filter','izin-kamar-filter','izin-mulai','izin-selesai','izin-keterangan');
+      clr('izin-kelas-filter','izin-kamar-filter','izin-cari','izin-santri','izin-mulai','izin-selesai','izin-keterangan');
       refreshIzinSantriOptions();
       riwayatLimit = 30; renderIzinList();
     } else if(tab === 'detail'){
@@ -2539,16 +2547,50 @@ function handleImportAlfaFile(e){
 /* Santri yang muncul di dropdown "Santri" pada Tambah Izin disaring
    berdasarkan Pilih Kelas / Pilih Kamar di atasnya (kosong = semua santri). */
 function refreshIzinSantriOptions(){
-  const sel = document.getElementById('izin-santri');
-  const current = sel.value;
+  const hid = document.getElementById('izin-santri');
+  const list = document.getElementById('izin-santri-list');
+  const detail = document.getElementById('izin-detail');
+  list.parentNode.insertBefore(detail, list.nextSibling); // selamatkan form detail sebelum daftar digambar ulang
   const kelasFilter = document.getElementById('izin-kelas-filter').value;
   const kamarFilter = document.getElementById('izin-kamar-filter').value;
-  sel.innerHTML = [...state.santri]
-    .filter(s => isSantriAktif(s) && (!kelasFilter || s.kelas === kelasFilter) && (!kamarFilter || s.kamar === kamarFilter))
-    .sort((a,b) => a.nama.localeCompare(b.nama))
-    .map(s => `<option value="${escapeHtml(santriKey(s))}">${escapeHtml(s.nama)}${s.alamat ? ' - ' + escapeHtml(s.alamat) : ''}${s.kelas ? ' · ' + escapeHtml(s.kelas) : ''}</option>`)
-    .join('');
-  if(current && [...sel.options].some(o => o.value === current)) sel.value = current;
+  const q = (document.getElementById('izin-cari').value || '').trim().toLowerCase();
+  const items = [...state.santri]
+    .filter(s => isSantriAktif(s) && (!kelasFilter || s.kelas === kelasFilter) && (!kamarFilter || s.kamar === kamarFilter) &&
+      (!q || [s.nama, s.alamat, s.id].some(v => String(v || '').toLowerCase().includes(q))))
+    .sort((a,b) => a.nama.localeCompare(b.nama));
+  list.innerHTML = '';
+  let selRow = null;
+  items.forEach(s => {
+    const key = santriKey(s);
+    const row = document.createElement('div');
+    row.className = 'list-row pick';
+    row.tabIndex = 0; row.setAttribute('role', 'button');
+    row.setAttribute('aria-label', 'Pilih ' + (s.nama || s.id || ''));
+    row.dataset.key = key;
+    row.innerHTML = `
+      ${avatarHtml(s, 'av-sm')}
+      <div class="grow">
+        <div class="name-line"><span class="name">${escapeHtml(s.nama)}</span> - <span class="addr">${escapeHtml(s.alamat || '-')}</span></div>
+        <div class="meta">${escapeHtml([s.kelas, s.kamar].map(v => (v || '').trim() || '-').join(' - '))}</div>
+      </div>`;
+    if(key === hid.value){ row.classList.add('sel'); selRow = row; }
+    list.appendChild(row);
+  });
+  hydrateAvatars(list);
+  document.getElementById('izin-santri-empty').classList.toggle('hidden', items.length > 0);
+  if(selRow){ selRow.after(detail); detail.classList.remove('hidden'); }
+  else { hid.value = ''; detail.classList.add('hidden'); }
+}
+
+function pilihIzinSantri(row){
+  const list = document.getElementById('izin-santri-list');
+  list.querySelectorAll('.list-row.pick.sel').forEach(r => r.classList.remove('sel'));
+  row.classList.add('sel');
+  document.getElementById('izin-santri').value = row.dataset.key;
+  const detail = document.getElementById('izin-detail');
+  row.after(detail);
+  detail.classList.remove('hidden');
+  detail.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 }
 
 /* Sama seperti refreshSantriFilterOptions: opsi diambil dari data santri
@@ -2576,6 +2618,18 @@ function initIzinHandlers(){
   refreshIzinSantriOptions();
   document.getElementById('izin-kelas-filter').addEventListener('change', refreshIzinSantriOptions);
   document.getElementById('izin-kamar-filter').addEventListener('change', refreshIzinSantriOptions);
+  document.getElementById('izin-cari').addEventListener('input', refreshIzinSantriOptions);
+  const pickList = document.getElementById('izin-santri-list');
+  pickList.addEventListener('click', e => {
+    if(e.target.closest('.av')) return; // ketuk foto = perbesar foto saja
+    const row = e.target.closest('.list-row.pick');
+    if(row) pilihIzinSantri(row);
+  });
+  pickList.addEventListener('keydown', e => {
+    if(e.key !== 'Enter' && e.key !== ' ') return;
+    const row = e.target.closest('.list-row.pick');
+    if(row && e.target === row){ e.preventDefault(); pilihIzinSantri(row); }
+  });
 
   document.getElementById('btn-tambah-izin').addEventListener('click', async () => {
     const btn = document.getElementById('btn-tambah-izin');
@@ -2603,6 +2657,8 @@ function initIzinHandlers(){
       document.getElementById('izin-mulai').value = '';
       document.getElementById('izin-selesai').value = '';
       document.getElementById('izin-keterangan').value = '';
+      document.getElementById('izin-santri').value = '';
+      refreshIzinSantriOptions();
       showToast('Pulang ditambahkan.');
       setIzinFormOpen(false);
     }catch(e){
